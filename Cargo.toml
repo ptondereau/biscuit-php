@@ -8,6 +8,7 @@ description = "PHP wrapper for Biscuit authorization tokens"
 [dependencies]
 cargo-php = "*"
 ext-php-rs = "0.8"
+biscuit-auth = "3.0.0-alpha1"
 
 [lib]
 name = "ext_biscuit_php"

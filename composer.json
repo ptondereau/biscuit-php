@@ -11,7 +11,7 @@
     ],
     "autoload-dev": {
         "psr-4": {
-            "BiscuitPHP\\Tests\\": "tests/"
+            "Biscuit\\Tests\\": "tests/"
         }
     },
     "require": {
