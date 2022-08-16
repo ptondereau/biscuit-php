@@ -553,6 +553,7 @@ dependencies = [
  "biscuit-auth",
  "cargo-php",
  "ext-php-rs",
+ "hex",
 ]
 
 [[package]]
