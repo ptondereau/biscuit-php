@@ -3,6 +3,50 @@ use ext_php_rs::builders::ClassBuilder;
 use ext_php_rs::zend::{ce, ClassEntry, ModuleEntry};
 use ext_php_rs::{info_table_end, info_table_row, info_table_start, prelude::*};
 
+#[derive(Debug, ZvalConvert)]
+pub enum MixedValue {
+    Long(u64),
+    Bool(bool),
+    ParsedStr(String),
+    None,
+}
+
+#[php_class(name = "Biscuit\\Auth\\Policy")]
+#[derive(Debug)]
+pub struct Policy(biscuit_auth::builder::Policy);
+
+#[php_impl]
+impl Policy {
+    pub fn __construct(source: &str) -> PhpResult<Self> {
+        source.try_into().map(Self).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_POLICY.expect("did not set exception ce")
+            })
+        })
+    }
+
+    pub fn set(&mut self, name: &str, value: MixedValue) -> PhpResult<()> {
+        let term_value = match value {
+            MixedValue::Long(v) => biscuit_auth::builder::Term::Integer(v as i64),
+            MixedValue::Bool(b) => biscuit_auth::builder::Term::Bool(b),
+            MixedValue::ParsedStr(s) => biscuit_auth::builder::Term::Str(s),
+            MixedValue::None => {
+                return Err(PhpException::new(
+                    "unexpected value".to_string(),
+                    0,
+                    unsafe { INVALID_POLICY.expect("did not set exception ce") },
+                ))
+            }
+        };
+
+        self.0.set(name, term_value).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_POLICY.expect("did not set exception ce")
+            })
+        })
+    }
+}
+
 #[php_class(name = "Biscuit\\Auth\\KeyPair")]
 #[derive(Debug)]
 pub struct KeyPair(biscuit_auth::KeyPair);
@@ -72,6 +116,7 @@ impl PrivateKey {
 /// This is statics classes entries for storing the right excpetion
 static mut INVALID_PRIVATE_KEY: Option<&'static ClassEntry> = None;
 static mut INVALID_PUBLIC_KEY: Option<&'static ClassEntry> = None;
+static mut INVALID_POLICY: Option<&'static ClassEntry> = None;
 
 #[php_startup]
 pub fn startup() {
@@ -86,6 +131,12 @@ pub fn startup() {
         .build()
         .expect("Invalid public key");
     unsafe { INVALID_PUBLIC_KEY.replace(ce_invalid_public_key) };
+
+    let ce_invalid_policy = ClassBuilder::new("Biscuit\\Exception\\InvalidPolicy")
+        .extends(ce::exception())
+        .build()
+        .expect("Invalid policy");
+    unsafe { INVALID_POLICY.replace(ce_invalid_policy) };
 }
 
 /// Used by the `phpinfo()` function and when you run `php -i`.

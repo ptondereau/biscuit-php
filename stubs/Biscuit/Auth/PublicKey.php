@@ -4,6 +4,9 @@
  */
 namespace Biscuit\Auth;
 
+/**
+ * auto generated file by PHPExtensionStubGenerator
+ */
 class PublicKey
 {
 
