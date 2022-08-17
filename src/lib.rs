@@ -3,8 +3,6 @@ use ext_php_rs::builders::ClassBuilder;
 use ext_php_rs::zend::{ce, ClassEntry, ModuleEntry};
 use ext_php_rs::{info_table_end, info_table_row, info_table_start, prelude::*};
 
-static mut INVALID_PRIVATE_KEY: Option<&'static ClassEntry> = None;
-
 #[php_class(name = "Biscuit\\Auth\\KeyPair")]
 #[derive(Debug)]
 pub struct KeyPair(biscuit_auth::KeyPair);
@@ -20,8 +18,12 @@ impl KeyPair {
         Ok(Self(biscuit_auth::KeyPair::from(pk.0)))
     }
 
-    pub fn public(&self) -> String {
-        self.0.public().print()
+    pub fn public(&self) -> PublicKey {
+        PublicKey(self.0.public())
+    }
+
+    pub fn private(&self) -> PrivateKey {
+        PrivateKey(self.0.private())
     }
 }
 
@@ -30,7 +32,21 @@ impl KeyPair {
 pub struct PublicKey(biscuit_auth::PublicKey);
 
 #[php_impl]
-impl PublicKey {}
+impl PublicKey {
+    pub fn __construct(key: BinarySlice<u8>) -> PhpResult<Self> {
+        let key = biscuit_auth::PublicKey::from_bytes(*key).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_PUBLIC_KEY.expect("did not set exception ce")
+            })
+        })?;
+
+        Ok(Self(key))
+    }
+
+    pub fn to_hex(&self) -> String {
+        hex::encode(&self.0.to_bytes())
+    }
+}
 
 #[php_class(name = "Biscuit\\Auth\\PrivateKey")]
 #[derive(Debug)]
@@ -53,6 +69,10 @@ impl PrivateKey {
     }
 }
 
+/// This is statics classes entries for storing the right excpetion
+static mut INVALID_PRIVATE_KEY: Option<&'static ClassEntry> = None;
+static mut INVALID_PUBLIC_KEY: Option<&'static ClassEntry> = None;
+
 #[php_startup]
 pub fn startup() {
     let ce_invalid_private_key = ClassBuilder::new("Biscuit\\Exception\\InvalidPrivateKey")
@@ -60,6 +80,12 @@ pub fn startup() {
         .build()
         .expect("Invalid private key");
     unsafe { INVALID_PRIVATE_KEY.replace(ce_invalid_private_key) };
+
+    let ce_invalid_public_key = ClassBuilder::new("Biscuit\\Exception\\InvalidPublicKey")
+        .extends(ce::exception())
+        .build()
+        .expect("Invalid public key");
+    unsafe { INVALID_PUBLIC_KEY.replace(ce_invalid_public_key) };
 }
 
 /// Used by the `phpinfo()` function and when you run `php -i`.

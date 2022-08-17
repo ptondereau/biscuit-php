@@ -14,7 +14,11 @@ class KeyPair
     {
     }
 
-    public function public() : string
+    public function public() : \Biscuit\Auth\PublicKey
+    {
+    }
+
+    public function private() : \Biscuit\Auth\PrivateKey
     {
     }
 
