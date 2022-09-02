@@ -4,12 +4,8 @@
  */
 namespace Biscuit\Auth;
 
-/**
- * auto generated file by PHPExtensionStubGenerator
- */
 class PublicKey
 {
-
     public function toHex() : string
     {
     }
@@ -17,6 +13,4 @@ class PublicKey
     public function __construct(string $key)
     {
     }
-
-
 }

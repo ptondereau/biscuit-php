@@ -25,6 +25,7 @@ impl Policy {
         })
     }
 
+    /// @param int|string|bool|null $value
     pub fn set(&mut self, name: &str, value: MixedValue) -> PhpResult<()> {
         let term_value = match value {
             MixedValue::Long(v) => biscuit_auth::builder::Term::Integer(v as i64),
@@ -59,7 +60,7 @@ impl KeyPair {
 
     pub fn from_private_key(private_key: BinarySlice<u8>) -> PhpResult<Self> {
         let pk = PrivateKey::__construct(private_key)?;
-        Ok(Self(biscuit_auth::KeyPair::from(pk.0)))
+        Ok(Self(biscuit_auth::KeyPair::from(&pk.0)))
     }
 
     pub fn public(&self) -> PublicKey {

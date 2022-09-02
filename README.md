@@ -19,7 +19,7 @@
 
 ## Generating PHP stubs
 
-[`cargo-php`](https://crates.io/crates/cargo-php) have a builtin feature to generate stubs but it's not finalized and stable enough. We use for the moment https://github.com/sasezaki/php-extension-stub-generator to generate with this current usage:
+[`cargo-php`](https://crates.io/crates/cargo-php) have a builtin feature to generate stubs but it's not finalized and stable enough. We use for the moment https://github.com/ptondereau/php-extension-stub-generator to generate with this current usage:
 
 ```bash
 $ cargo build

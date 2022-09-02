@@ -4,12 +4,8 @@
  */
 namespace Biscuit\Auth;
 
-/**
- * auto generated file by PHPExtensionStubGenerator
- */
 class KeyPair
 {
-
     public static function fromPrivateKey(string $private_key) : \Biscuit\Auth\KeyPair
     {
     }
@@ -25,6 +21,4 @@ class KeyPair
     public function __construct()
     {
     }
-
-
 }

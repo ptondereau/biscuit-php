@@ -4,11 +4,6 @@
  */
 namespace Biscuit\Exception;
 
-/**
- * auto generated file by PHPExtensionStubGenerator
- */
 class InvalidPrivateKey extends \Exception
 {
-
-
 }
