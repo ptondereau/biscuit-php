@@ -10,9 +10,13 @@ class RuleTest extends TestCase
 {
     public function testGoodTermConversion(): void
     {
-        self::markTestSkipped();
-        $rule = new Rule('allow if resource($test)');
-        $rule->set('test', true);
+        $rule = new Rule('right({test}, "read") <- resource({test}), operation("read")');
+        $rule->set('test', 15);
+
+        self::assertEquals(
+            'right(15, "read") <- resource(15), operation("read")',
+            $rule->toString(),
+        );
     }
 
     public function testExcpetionWhenBadRule(): void

@@ -2,24 +2,28 @@
 
 namespace Biscuit\Tests;
 
-use Biscuit\Auth\Policy;
-use Biscuit\Exception\InvalidPolicy;
+use Biscuit\Auth\Check;
+use Biscuit\Exception\InvalidCheck;
 use PHPUnit\Framework\TestCase;
 
 class CheckTest extends TestCase
 {
     public function testGoodTermConversion(): void
     {
-        self::markTestSkipped();
-        $policy = new Policy('allow if resource($test)');
-        $policy->set('test', true);
+        $check = new Check('check if resource({id}), operation("read") or admin("authority")');
+        $check->set('id', 'uuid');
+
+        self::assertEquals(
+            'check if resource("uuid"), operation("read") or admin("authority")',
+            $check->toString(),
+        );
     }
 
     public function testExcpetionWhenBadCheck(): void
     {
-        $this->expectException(InvalidPolicy::class);
+        $this->expectException(InvalidCheck::class);
         $this->expectExceptionMessage('error generating Datalog: datalog parsing error: ParseErrors { errors: [ParseError { input: "wrong", message: None }] }');
 
-        new Policy('wrong');
+        new Check('wrong');
     }
 }

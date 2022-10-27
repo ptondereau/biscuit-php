@@ -8,11 +8,15 @@ use PHPUnit\Framework\TestCase;
 
 class PolicyTest extends TestCase
 {
-    public function testGoodTermConversion(): void
+    public function testGoodPolicy(): void
     {
-        self::markTestSkipped();
-        $policy = new Policy('allow if resource($test)');
+        $policy = new Policy('allow if resource({test})');
         $policy->set('test', true);
+
+        self::assertEquals(
+            'allow if resource(true)',
+            $policy->toString(),
+        );
     }
 
     public function testExcpetionWhenBadPolicy(): void

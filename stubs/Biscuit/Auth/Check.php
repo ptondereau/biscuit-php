@@ -10,6 +10,10 @@ class Check
     {
     }
 
+    public function toString() : string
+    {
+    }
+
     public function __construct(string $source)
     {
     }

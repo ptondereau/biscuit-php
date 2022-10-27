@@ -10,9 +10,13 @@ class FactTest extends TestCase
 {
     public function testGoodTermConversion(): void
     {
-        self::markTestSkipped();
-        $fact = new Fact('allow if resource($test)');
-        $fact->set('test', true);
+        $fact = new Fact('user({id})');
+        $fact->set('id', 15);
+
+        self::assertEquals(
+            'user(15)',
+            $fact->toString(),
+        );
     }
 
     public function testExcpetionWhenBadFact(): void

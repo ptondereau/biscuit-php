@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ext_php_rs::binary_slice::BinarySlice;
 use ext_php_rs::builders::ClassBuilder;
 use ext_php_rs::zend::{ce, ClassEntry, ModuleEntry};
@@ -9,6 +11,85 @@ pub enum MixedValue {
     Bool(bool),
     ParsedStr(String),
     None,
+}
+
+#[php_class(name = "Biscuit\\Auth\\BlockBuilder")]
+#[derive(Debug)]
+pub struct BlockBuilder(biscuit_auth::builder::BlockBuilder);
+
+#[php_impl]
+impl BlockBuilder {
+    pub fn __construct() -> Self {
+        Self(biscuit_auth::builder::BlockBuilder::default())
+    }
+
+    pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
+        Ok(self.0.add_fact(fact.0.clone()).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_FACT.expect("did not set exception ce")
+            })
+        })?)
+    }
+
+    pub fn add_rule(&mut self, rule: &Rule) -> PhpResult<()> {
+        Ok(self.0.add_rule(rule.0.clone()).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_RULE.expect("did not set exception ce")
+            })
+        })?)
+    }
+
+    pub fn add_check(&mut self, check: &Check) -> PhpResult<()> {
+        Ok(self.0.add_check(check.0.clone()).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_CHECK.expect("did not set exception ce")
+            })
+        })?)
+    }
+
+    pub fn add_code(&mut self, source: &str) -> PhpResult<()> {
+        Ok(self.0.add_code(source).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_TERM.expect("did not set exception ce")
+            })
+        })?)
+    }
+
+    pub fn add_code_with_params(
+        &mut self,
+        source: &str,
+        params: HashMap<String, MixedValue>,
+        scope_params: HashMap<String, &PublicKey>,
+    ) -> PhpResult<()> {
+        let mut term_params: HashMap<String, biscuit_auth::builder::Term> =
+            HashMap::with_capacity(params.len());
+
+        for (key, p) in params.iter() {
+            let term_value = mixed_value_to_term(p)?;
+
+            term_params.insert(key.clone(), term_value);
+        }
+
+        let mut scope_params_cloned: HashMap<String, biscuit_auth::PublicKey> =
+            HashMap::with_capacity(scope_params.len());
+
+        for (key, scope_param) in scope_params.iter() {
+            scope_params_cloned.insert(key.clone(), scope_param.0);
+        }
+
+        Ok(self
+            .0
+            .add_code_with_params(source, term_params, scope_params_cloned)
+            .map_err(|e| {
+                PhpException::new(e.to_string(), 0, unsafe {
+                    INVALID_TERM.expect("did not set exception ce")
+                })
+            })?)
+    }
+
+    pub fn to_string(&mut self) -> String {
+        format!("{}", self.0)
+    }
 }
 
 #[php_class(name = "Biscuit\\Auth\\Rule")]
@@ -27,24 +108,17 @@ impl Rule {
 
     /// @param int|string|bool|null $value
     pub fn set(&mut self, name: &str, value: MixedValue) -> PhpResult<()> {
-        let term_value = match value {
-            MixedValue::Long(v) => biscuit_auth::builder::Term::Integer(v as i64),
-            MixedValue::Bool(b) => biscuit_auth::builder::Term::Bool(b),
-            MixedValue::ParsedStr(s) => biscuit_auth::builder::Term::Str(s),
-            MixedValue::None => {
-                return Err(PhpException::new(
-                    "unexpected value".to_string(),
-                    0,
-                    unsafe { INVALID_RULE.expect("did not set exception ce") },
-                ))
-            }
-        };
+        let term_value = mixed_value_to_term(&value)?;
 
         self.0.set(name, term_value).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
-                INVALID_RULE.expect("did not set exception ce")
+                INVALID_TERM.expect("did not set exception ce")
             })
         })
+    }
+
+    pub fn to_string(&mut self) -> String {
+        format!("{}", self.0)
     }
 }
 
@@ -64,24 +138,17 @@ impl Fact {
 
     /// @param int|string|bool|null $value
     pub fn set(&mut self, name: &str, value: MixedValue) -> PhpResult<()> {
-        let term_value = match value {
-            MixedValue::Long(v) => biscuit_auth::builder::Term::Integer(v as i64),
-            MixedValue::Bool(b) => biscuit_auth::builder::Term::Bool(b),
-            MixedValue::ParsedStr(s) => biscuit_auth::builder::Term::Str(s),
-            MixedValue::None => {
-                return Err(PhpException::new(
-                    "unexpected value".to_string(),
-                    0,
-                    unsafe { INVALID_FACT.expect("did not set exception ce") },
-                ))
-            }
-        };
+        let term_value = mixed_value_to_term(&value)?;
 
         self.0.set(name, term_value).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
-                INVALID_FACT.expect("did not set exception ce")
+                INVALID_TERM.expect("did not set exception ce")
             })
         })
+    }
+
+    pub fn to_string(&mut self) -> String {
+        format!("{}", self.0)
     }
 }
 
@@ -101,24 +168,17 @@ impl Check {
 
     /// @param int|string|bool|null $value
     pub fn set(&mut self, name: &str, value: MixedValue) -> PhpResult<()> {
-        let term_value = match value {
-            MixedValue::Long(v) => biscuit_auth::builder::Term::Integer(v as i64),
-            MixedValue::Bool(b) => biscuit_auth::builder::Term::Bool(b),
-            MixedValue::ParsedStr(s) => biscuit_auth::builder::Term::Str(s),
-            MixedValue::None => {
-                return Err(PhpException::new(
-                    "unexpected value".to_string(),
-                    0,
-                    unsafe { INVALID_CHECK.expect("did not set exception ce") },
-                ))
-            }
-        };
+        let term_value = mixed_value_to_term(&value)?;
 
         self.0.set(name, term_value).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
-                INVALID_CHECK.expect("did not set exception ce")
+                INVALID_TERM.expect("did not set exception ce")
             })
         })
+    }
+
+    pub fn to_string(&mut self) -> String {
+        format!("{}", self.0)
     }
 }
 
@@ -138,24 +198,17 @@ impl Policy {
 
     /// @param int|string|bool|null $value
     pub fn set(&mut self, name: &str, value: MixedValue) -> PhpResult<()> {
-        let term_value = match value {
-            MixedValue::Long(v) => biscuit_auth::builder::Term::Integer(v as i64),
-            MixedValue::Bool(b) => biscuit_auth::builder::Term::Bool(b),
-            MixedValue::ParsedStr(s) => biscuit_auth::builder::Term::Str(s),
-            MixedValue::None => {
-                return Err(PhpException::new(
-                    "unexpected value".to_string(),
-                    0,
-                    unsafe { INVALID_POLICY.expect("did not set exception ce") },
-                ))
-            }
-        };
+        let term_value = mixed_value_to_term(&value)?;
 
         self.0.set(name, term_value).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
-                INVALID_POLICY.expect("did not set exception ce")
+                INVALID_TERM.expect("did not set exception ce")
             })
         })
+    }
+
+    pub fn to_string(&mut self) -> String {
+        format!("{}", self.0)
     }
 }
 
@@ -225,13 +278,29 @@ impl PrivateKey {
     }
 }
 
+fn mixed_value_to_term(value: &MixedValue) -> PhpResult<biscuit_auth::builder::Term> {
+    match value {
+        MixedValue::Long(v) => Ok(biscuit_auth::builder::Term::Integer(*v as i64)),
+        MixedValue::Bool(b) => Ok(biscuit_auth::builder::Term::Bool(*b)),
+        MixedValue::ParsedStr(s) => Ok(biscuit_auth::builder::Term::Str(s.clone())),
+        MixedValue::None => {
+            return Err(PhpException::new(
+                "unexpected value".to_string(),
+                0,
+                unsafe { INVALID_TERM.expect("did not set exception ce") },
+            ))
+        }
+    }
+}
+
 /// This is statics classes entries for storing the right excpetion
 static mut INVALID_PRIVATE_KEY: Option<&'static ClassEntry> = None;
 static mut INVALID_PUBLIC_KEY: Option<&'static ClassEntry> = None;
-static mut INVALID_POLICY: Option<&'static ClassEntry> = None;
 static mut INVALID_CHECK: Option<&'static ClassEntry> = None;
+static mut INVALID_POLICY: Option<&'static ClassEntry> = None;
 static mut INVALID_FACT: Option<&'static ClassEntry> = None;
 static mut INVALID_RULE: Option<&'static ClassEntry> = None;
+static mut INVALID_TERM: Option<&'static ClassEntry> = None;
 
 #[php_startup]
 pub fn startup() {
@@ -270,6 +339,12 @@ pub fn startup() {
         .build()
         .expect("Invalid rule");
     unsafe { INVALID_RULE.replace(ce_invalid_rule) };
+
+    let ce_invalid_term = ClassBuilder::new("Biscuit\\Exception\\InvalidTerm")
+        .extends(ce::exception())
+        .build()
+        .expect("Invalid term");
+    unsafe { INVALID_TERM.replace(ce_invalid_term) };
 }
 
 /// Used by the `phpinfo()` function and when you run `php -i`.
