@@ -15,7 +15,7 @@ class CheckTest extends TestCase
 
         self::assertEquals(
             'check if resource("uuid"), operation("read") or admin("authority")',
-            $check->toString(),
+            (string) $check,
         );
     }
 

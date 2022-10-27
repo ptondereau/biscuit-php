@@ -15,7 +15,7 @@ class PolicyTest extends TestCase
 
         self::assertEquals(
             'allow if resource(true)',
-            $policy->toString(),
+            (string) $policy,
         );
     }
 

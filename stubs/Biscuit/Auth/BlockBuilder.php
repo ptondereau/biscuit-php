@@ -4,7 +4,7 @@
  */
 namespace Biscuit\Auth;
 
-class BlockBuilder
+class BlockBuilder implements \Stringable
 {
     public function addFact(\Biscuit\Auth\Fact $fact) : void
     {
@@ -26,7 +26,7 @@ class BlockBuilder
     {
     }
 
-    public function toString() : string
+    public function __toString() : string
     {
     }
 

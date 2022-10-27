@@ -15,7 +15,7 @@ class RuleTest extends TestCase
 
         self::assertEquals(
             'right(15, "read") <- resource(15), operation("read")',
-            $rule->toString(),
+            (string) $rule,
         );
     }
 

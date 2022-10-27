@@ -4,13 +4,13 @@
  */
 namespace Biscuit\Auth;
 
-class Policy
+class Policy implements \Stringable
 {
     public function set(string $name, mixed $value) : void
     {
     }
 
-    public function toString() : string
+    public function __toString() : string
     {
     }
 

@@ -30,7 +30,7 @@ class BlockBuilderTest extends TestCase
 
         self::assertEquals(
             $expected,
-            $blockBuilder->toString(),
+            (string) $blockBuilder,
         );
     }
 }

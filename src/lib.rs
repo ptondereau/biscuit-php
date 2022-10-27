@@ -24,35 +24,35 @@ impl BlockBuilder {
     }
 
     pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
-        Ok(self.0.add_fact(fact.0.clone()).map_err(|e| {
+        self.0.add_fact(fact.0.clone()).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 INVALID_FACT.expect("did not set exception ce")
             })
-        })?)
+        })
     }
 
     pub fn add_rule(&mut self, rule: &Rule) -> PhpResult<()> {
-        Ok(self.0.add_rule(rule.0.clone()).map_err(|e| {
+        self.0.add_rule(rule.0.clone()).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 INVALID_RULE.expect("did not set exception ce")
             })
-        })?)
+        })
     }
 
     pub fn add_check(&mut self, check: &Check) -> PhpResult<()> {
-        Ok(self.0.add_check(check.0.clone()).map_err(|e| {
+        self.0.add_check(check.0.clone()).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 INVALID_CHECK.expect("did not set exception ce")
             })
-        })?)
+        })
     }
 
     pub fn add_code(&mut self, source: &str) -> PhpResult<()> {
-        Ok(self.0.add_code(source).map_err(|e| {
+        self.0.add_code(source).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 INVALID_TERM.expect("did not set exception ce")
             })
-        })?)
+        })
     }
 
     pub fn add_code_with_params(
@@ -77,18 +77,23 @@ impl BlockBuilder {
             scope_params_cloned.insert(key.clone(), scope_param.0);
         }
 
-        Ok(self
-            .0
+        self.0
             .add_code_with_params(source, term_params, scope_params_cloned)
             .map_err(|e| {
                 PhpException::new(e.to_string(), 0, unsafe {
                     INVALID_TERM.expect("did not set exception ce")
                 })
-            })?)
+            })
     }
 
-    pub fn to_string(&mut self) -> String {
-        format!("{}", self.0)
+    pub fn __to_string(&mut self) -> String {
+        format!("{}", self)
+    }
+}
+
+impl std::fmt::Display for BlockBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -117,8 +122,14 @@ impl Rule {
         })
     }
 
-    pub fn to_string(&mut self) -> String {
-        format!("{}", self.0)
+    pub fn __to_string(&mut self) -> String {
+        format!("{}", self)
+    }
+}
+
+impl std::fmt::Display for Rule {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -147,8 +158,14 @@ impl Fact {
         })
     }
 
-    pub fn to_string(&mut self) -> String {
-        format!("{}", self.0)
+    pub fn __to_string(&mut self) -> String {
+        format!("{}", self)
+    }
+}
+
+impl std::fmt::Display for Fact {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -177,8 +194,14 @@ impl Check {
         })
     }
 
-    pub fn to_string(&mut self) -> String {
-        format!("{}", self.0)
+    pub fn __to_string(&mut self) -> String {
+        format!("{}", self)
+    }
+}
+
+impl std::fmt::Display for Check {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -207,8 +230,14 @@ impl Policy {
         })
     }
 
-    pub fn to_string(&mut self) -> String {
-        format!("{}", self.0)
+    pub fn __to_string(&mut self) -> String {
+        format!("{}", self)
+    }
+}
+
+impl std::fmt::Display for Policy {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

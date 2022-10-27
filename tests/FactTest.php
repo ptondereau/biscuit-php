@@ -15,7 +15,7 @@ class FactTest extends TestCase
 
         self::assertEquals(
             'user(15)',
-            $fact->toString(),
+            (string) $fact,
         );
     }
 
