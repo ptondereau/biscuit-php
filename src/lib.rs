@@ -312,13 +312,11 @@ fn mixed_value_to_term(value: &MixedValue) -> PhpResult<biscuit_auth::builder::T
         MixedValue::Long(v) => Ok(biscuit_auth::builder::Term::Integer(*v as i64)),
         MixedValue::Bool(b) => Ok(biscuit_auth::builder::Term::Bool(*b)),
         MixedValue::ParsedStr(s) => Ok(biscuit_auth::builder::Term::Str(s.clone())),
-        MixedValue::None => {
-            return Err(PhpException::new(
-                "unexpected value".to_string(),
-                0,
-                unsafe { INVALID_TERM.expect("did not set exception ce") },
-            ))
-        }
+        MixedValue::None => Err(PhpException::new(
+            "unexpected value".to_string(),
+            0,
+            unsafe { INVALID_TERM.expect("did not set exception ce") },
+        )),
     }
 }
 
