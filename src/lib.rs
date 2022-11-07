@@ -13,6 +13,221 @@ pub enum MixedValue {
     None,
 }
 
+#[php_class(name = "Biscuit\\Auth\\Biscuit")]
+pub struct Biscuit(biscuit_auth::Biscuit);
+
+#[php_impl]
+impl Biscuit {
+    pub fn __construct(root_key: &PrivateKey) -> PhpResult<Self> {
+        let key_pair = biscuit_auth::KeyPair::from(&root_key.0);
+
+        let biscuit_buillder = biscuit_auth::builder::BiscuitBuilder::new();
+        Ok(Self(
+            biscuit_buillder
+                .build(&key_pair)
+                .map_err(|e| format!("Biscuit error: {}", e))?,
+        ))
+    }
+}
+
+#[php_class(name = "Biscuit\\Auth\\Authorizer")]
+pub struct Authorizer {
+    token: Option<biscuit_auth::Biscuit>,
+    facts: Vec<biscuit_auth::builder::Fact>,
+    rules: Vec<biscuit_auth::builder::Rule>,
+    checks: Vec<biscuit_auth::builder::Check>,
+    policies: Vec<biscuit_auth::builder::Policy>,
+}
+
+#[php_impl]
+impl Authorizer {
+    pub fn __construct() -> Self {
+        Self {
+            token: None,
+            facts: vec![],
+            rules: vec![],
+            checks: vec![],
+            policies: vec![],
+        }
+    }
+
+    pub fn add_token(&mut self, token: &Biscuit) {
+        self.token = Some(token.0.clone());
+    }
+
+    pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
+        self.facts.push(fact.0.clone());
+        Ok(())
+    }
+
+    pub fn add_rule(&mut self, rule: &Rule) -> PhpResult<()> {
+        self.rules.push(rule.0.clone());
+        Ok(())
+    }
+
+    pub fn add_check(&mut self, check: &Check) -> PhpResult<()> {
+        self.checks.push(check.0.clone());
+        Ok(())
+    }
+
+    pub fn add_policy(&mut self, policy: &Policy) -> PhpResult<()> {
+        self.policies.push(policy.0.clone());
+        Ok(())
+    }
+
+    pub fn add_code(&mut self, source: &str) -> PhpResult<()> {
+        let source_result = biscuit_auth::parser::parse_source(source).map_err(|e| {
+            let e2: biscuit_parser::error::LanguageError = e.into();
+            let e: biscuit_auth::error::Token = e2.into();
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_TERM.expect("did not set exception ce")
+            })
+        })?;
+
+        for (_, fact) in source_result.facts.into_iter() {
+            self.facts.push(fact.into());
+        }
+
+        for (_, rule) in source_result.rules.into_iter() {
+            self.rules.push(rule.into());
+        }
+
+        for (_, check) in source_result.checks.into_iter() {
+            self.checks.push(check.into());
+        }
+
+        for (_, policy) in source_result.policies.into_iter() {
+            self.policies.push(policy.into());
+        }
+
+        Ok(())
+    }
+
+    pub fn authorize(&self) -> PhpResult<usize> {
+        let mut authorizer = match &self.token {
+            Some(token) => token.authorizer().map_err(|e| {
+                PhpException::new(e.to_string(), 0, unsafe {
+                    AUTHORIZER_ERROR.expect("did not set exception ce")
+                })
+            })?,
+            None => biscuit_auth::Authorizer::new(),
+        };
+
+        for fact in self.facts.iter() {
+            authorizer.add_fact(fact.clone()).map_err(|e| {
+                PhpException::new(e.to_string(), 0, unsafe {
+                    AUTHORIZER_ERROR.expect("did not set exception ce")
+                })
+            })?;
+        }
+        for rule in self.rules.iter() {
+            authorizer.add_rule(rule.clone()).map_err(|e| {
+                PhpException::new(e.to_string(), 0, unsafe {
+                    AUTHORIZER_ERROR.expect("did not set exception ce")
+                })
+            })?;
+        }
+        for check in self.checks.iter() {
+            authorizer.add_check(check.clone()).map_err(|e| {
+                PhpException::new(e.to_string(), 0, unsafe {
+                    AUTHORIZER_ERROR.expect("did not set exception ce")
+                })
+            })?;
+        }
+        for policy in self.policies.iter() {
+            authorizer.add_policy(policy.clone()).map_err(|e| {
+                PhpException::new(e.to_string(), 0, unsafe {
+                    AUTHORIZER_ERROR.expect("did not set exception ce")
+                })
+            })?;
+        }
+
+        authorizer.authorize().map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                AUTHORIZER_ERROR.expect("did not set exception ce")
+            })
+        })
+    }
+}
+
+#[php_class(name = "Biscuit\\Auth\\BiscuitBuilder")]
+pub struct BiscuitBuilder(biscuit_auth::builder::BiscuitBuilder);
+
+#[php_impl]
+impl BiscuitBuilder {
+    pub fn __construct() -> Self {
+        Self(biscuit_auth::builder::BiscuitBuilder::new())
+    }
+
+    pub fn merge(&mut self, other: &BlockBuilder) {
+        let php_block_instance = other.0.clone();
+        self.0.merge(php_block_instance)
+    }
+
+    pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
+        self.0.add_fact(fact.0.clone()).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_FACT.expect("did not set exception ce")
+            })
+        })
+    }
+
+    pub fn add_rule(&mut self, rule: &Rule) -> PhpResult<()> {
+        self.0.add_rule(rule.0.clone()).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_RULE.expect("did not set exception ce")
+            })
+        })
+    }
+
+    pub fn add_check(&mut self, check: &Check) -> PhpResult<()> {
+        self.0.add_check(check.0.clone()).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_CHECK.expect("did not set exception ce")
+            })
+        })
+    }
+
+    pub fn add_code(&mut self, source: &str) -> PhpResult<()> {
+        self.0.add_code(source).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                INVALID_TERM.expect("did not set exception ce")
+            })
+        })
+    }
+
+    pub fn add_code_with_params(
+        &mut self,
+        source: &str,
+        params: HashMap<String, MixedValue>,
+        scope_params: HashMap<String, &PublicKey>,
+    ) -> PhpResult<()> {
+        let mut term_params: HashMap<String, biscuit_auth::builder::Term> =
+            HashMap::with_capacity(params.len());
+
+        for (key, p) in params.iter() {
+            let term_value = mixed_value_to_term(p)?;
+
+            term_params.insert(key.clone(), term_value);
+        }
+
+        let mut scope_params_cloned: HashMap<String, biscuit_auth::PublicKey> =
+            HashMap::with_capacity(scope_params.len());
+
+        for (key, scope_param) in scope_params.iter() {
+            scope_params_cloned.insert(key.clone(), scope_param.0);
+        }
+
+        self.0
+            .add_code_with_params(source, term_params, scope_params_cloned)
+            .map_err(|e| {
+                PhpException::new(e.to_string(), 0, unsafe {
+                    INVALID_TERM.expect("did not set exception ce")
+                })
+            })
+    }
+}
+
 #[php_class(name = "Biscuit\\Auth\\BlockBuilder")]
 #[derive(Debug)]
 pub struct BlockBuilder(biscuit_auth::builder::BlockBuilder);
@@ -272,7 +487,7 @@ pub struct PublicKey(biscuit_auth::PublicKey);
 #[php_impl]
 impl PublicKey {
     pub fn __construct(key: BinarySlice<u8>) -> PhpResult<Self> {
-        let key = biscuit_auth::PublicKey::from_bytes(*key).map_err(|e| {
+        let key = biscuit_auth::PublicKey::from_bytes(key.into()).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 INVALID_PUBLIC_KEY.expect("did not set exception ce")
             })
@@ -282,7 +497,7 @@ impl PublicKey {
     }
 
     pub fn to_hex(&self) -> String {
-        hex::encode(&self.0.to_bytes())
+        hex::encode(self.0.to_bytes())
     }
 }
 
@@ -293,7 +508,7 @@ pub struct PrivateKey(biscuit_auth::PrivateKey);
 #[php_impl]
 impl PrivateKey {
     pub fn __construct(key: BinarySlice<u8>) -> PhpResult<Self> {
-        let key = biscuit_auth::PrivateKey::from_bytes(*key).map_err(|e| {
+        let key = biscuit_auth::PrivateKey::from_bytes(key.into()).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 INVALID_PRIVATE_KEY.expect("did not set exception ce")
             })
@@ -303,7 +518,7 @@ impl PrivateKey {
     }
 
     pub fn to_hex(&self) -> String {
-        hex::encode(&self.0.to_bytes())
+        hex::encode(self.0.to_bytes())
     }
 }
 
@@ -328,6 +543,8 @@ static mut INVALID_POLICY: Option<&'static ClassEntry> = None;
 static mut INVALID_FACT: Option<&'static ClassEntry> = None;
 static mut INVALID_RULE: Option<&'static ClassEntry> = None;
 static mut INVALID_TERM: Option<&'static ClassEntry> = None;
+static mut THIRD_PARTY_ERROR: Option<&'static ClassEntry> = None;
+static mut AUTHORIZER_ERROR: Option<&'static ClassEntry> = None;
 
 #[php_startup]
 pub fn startup() {
@@ -372,6 +589,18 @@ pub fn startup() {
         .build()
         .expect("Invalid term");
     unsafe { INVALID_TERM.replace(ce_invalid_term) };
+
+    let ce_third_party_error = ClassBuilder::new("Biscuit\\Exception\\ThirdPartyRequestError")
+        .extends(ce::exception())
+        .build()
+        .expect("Invalid term");
+    unsafe { THIRD_PARTY_ERROR.replace(ce_third_party_error) };
+
+    let ce_authorizer_error = ClassBuilder::new("Biscuit\\Exception\\AuthorizerError")
+        .extends(ce::exception())
+        .build()
+        .expect("Authorizer error");
+    unsafe { AUTHORIZER_ERROR.replace(ce_authorizer_error) };
 }
 
 /// Used by the `phpinfo()` function and when you run `php -i`.
