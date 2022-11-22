@@ -21,9 +21,9 @@ impl Biscuit {
     pub fn __construct(root_key: &PrivateKey) -> PhpResult<Self> {
         let key_pair = biscuit_auth::KeyPair::from(&root_key.0);
 
-        let biscuit_buillder = biscuit_auth::builder::BiscuitBuilder::new();
+        let biscuit_builder = biscuit_auth::builder::BiscuitBuilder::new();
         Ok(Self(
-            biscuit_buillder
+            biscuit_builder
                 .build(&key_pair)
                 .map_err(|e| format!("Biscuit error: {}", e))?,
         ))
@@ -535,7 +535,7 @@ fn mixed_value_to_term(value: &MixedValue) -> PhpResult<biscuit_auth::builder::T
     }
 }
 
-/// This is statics classes entries for storing the right excpetion
+/// This is statics classes entries for storing the right exception
 static mut INVALID_PRIVATE_KEY: Option<&'static ClassEntry> = None;
 static mut INVALID_PUBLIC_KEY: Option<&'static ClassEntry> = None;
 static mut INVALID_CHECK: Option<&'static ClassEntry> = None;
