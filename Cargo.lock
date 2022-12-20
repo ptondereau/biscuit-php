@@ -88,10 +88,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "biscuit-auth"
-version = "3.0.0-alpha3"
+name = "bindgen"
+version = "0.63.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c89b8ee0c0f96bdde08d340ed808379af5284b057f25496a6b2f1e4fd36a04ed"
+checksum = "36d860121800b2a9a94f9b5604b332d5cffb234ce17609ea479d723dbc9d3885"
+dependencies = [
+ "bitflags",
+ "cexpr",
+ "clang-sys",
+ "lazy_static",
+ "lazycell",
+ "log",
+ "peeking_take_while",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "rustc-hash",
+ "shlex",
+ "syn",
+ "which",
+]
+
+[[package]]
+name = "biscuit-auth"
+version = "3.0.0-alpha4"
+source = "git+https://github.com/biscuit-auth/biscuit-rust#a7b87d024c4a4eec059ca22ed220ef45107879f8"
 dependencies = [
  "base64",
  "biscuit-parser",
@@ -113,9 +134,8 @@ dependencies = [
 
 [[package]]
 name = "biscuit-parser"
-version = "0.1.0-alpha3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce31e8de05f024318c7f1eb0ef534c951989664a82e370a6aacaf8d44bf63856"
+version = "0.1.0-alpha4"
+source = "git+https://github.com/biscuit-auth/biscuit-rust#a7b87d024c4a4eec059ca22ed220ef45107879f8"
 dependencies = [
  "hex",
  "nom",
@@ -127,9 +147,8 @@ dependencies = [
 
 [[package]]
 name = "biscuit-quote"
-version = "0.2.0-alpha4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df22a65f15c72612ad8fc2bb0e97ef2135ac60957d00964560ce8bb80c2c02c9"
+version = "0.2.0-alpha5"
+source = "git+https://github.com/biscuit-auth/biscuit-rust#a7b87d024c4a4eec059ca22ed220ef45107879f8"
 dependencies = [
  "biscuit-parser",
  "proc-macro-error",
@@ -220,7 +239,7 @@ dependencies = [
  "cargo_metadata",
  "clap",
  "dialoguer",
- "ext-php-rs",
+ "ext-php-rs 0.8.0",
  "libloading",
  "semver",
 ]
@@ -553,9 +572,8 @@ name = "ext-biscuit-php"
 version = "0.1.0"
 dependencies = [
  "biscuit-auth",
- "biscuit-parser",
  "cargo-php",
- "ext-php-rs",
+ "ext-php-rs 0.9.0",
  "hex",
 ]
 
@@ -566,11 +584,31 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c7e7a60d72473fa1baa5a6e888d886304b5a0fdbf39ac91fcc6da6567f9430c"
 dependencies = [
  "anyhow",
- "bindgen",
+ "bindgen 0.60.1",
  "bitflags",
  "cc",
  "cfg-if",
- "ext-php-rs-derive",
+ "ext-php-rs-derive 0.8.0",
+ "native-tls",
+ "once_cell",
+ "parking_lot",
+ "skeptic",
+ "ureq",
+ "zip",
+]
+
+[[package]]
+name = "ext-php-rs"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c877f41b1cd7db9ed8848e265700f5adeb961fc01f10749da49a39a466142338"
+dependencies = [
+ "anyhow",
+ "bindgen 0.63.0",
+ "bitflags",
+ "cc",
+ "cfg-if",
+ "ext-php-rs-derive 0.9.0",
  "native-tls",
  "once_cell",
  "parking_lot",
@@ -584,6 +622,21 @@ name = "ext-php-rs-derive"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6cdbf8a7e0e5de0a1a73f1e77e1141e9eeb1e99e95c1253c3b32653aba3ead10"
+dependencies = [
+ "anyhow",
+ "darling",
+ "ident_case",
+ "lazy_static",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "ext-php-rs-derive"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f36daf5b76a4f68ddf4cc72dadcff7bd6298f164ee555e0a77866fd2c8c8a16"
 dependencies = [
  "anyhow",
  "darling",
@@ -1043,9 +1096,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.43"
+version = "1.0.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a2ca2c61bc9f3d74d2886294ab7b9853abd9c1ad903a3ac7815c58989bb7bab"
+checksum = "57a8eca9f9c4ffde41714334dee777596264c7825420f521abc92b5b5deb63a5"
 dependencies = [
  "unicode-ident",
 ]
@@ -1367,9 +1420,9 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.95"
+version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbaf6116ab8924f39d52792136fb74fd60a80194cf1b1c6ffa6453eef1c3f942"
+checksum = "1f4064b5b16e03ae50984a5a8ed5d4f8803e6bc1fd170a3cda91a1be4b18e3f5"
 dependencies = [
  "proc-macro2",
  "quote",

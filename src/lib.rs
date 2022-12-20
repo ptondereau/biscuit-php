@@ -31,122 +31,78 @@ impl Biscuit {
 }
 
 #[php_class(name = "Biscuit\\Auth\\Authorizer")]
-pub struct Authorizer {
-    token: Option<biscuit_auth::Biscuit>,
-    facts: Vec<biscuit_auth::builder::Fact>,
-    rules: Vec<biscuit_auth::builder::Rule>,
-    checks: Vec<biscuit_auth::builder::Check>,
-    policies: Vec<biscuit_auth::builder::Policy>,
-}
+pub struct Authorizer(biscuit_auth::Authorizer);
 
 #[php_impl]
 impl Authorizer {
     pub fn __construct() -> Self {
-        Self {
-            token: None,
-            facts: vec![],
-            rules: vec![],
-            checks: vec![],
-            policies: vec![],
-        }
+        Self(biscuit_auth::Authorizer::new())
     }
 
-    pub fn add_token(&mut self, token: &Biscuit) {
-        self.token = Some(token.0.clone());
+    pub fn add_token(&mut self, token: &Biscuit) -> PhpResult<()> {
+        Ok(self.0.add_token(&token.0).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                AUTHORIZER_ERROR.expect("did not set exception ce")
+            })
+        })?)
     }
 
     pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
-        self.facts.push(fact.0.clone());
-        Ok(())
+        Ok(self.0.add_fact(fact.0.clone()).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                AUTHORIZER_ERROR.expect("did not set exception ce")
+            })
+        })?)
     }
 
     pub fn add_rule(&mut self, rule: &Rule) -> PhpResult<()> {
-        self.rules.push(rule.0.clone());
-        Ok(())
+        Ok(self.0.add_rule(rule.0.clone()).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                AUTHORIZER_ERROR.expect("did not set exception ce")
+            })
+        })?)
     }
 
     pub fn add_check(&mut self, check: &Check) -> PhpResult<()> {
-        self.checks.push(check.0.clone());
-        Ok(())
+        Ok(self.0.add_check(check.0.clone()).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                AUTHORIZER_ERROR.expect("did not set exception ce")
+            })
+        })?)
     }
 
     pub fn add_policy(&mut self, policy: &Policy) -> PhpResult<()> {
-        self.policies.push(policy.0.clone());
-        Ok(())
+        Ok(self.0.add_policy(policy.0.clone()).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                AUTHORIZER_ERROR.expect("did not set exception ce")
+            })
+        })?)
     }
 
     pub fn add_code(&mut self, source: &str) -> PhpResult<()> {
-        let source_result = biscuit_auth::parser::parse_source(source).map_err(|e| {
-            let e2: biscuit_parser::error::LanguageError = e.into();
-            let e: biscuit_auth::error::Token = e2.into();
+        Ok(self.0.add_code(source).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
-                INVALID_TERM.expect("did not set exception ce")
+                AUTHORIZER_ERROR.expect("did not set exception ce")
             })
-        })?;
-
-        for (_, fact) in source_result.facts.into_iter() {
-            self.facts.push(fact.into());
-        }
-
-        for (_, rule) in source_result.rules.into_iter() {
-            self.rules.push(rule.into());
-        }
-
-        for (_, check) in source_result.checks.into_iter() {
-            self.checks.push(check.into());
-        }
-
-        for (_, policy) in source_result.policies.into_iter() {
-            self.policies.push(policy.into());
-        }
-
-        Ok(())
+        })?)
     }
 
-    pub fn authorize(&self) -> PhpResult<usize> {
-        let mut authorizer = match &self.token {
-            Some(token) => token.authorizer().map_err(|e| {
-                PhpException::new(e.to_string(), 0, unsafe {
-                    AUTHORIZER_ERROR.expect("did not set exception ce")
-                })
-            })?,
-            None => biscuit_auth::Authorizer::new(),
-        };
-
-        for fact in self.facts.iter() {
-            authorizer.add_fact(fact.clone()).map_err(|e| {
-                PhpException::new(e.to_string(), 0, unsafe {
-                    AUTHORIZER_ERROR.expect("did not set exception ce")
-                })
-            })?;
-        }
-        for rule in self.rules.iter() {
-            authorizer.add_rule(rule.clone()).map_err(|e| {
-                PhpException::new(e.to_string(), 0, unsafe {
-                    AUTHORIZER_ERROR.expect("did not set exception ce")
-                })
-            })?;
-        }
-        for check in self.checks.iter() {
-            authorizer.add_check(check.clone()).map_err(|e| {
-                PhpException::new(e.to_string(), 0, unsafe {
-                    AUTHORIZER_ERROR.expect("did not set exception ce")
-                })
-            })?;
-        }
-        for policy in self.policies.iter() {
-            authorizer.add_policy(policy.clone()).map_err(|e| {
-                PhpException::new(e.to_string(), 0, unsafe {
-                    AUTHORIZER_ERROR.expect("did not set exception ce")
-                })
-            })?;
-        }
-
-        authorizer.authorize().map_err(|e| {
+    pub fn authorize(&mut self) -> PhpResult<usize> {
+        self.0.authorize().map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 AUTHORIZER_ERROR.expect("did not set exception ce")
             })
         })
+    }
+
+    pub fn __to_string(&mut self) -> String {
+        format!("{}", self)
+    }
+}
+
+impl std::fmt::Display for Authorizer {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0.print_world())
     }
 }
 
