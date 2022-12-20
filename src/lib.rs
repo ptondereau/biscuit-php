@@ -40,51 +40,51 @@ impl Authorizer {
     }
 
     pub fn add_token(&mut self, token: &Biscuit) -> PhpResult<()> {
-        Ok(self.0.add_token(&token.0).map_err(|e| {
+        self.0.add_token(&token.0).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 AUTHORIZER_ERROR.expect("did not set exception ce")
             })
-        })?)
+        })
     }
 
     pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
-        Ok(self.0.add_fact(fact.0.clone()).map_err(|e| {
+        self.0.add_fact(fact.0.clone()).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 AUTHORIZER_ERROR.expect("did not set exception ce")
             })
-        })?)
+        })
     }
 
     pub fn add_rule(&mut self, rule: &Rule) -> PhpResult<()> {
-        Ok(self.0.add_rule(rule.0.clone()).map_err(|e| {
+        self.0.add_rule(rule.0.clone()).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 AUTHORIZER_ERROR.expect("did not set exception ce")
             })
-        })?)
+        })
     }
 
     pub fn add_check(&mut self, check: &Check) -> PhpResult<()> {
-        Ok(self.0.add_check(check.0.clone()).map_err(|e| {
+        self.0.add_check(check.0.clone()).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 AUTHORIZER_ERROR.expect("did not set exception ce")
             })
-        })?)
+        })
     }
 
     pub fn add_policy(&mut self, policy: &Policy) -> PhpResult<()> {
-        Ok(self.0.add_policy(policy.0.clone()).map_err(|e| {
+        self.0.add_policy(policy.0.clone()).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 AUTHORIZER_ERROR.expect("did not set exception ce")
             })
-        })?)
+        })
     }
 
     pub fn add_code(&mut self, source: &str) -> PhpResult<()> {
-        Ok(self.0.add_code(source).map_err(|e| {
+        self.0.add_code(source).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 AUTHORIZER_ERROR.expect("did not set exception ce")
             })
-        })?)
+        })
     }
 
     pub fn authorize(&mut self) -> PhpResult<usize> {
