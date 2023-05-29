@@ -7,7 +7,7 @@ description = "PHP wrapper for Biscuit authorization tokens"
 
 [dependencies]
 cargo-php = "*"
-ext-php-rs = "0.9"
+ext-php-rs = "0.10.1"
 biscuit-auth = { git = "https://github.com/biscuit-auth/biscuit-rust" }
 hex = "0.4"
 
