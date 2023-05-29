@@ -28,6 +28,28 @@ impl Biscuit {
                 .map_err(|e| format!("Biscuit error: {}", e))?,
         ))
     }
+
+    pub fn from_base64(biscuit: &str, public_key: &PublicKey) -> PhpResult<Self> {
+        Ok(Self(
+            biscuit_auth::Biscuit::from_base64(biscuit, public_key.0)
+                .map_err(|e| format!("Biscuit error: {}", e))?,
+        ))
+    }
+
+    pub fn to_base64(&mut self) -> PhpResult<String> {
+        Ok(self
+            .0
+            .to_base64()
+            .map_err(|e| format!("Biscuit error: {}", e))?)
+    }
+
+    pub fn authorizer(&mut self) -> PhpResult<Authorizer> {
+        Ok(Authorizer(
+            self.0
+                .authorizer()
+                .map_err(|e| format!("Biscuit error: {}", e))?,
+        ))
+    }
 }
 
 #[php_class(name = "Biscuit\\Auth\\Authorizer")]
