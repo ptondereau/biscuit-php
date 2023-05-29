@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
-use ext_php_rs::binary_slice::BinarySlice;
 use ext_php_rs::builders::ClassBuilder;
 use ext_php_rs::zend::{ce, ClassEntry, ModuleEntry};
 use ext_php_rs::{info_table_end, info_table_row, info_table_start, prelude::*};
+use std::collections::HashMap;
 
 #[derive(Debug, ZvalConvert)]
 pub enum MixedValue {
