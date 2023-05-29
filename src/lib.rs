@@ -11,6 +11,18 @@ pub enum MixedValue {
     None,
 }
 
+impl From<biscuit_auth::builder::Fact> for MixedValue {
+    fn from(value: biscuit_auth::builder::Fact) -> Self {
+        let vec: Vec<String> = value
+            .predicate
+            .terms
+            .iter()
+            .map(|x| x.to_string())
+            .collect();
+        MixedValue::ParsedStr(vec.join("|"))
+    }
+}
+
 #[php_class(name = "Biscuit\\Auth\\Biscuit")]
 pub struct Biscuit(biscuit_auth::Biscuit);
 
@@ -117,6 +129,14 @@ impl Authorizer {
 
     pub fn __to_string(&mut self) -> String {
         format!("{}", self)
+    }
+
+    pub fn query(&mut self, rule: &str) -> PhpResult<Vec<MixedValue>> {
+        self.0.query(rule).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                AUTHORIZER_ERROR.expect("did not set exception ce")
+            })
+        })
     }
 }
 
