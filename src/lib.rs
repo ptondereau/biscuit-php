@@ -204,6 +204,18 @@ impl BiscuitBuilder {
                 })
             })
     }
+
+    pub fn build(&mut self, root_key: &KeyPair) -> PhpResult<Biscuit> {
+        self.0
+            .clone()
+            .build(&root_key.0)
+            .and_then(|b| Ok(Biscuit(b)))
+            .map_err(|e| {
+                PhpException::new(e.to_string(), 0, unsafe {
+                    INVALID_TERM.expect("did not set exception ce")
+                })
+            })
+    }
 }
 
 #[php_class(name = "Biscuit\\Auth\\BlockBuilder")]
