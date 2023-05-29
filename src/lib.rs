@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
-use ext_php_rs::binary_slice::BinarySlice;
 use ext_php_rs::builders::ClassBuilder;
 use ext_php_rs::zend::{ce, ClassEntry, ModuleEntry};
 use ext_php_rs::{info_table_end, info_table_row, info_table_start, prelude::*};
+use std::collections::HashMap;
 
 #[derive(Debug, ZvalConvert)]
 pub enum MixedValue {
@@ -11,6 +9,18 @@ pub enum MixedValue {
     Bool(bool),
     ParsedStr(String),
     None,
+}
+
+impl From<biscuit_auth::builder::Fact> for MixedValue {
+    fn from(value: biscuit_auth::builder::Fact) -> Self {
+        let vec: Vec<String> = value
+            .predicate
+            .terms
+            .iter()
+            .map(|x| x.to_string())
+            .collect();
+        MixedValue::ParsedStr(vec.join("|"))
+    }
 }
 
 #[php_class(name = "Biscuit\\Auth\\Biscuit")]
@@ -25,6 +35,28 @@ impl Biscuit {
         Ok(Self(
             biscuit_builder
                 .build(&key_pair)
+                .map_err(|e| format!("Biscuit error: {}", e))?,
+        ))
+    }
+
+    pub fn from_base64(biscuit: &str, public_key: &PublicKey) -> PhpResult<Self> {
+        Ok(Self(
+            biscuit_auth::Biscuit::from_base64(biscuit, public_key.0)
+                .map_err(|e| format!("Biscuit error: {}", e))?,
+        ))
+    }
+
+    pub fn to_base64(&mut self) -> PhpResult<String> {
+        Ok(self
+            .0
+            .to_base64()
+            .map_err(|e| format!("Biscuit error: {}", e))?)
+    }
+
+    pub fn authorizer(&mut self) -> PhpResult<Authorizer> {
+        Ok(Authorizer(
+            self.0
+                .authorizer()
                 .map_err(|e| format!("Biscuit error: {}", e))?,
         ))
     }
@@ -97,6 +129,14 @@ impl Authorizer {
 
     pub fn __to_string(&mut self) -> String {
         format!("{}", self)
+    }
+
+    pub fn query(&mut self, rule: &str) -> PhpResult<Vec<MixedValue>> {
+        self.0.query(rule).map_err(|e| {
+            PhpException::new(e.to_string(), 0, unsafe {
+                AUTHORIZER_ERROR.expect("did not set exception ce")
+            })
+        })
     }
 }
 
@@ -176,6 +216,18 @@ impl BiscuitBuilder {
 
         self.0
             .add_code_with_params(source, term_params, scope_params_cloned)
+            .map_err(|e| {
+                PhpException::new(e.to_string(), 0, unsafe {
+                    INVALID_TERM.expect("did not set exception ce")
+                })
+            })
+    }
+
+    pub fn build(&mut self, root_key: &KeyPair) -> PhpResult<Biscuit> {
+        self.0
+            .clone()
+            .build(&root_key.0)
+            .map(Biscuit)
             .map_err(|e| {
                 PhpException::new(e.to_string(), 0, unsafe {
                     INVALID_TERM.expect("did not set exception ce")
@@ -422,7 +474,7 @@ impl KeyPair {
         Self(biscuit_auth::KeyPair::new())
     }
 
-    pub fn from_private_key(private_key: BinarySlice<u8>) -> PhpResult<Self> {
+    pub fn from_private_key(private_key: &str) -> PhpResult<Self> {
         let pk = PrivateKey::__construct(private_key)?;
         Ok(Self(biscuit_auth::KeyPair::from(&pk.0)))
     }
@@ -442,8 +494,8 @@ pub struct PublicKey(biscuit_auth::PublicKey);
 
 #[php_impl]
 impl PublicKey {
-    pub fn __construct(key: BinarySlice<u8>) -> PhpResult<Self> {
-        let key = biscuit_auth::PublicKey::from_bytes(key.into()).map_err(|e| {
+    pub fn __construct(key: &str) -> PhpResult<Self> {
+        let key = biscuit_auth::PublicKey::from_bytes_hex(key).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 INVALID_PUBLIC_KEY.expect("did not set exception ce")
             })
@@ -453,7 +505,7 @@ impl PublicKey {
     }
 
     pub fn to_hex(&self) -> String {
-        hex::encode(self.0.to_bytes())
+        self.0.to_bytes_hex()
     }
 }
 
@@ -463,8 +515,8 @@ pub struct PrivateKey(biscuit_auth::PrivateKey);
 
 #[php_impl]
 impl PrivateKey {
-    pub fn __construct(key: BinarySlice<u8>) -> PhpResult<Self> {
-        let key = biscuit_auth::PrivateKey::from_bytes(key.into()).map_err(|e| {
+    pub fn __construct(key: &str) -> PhpResult<Self> {
+        let key = biscuit_auth::PrivateKey::from_bytes_hex(key).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 INVALID_PRIVATE_KEY.expect("did not set exception ce")
             })
@@ -474,7 +526,7 @@ impl PrivateKey {
     }
 
     pub fn to_hex(&self) -> String {
-        hex::encode(self.0.to_bytes())
+        self.0.to_bytes_hex()
     }
 }
 

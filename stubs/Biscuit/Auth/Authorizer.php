@@ -4,9 +4,9 @@
  */
 namespace Biscuit\Auth;
 
-class Authorizer
+class Authorizer implements \Stringable
 {
-    public function addToken(\Biscuit\Auth\Biscuit $token)
+    public function addToken(\Biscuit\Auth\Biscuit $token) : void
     {
     }
 
@@ -31,6 +31,14 @@ class Authorizer
     }
 
     public function authorize() : int
+    {
+    }
+
+    public function __toString() : string
+    {
+    }
+
+    public function query(string $rule) : array
     {
     }
 

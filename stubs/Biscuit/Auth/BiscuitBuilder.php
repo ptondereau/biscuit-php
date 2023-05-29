@@ -30,6 +30,10 @@ class BiscuitBuilder
     {
     }
 
+    public function build(\Biscuit\Auth\KeyPair $root_key) : \Biscuit\Auth\Biscuit
+    {
+    }
+
     public function __construct()
     {
     }
