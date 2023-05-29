@@ -456,7 +456,7 @@ impl KeyPair {
         Self(biscuit_auth::KeyPair::new())
     }
 
-    pub fn from_private_key(private_key: BinarySlice<u8>) -> PhpResult<Self> {
+    pub fn from_private_key(private_key: &str) -> PhpResult<Self> {
         let pk = PrivateKey::__construct(private_key)?;
         Ok(Self(biscuit_auth::KeyPair::from(&pk.0)))
     }
@@ -476,8 +476,8 @@ pub struct PublicKey(biscuit_auth::PublicKey);
 
 #[php_impl]
 impl PublicKey {
-    pub fn __construct(key: BinarySlice<u8>) -> PhpResult<Self> {
-        let key = biscuit_auth::PublicKey::from_bytes(key.into()).map_err(|e| {
+    pub fn __construct(key: &str) -> PhpResult<Self> {
+        let key = biscuit_auth::PublicKey::from_bytes_hex(key).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 INVALID_PUBLIC_KEY.expect("did not set exception ce")
             })
@@ -487,7 +487,7 @@ impl PublicKey {
     }
 
     pub fn to_hex(&self) -> String {
-        hex::encode(self.0.to_bytes())
+        self.0.to_bytes_hex()
     }
 }
 
@@ -497,8 +497,8 @@ pub struct PrivateKey(biscuit_auth::PrivateKey);
 
 #[php_impl]
 impl PrivateKey {
-    pub fn __construct(key: BinarySlice<u8>) -> PhpResult<Self> {
-        let key = biscuit_auth::PrivateKey::from_bytes(key.into()).map_err(|e| {
+    pub fn __construct(key: &str) -> PhpResult<Self> {
+        let key = biscuit_auth::PrivateKey::from_bytes_hex(key).map_err(|e| {
             PhpException::new(e.to_string(), 0, unsafe {
                 INVALID_PRIVATE_KEY.expect("did not set exception ce")
             })
@@ -508,7 +508,7 @@ impl PrivateKey {
     }
 
     pub fn to_hex(&self) -> String {
-        hex::encode(self.0.to_bytes())
+        self.0.to_bytes_hex()
     }
 }
 
