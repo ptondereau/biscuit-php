@@ -10,6 +10,10 @@ class Fact implements \Stringable
     {
     }
 
+    public function name() : string
+    {
+    }
+
     public function __toString() : string
     {
     }

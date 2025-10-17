@@ -4,8 +4,20 @@
  */
 namespace Biscuit\Auth;
 
-class BiscuitBuilder
+class BiscuitBuilder implements \Stringable
 {
+    public function build(\Biscuit\Auth\PrivateKey $root) : \Biscuit\Auth\Biscuit
+    {
+    }
+
+    public function addCode(string $source) : void
+    {
+    }
+
+    public function addCodeWithParams(string $source, array $params, array $scope_params) : void
+    {
+    }
+
     public function merge(\Biscuit\Auth\BlockBuilder $other)
     {
     }
@@ -22,11 +34,11 @@ class BiscuitBuilder
     {
     }
 
-    public function addCode(string $source) : void
+    public function setRootKeyId(int $root_key_id)
     {
     }
 
-    public function addCodeWithParams(string $source, array $params, array $scope_params) : void
+    public function __toString() : string
     {
     }
 

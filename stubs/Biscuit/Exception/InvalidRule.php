@@ -6,4 +6,7 @@ namespace Biscuit\Exception;
 
 class InvalidRule extends \Exception
 {
+    public function __construct()
+    {
+    }
 }

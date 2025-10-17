@@ -6,4 +6,7 @@ namespace Biscuit\Exception;
 
 class InvalidPolicy extends \Exception
 {
+    public function __construct()
+    {
+    }
 }

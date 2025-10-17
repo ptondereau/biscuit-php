@@ -10,14 +10,18 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  tests-build:
     runs-on: ubuntu-latest
-    name: Build
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4"]
+
+    name: Build extension and run tests
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Cache Cargo registry
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -30,35 +34,6 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Build
-        run: cargo build --release --all-features
-
-      - name: Run linter (clippy)
-        run: cargo clippy -- -D warnings
-
-      - name: Save built extension into artifcat
-        uses: actions/upload-artifact@v3
-        with:
-          name: ext-biscuit-php
-          path: target/release/libext_biscuit_php.so
-
-  tests:
-    needs: build
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: true
-      matrix:
-        php-version: ["8.1"]
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: "Setup extension"
-        uses: actions/download-artifact@v3
-        with:
-          name: ext-biscuit-php
-
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
         with:
@@ -67,8 +42,14 @@ jobs:
           ini-values: "memory_limit=-1"
           extensions: mbstring
 
+      - name: Build
+        run: cargo build --release --all-features
+
+      - name: Run linter (clippy)
+        run: cargo clippy -- -D warnings
+
       - name: "Install dependencies (Composer)"
-        uses: "ramsey/composer-install@v2"
+        uses: "ramsey/composer-install@v3"
 
       - name: "Run PHPUnit"
-        run: php -dextension=./libext_biscuit_php.so vendor/bin/phpunit
+        run: php -dextension=./target/release/libext_biscuit_php.so vendor/bin/phpunit

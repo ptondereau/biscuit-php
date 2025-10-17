@@ -6,4 +6,7 @@ namespace Biscuit\Exception;
 
 class InvalidCheck extends \Exception
 {
+    public function __construct()
+    {
+    }
 }
