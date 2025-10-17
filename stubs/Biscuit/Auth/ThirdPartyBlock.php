@@ -2,9 +2,9 @@
 /**
  * auto generated file by PHPExtensionStubGenerator
  */
-namespace Biscuit\Exception;
+namespace Biscuit\Auth;
 
-class ThirdPartyRequestError extends \Exception
+class ThirdPartyBlock
 {
     public function __construct()
     {

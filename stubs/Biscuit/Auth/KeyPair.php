@@ -6,7 +6,11 @@ namespace Biscuit\Auth;
 
 class KeyPair
 {
-    public static function fromPrivateKey(string $private_key) : \Biscuit\Auth\KeyPair
+    public static function newWithAlgorithm(?int $alg = null) : \Biscuit\Auth\KeyPair
+    {
+    }
+
+    public static function fromPrivateKey(\Biscuit\Auth\PrivateKey $private_key) : \Biscuit\Auth\KeyPair
     {
     }
 

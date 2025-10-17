@@ -10,6 +10,10 @@ class Policy implements \Stringable
     {
     }
 
+    public function setScope(string $name, \Biscuit\Auth\PublicKey $key) : void
+    {
+    }
+
     public function __toString() : string
     {
     }

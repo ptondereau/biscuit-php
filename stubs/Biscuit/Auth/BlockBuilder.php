@@ -26,6 +26,10 @@ class BlockBuilder implements \Stringable
     {
     }
 
+    public function merge(\Biscuit\Auth\BlockBuilder $other)
+    {
+    }
+
     public function __toString() : string
     {
     }

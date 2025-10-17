@@ -6,4 +6,7 @@ namespace Biscuit\Exception;
 
 class InvalidPublicKey extends \Exception
 {
+    public function __construct()
+    {
+    }
 }
