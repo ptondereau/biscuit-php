@@ -28,6 +28,7 @@ pub enum MixedValue {
     Bool(bool),
     ParsedStr(String),
     Bytes(Vec<u8>),
+    Array(Vec<MixedValue>),
     None,
 }
 
@@ -881,6 +882,12 @@ fn mixed_value_to_term(value: &MixedValue) -> PhpResult<biscuit_auth::builder::T
         MixedValue::Bool(b) => Ok(biscuit_auth::builder::Term::Bool(*b)),
         MixedValue::ParsedStr(s) => Ok(biscuit_auth::builder::Term::Str(s.clone())),
         MixedValue::Bytes(b) => Ok(biscuit_auth::builder::Term::Bytes(b.clone())),
+        MixedValue::Array(arr) => {
+            // Recursively convert array elements to terms
+            let terms: Result<Vec<_>, _> = arr.iter().map(mixed_value_to_term).collect();
+            let term_set: std::collections::BTreeSet<_> = terms?.into_iter().collect();
+            Ok(biscuit_auth::builder::Term::Set(term_set))
+        }
         MixedValue::None => Err(PhpException::from_class::<InvalidTerm>(
             "unexpected value".to_string(),
         )),
