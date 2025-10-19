@@ -1,7 +1,5 @@
 # PHP Extension for Biscuit
 
-
-
 PHP bindings for [Biscuit](https://www.biscuitsec.org), a bearer token supporting offline attenuation, decentralized verification, and powerful authorization policies.
 
 [![CI](https://github.com/ptondereau/biscuit-php/actions/workflows/tests.yml/badge.svg)](https://github.com/ptondereau/biscuit-php/actions/workflows/tests.yml)
@@ -21,7 +19,35 @@ PHP bindings for [Biscuit](https://www.biscuitsec.org), a bearer token supportin
 
 ## Installation
 
+### Pre-built Binaries (Recommended)
+
+Pre-built binaries are available for Linux x86_64 across multiple PHP versions, with both Thread-Safe (TS) and Non-Thread-Safe (NTS) variants. Download the appropriate binary for your PHP version and thread safety from the [latest release](https://github.com/ptondereau/biscuit-php/releases/latest).
+
+#### Quick Installation
+
+```bash
+# Download binary for your PHP version and thread safety
+# Replace 8.3 with your version and ts/nts based on your thread safety
+wget https://github.com/ptondereau/biscuit-php/releases/latest/download/ext_biscuit_php-linux-x86_64-php8.3-nts.so
+
+# Verify checksum
+wget https://github.com/ptondereau/biscuit-php/releases/latest/download/ext_biscuit_php-linux-x86_64-php8.3-nts.so.sha256
+sha256sum -c ext_biscuit_php-linux-x86_64-php8.3-nts.so.sha256
+
+# Move to PHP extension directory (adjust path for your system)
+sudo mv ext_biscuit_php-linux-x86_64-php8.3-nts.so /usr/lib/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/
+
+# Enable the extension
+echo "extension=ext_biscuit_php-linux-x86_64-php8.3-nts.so" | sudo tee /etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/mods-available/biscuit.ini
+sudo phpenmod biscuit
+
+# Verify installation
+php -m | grep biscuit
+```
+
 ### Build from Source
+
+If pre-built binaries are not available for your platform:
 
 ```bash
 # Clone the repository
