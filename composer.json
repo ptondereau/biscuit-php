@@ -9,6 +9,11 @@
             "email": "pierre.tondereau@protonmail.com"
         }
     ],
+    "autoload": {
+        "psr-4": {
+            "Biscuit\\": "stubs/Biscuit/"
+        }
+    },
     "autoload-dev": {
         "psr-4": {
             "Biscuit\\Tests\\": "tests/"

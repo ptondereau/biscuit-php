@@ -38,6 +38,14 @@ cargo build --release
 php -dextension=target/release/libext_biscuit_php.so -m | grep biscuit
 ```
 
+### Using stubs for autocompletion
+
+We're exposing PHP stubs for IDE integration
+
+```bash
+composer require ptondereau/ext-biscuit-php
+```
+
 ## Quick Start
 
 ```php
