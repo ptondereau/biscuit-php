@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Biscuit\Tests;
 
 use Biscuit\Auth\Check;
@@ -13,16 +15,15 @@ class CheckTest extends TestCase
         $check = new Check('check if resource({id}), operation("read") or admin("authority")');
         $check->set('id', 'uuid');
 
-        self::assertEquals(
-            'check if resource("uuid"), operation("read") or admin("authority")',
-            (string) $check,
-        );
+        static::assertSame('check if resource("uuid"), operation("read") or admin("authority")', (string) $check);
     }
 
     public function testExcpetionWhenBadCheck(): void
     {
         $this->expectException(InvalidCheck::class);
-        $this->expectExceptionMessage('error generating Datalog: datalog parsing error: ParseErrors { errors: [ParseError { input: "wrong", message: None }] }');
+        $this->expectExceptionMessage(
+            'error generating Datalog: datalog parsing error: ParseErrors { errors: [ParseError { input: "wrong", message: None }] }',
+        );
 
         new Check('wrong');
     }

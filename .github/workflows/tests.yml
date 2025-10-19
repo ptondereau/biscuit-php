@@ -51,5 +51,15 @@ jobs:
       - name: "Install dependencies (Composer)"
         uses: "ramsey/composer-install@v3"
 
+      - name: Setup Mago
+        if: ${{ matrix.php-version == '8.4' }}
+        uses: nhedger/setup-mago@v1
+
+      - name: Run Mago
+        if: ${{ matrix.php-version == '8.4' }}
+        run: |
+          mago format --dry-run
+          mago lint --reporting-format=github
+
       - name: "Run PHPUnit"
         run: php -dextension=./target/release/libext_biscuit_php.so vendor/bin/phpunit
