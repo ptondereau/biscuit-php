@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Biscuit\Tests;
 
 use Biscuit\Auth\Policy;
@@ -13,16 +15,15 @@ class PolicyTest extends TestCase
         $policy = new Policy('allow if resource({test})');
         $policy->set('test', true);
 
-        self::assertEquals(
-            'allow if resource(true)',
-            (string) $policy,
-        );
+        static::assertSame('allow if resource(true)', (string) $policy);
     }
 
     public function testExcpetionWhenBadPolicy(): void
     {
         $this->expectException(InvalidPolicy::class);
-        $this->expectExceptionMessage('error generating Datalog: datalog parsing error: ParseErrors { errors: [ParseError { input: "wrong", message: None }] }');
+        $this->expectExceptionMessage(
+            'error generating Datalog: datalog parsing error: ParseErrors { errors: [ParseError { input: "wrong", message: None }] }',
+        );
 
         new Policy('wrong');
     }

@@ -141,11 +141,22 @@ $publicKey = PublicKey::fromBytes($bytes, 1); // Explicit Secp256r1
 ## Testing
 
 ```bash
-composer install
-composer test
+cargo build
+php \
+    -dextension=target/debug/libext_biscuit_php.so \
+    vendor/bin/phpunit
+```
 
-# With coverage
-composer test:coverage
+## Formatting
+
+We're using [Mago](https://mago.carthage.software/) as code-style formatter for PHP code
+
+```bash
+composer install
+cargo build
+php \
+    -dextension=target/debug/libext_biscuit_php.so \
+    vendor/bin/mago lint // and format
 ```
 
 ## Generating PHP Stubs

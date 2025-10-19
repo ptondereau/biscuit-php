@@ -4,24 +4,22 @@ declare(strict_types=1);
 
 namespace Biscuit\Tests;
 
-use Biscuit\Auth\{
-    Algorithm,
-    Authorizer,
-    AuthorizerBuilder,
-    Biscuit,
-    BiscuitBuilder,
-    BlockBuilder,
-    Check,
-    Fact,
-    KeyPair,
-    Policy,
-    PrivateKey,
-    PublicKey,
-    Rule,
-    ThirdPartyBlock,
-    ThirdPartyRequest,
-    UnverifiedBiscuit
-};
+use Biscuit\Auth\Algorithm;
+use Biscuit\Auth\Authorizer;
+use Biscuit\Auth\AuthorizerBuilder;
+use Biscuit\Auth\Biscuit;
+use Biscuit\Auth\BiscuitBuilder;
+use Biscuit\Auth\BlockBuilder;
+use Biscuit\Auth\Check;
+use Biscuit\Auth\Fact;
+use Biscuit\Auth\KeyPair;
+use Biscuit\Auth\Policy;
+use Biscuit\Auth\PrivateKey;
+use Biscuit\Auth\PublicKey;
+use Biscuit\Auth\Rule;
+use Biscuit\Auth\ThirdPartyBlock;
+use Biscuit\Auth\ThirdPartyRequest;
+use Biscuit\Auth\UnverifiedBiscuit;
 use PHPUnit\Framework\TestCase;
 
 class BiscuitTest extends TestCase
@@ -29,62 +27,62 @@ class BiscuitTest extends TestCase
     public function testKeyPairGeneration(): void
     {
         $kp = new KeyPair();
-        $this->assertInstanceOf(KeyPair::class, $kp);
+        static::assertInstanceOf(KeyPair::class, $kp);
 
         $publicKey = $kp->public();
-        $this->assertInstanceOf(PublicKey::class, $publicKey);
+        static::assertInstanceOf(PublicKey::class, $publicKey);
 
         $privateKey = $kp->private();
-        $this->assertInstanceOf(PrivateKey::class, $privateKey);
+        static::assertInstanceOf(PrivateKey::class, $privateKey);
     }
 
     public function testKeyPairFromPrivateKey(): void
     {
-        $privateKeyHex = "ed25519-private/473b5189232f3f597b5c2f3f9b0d5e28b1ee4e7cce67ec6b7fbf5984157a6b97";
+        $privateKeyHex = 'ed25519-private/473b5189232f3f597b5c2f3f9b0d5e28b1ee4e7cce67ec6b7fbf5984157a6b97';
         $privateKey = new PrivateKey($privateKeyHex);
 
         $kp = KeyPair::fromPrivateKey($privateKey);
-        $this->assertInstanceOf(KeyPair::class, $kp);
+        static::assertInstanceOf(KeyPair::class, $kp);
 
-        $this->assertEquals($privateKeyHex, $kp->private()->toHex());
+        static::assertSame($privateKeyHex, $kp->private()->toHex());
     }
 
     public function testPublicKeyFromHex(): void
     {
-        $publicKeyHex = "ed25519/acdd6d5b53bfee478bf689f8e012fe7988bf755e3d7c5152947abc149bc20189";
+        $publicKeyHex = 'ed25519/acdd6d5b53bfee478bf689f8e012fe7988bf755e3d7c5152947abc149bc20189';
         $publicKey = new PublicKey($publicKeyHex);
 
-        $this->assertEquals($publicKeyHex, $publicKey->toHex());
+        static::assertSame($publicKeyHex, $publicKey->toHex());
     }
 
     public function testPublicKeyFromBytes(): void
     {
-        $publicKeyHex = "ed25519/acdd6d5b53bfee478bf689f8e012fe7988bf755e3d7c5152947abc149bc20189";
+        $publicKeyHex = 'ed25519/acdd6d5b53bfee478bf689f8e012fe7988bf755e3d7c5152947abc149bc20189';
         $publicKey = new PublicKey($publicKeyHex);
 
         $bytes = $publicKey->toBytes();
         $publicKey2 = PublicKey::fromBytes(pack('C*', ...$bytes));
 
-        $this->assertEquals($publicKey->toHex(), $publicKey2->toHex());
+        static::assertSame($publicKey->toHex(), $publicKey2->toHex());
     }
 
     public function testPrivateKeyFromHex(): void
     {
-        $privateKeyHex = "ed25519-private/12aca40167fbdd1a11037e9fd440e3d510d9d9dea70a6646aa4aaf84d718d75a";
+        $privateKeyHex = 'ed25519-private/12aca40167fbdd1a11037e9fd440e3d510d9d9dea70a6646aa4aaf84d718d75a';
         $privateKey = new PrivateKey($privateKeyHex);
 
-        $this->assertEquals($privateKeyHex, $privateKey->toHex());
+        static::assertSame($privateKeyHex, $privateKey->toHex());
     }
 
     public function testPrivateKeyFromBytes(): void
     {
-        $privateKeyHex = "ed25519-private/12aca40167fbdd1a11037e9fd440e3d510d9d9dea70a6646aa4aaf84d718d75a";
+        $privateKeyHex = 'ed25519-private/12aca40167fbdd1a11037e9fd440e3d510d9d9dea70a6646aa4aaf84d718d75a';
         $privateKey = new PrivateKey($privateKeyHex);
 
         $bytes = $privateKey->toBytes();
         $privateKey2 = PrivateKey::fromBytes(pack('C*', ...$bytes));
 
-        $this->assertEquals($privateKey->toHex(), $privateKey2->toHex());
+        static::assertSame($privateKey->toHex(), $privateKey2->toHex());
     }
 
     public function testBiscuitBuilder(): void
@@ -98,7 +96,7 @@ class BiscuitTest extends TestCase
         $builder->addCheck(new Check('check if user($u)'));
 
         $biscuit = $builder->build($kp->private());
-        $this->assertInstanceOf(Biscuit::class, $biscuit);
+        static::assertInstanceOf(Biscuit::class, $biscuit);
     }
 
     public function testBiscuitBuilderWithParameters(): void
@@ -109,16 +107,16 @@ class BiscuitTest extends TestCase
         $builder->addCodeWithParams(
             'user({username}); resource({res});',
             ['username' => 'alice', 'res' => 'file1'],
-            []
+            [],
         );
 
         $biscuit = $builder->build($kp->private());
-        $this->assertInstanceOf(Biscuit::class, $biscuit);
+        static::assertInstanceOf(Biscuit::class, $biscuit);
     }
 
     public function testBiscuitSerialization(): void
     {
-        $privateKeyHex = "ed25519-private/473b5189232f3f597b5c2f3f9b0d5e28b1ee4e7cce67ec6b7fbf5984157a6b97";
+        $privateKeyHex = 'ed25519-private/473b5189232f3f597b5c2f3f9b0d5e28b1ee4e7cce67ec6b7fbf5984157a6b97';
         $privateKey = new PrivateKey($privateKeyHex);
         $kp = KeyPair::fromPrivateKey($privateKey);
 
@@ -127,19 +125,17 @@ class BiscuitTest extends TestCase
 
         $biscuit = $builder->build($privateKey);
 
-
         $base64 = $biscuit->toBase64();
-        $this->assertIsString($base64);
+        static::assertIsString($base64);
 
         $parsed = Biscuit::fromBase64($base64, $kp->public());
-        $this->assertInstanceOf(Biscuit::class, $parsed);
-
+        static::assertInstanceOf(Biscuit::class, $parsed);
 
         $bytes = $biscuit->toBytes();
-        $this->assertIsArray($bytes);
+        static::assertIsArray($bytes);
 
         $parsed2 = Biscuit::fromBytes(pack('C*', ...$bytes), $kp->public());
-        $this->assertInstanceOf(Biscuit::class, $parsed2);
+        static::assertInstanceOf(Biscuit::class, $parsed2);
     }
 
     public function testBiscuitAppend(): void
@@ -149,13 +145,13 @@ class BiscuitTest extends TestCase
         $builder->addCode('user("alice")');
 
         $biscuit = $builder->build($kp->private());
-        $this->assertEquals(1, $biscuit->blockCount());
+        static::assertSame(1, $biscuit->blockCount());
 
         $block = new BlockBuilder();
         $block->addCode('resource("file1")');
 
         $biscuit2 = $biscuit->append($block);
-        $this->assertEquals(2, $biscuit2->blockCount());
+        static::assertSame(2, $biscuit2->blockCount());
     }
 
     public function testBlockBuilder(): void
@@ -166,19 +162,15 @@ class BiscuitTest extends TestCase
         $builder->addRule(new Rule('head($v) <- fact($v)'));
         $builder->addCheck(new Check('check if fact(true)'));
 
-        $this->assertInstanceOf(BlockBuilder::class, $builder);
+        static::assertInstanceOf(BlockBuilder::class, $builder);
     }
 
     public function testBlockBuilderWithParameters(): void
     {
         $builder = new BlockBuilder();
-        $builder->addCodeWithParams(
-            'resource({res}); permission({perm});',
-            ['res' => 'file1', 'perm' => 'read'],
-            []
-        );
+        $builder->addCodeWithParams('resource({res}); permission({perm});', ['res' => 'file1', 'perm' => 'read'], []);
 
-        $this->assertInstanceOf(BlockBuilder::class, $builder);
+        static::assertInstanceOf(BlockBuilder::class, $builder);
     }
 
     public function testAuthorizerBuilder(): void
@@ -196,7 +188,7 @@ class BiscuitTest extends TestCase
         $authBuilder->addPolicy(new Policy('allow if user("alice")'));
 
         $authorizer = $authBuilder->build($biscuit);
-        $this->assertInstanceOf(Authorizer::class, $authorizer);
+        static::assertInstanceOf(Authorizer::class, $authorizer);
     }
 
     public function testAuthorizerBuilderWithParameters(): void
@@ -207,14 +199,10 @@ class BiscuitTest extends TestCase
         $biscuit = $biscuitBuilder->build($kp->private());
 
         $authBuilder = new AuthorizerBuilder();
-        $authBuilder->addCodeWithParams(
-            'allow if user({username})',
-            ['username' => 'alice'],
-            []
-        );
+        $authBuilder->addCodeWithParams('allow if user({username})', ['username' => 'alice'], []);
 
         $authorizer = $authBuilder->build($biscuit);
-        $this->assertInstanceOf(Authorizer::class, $authorizer);
+        static::assertInstanceOf(Authorizer::class, $authorizer);
     }
 
     public function testAuthorizerBuilderUnauthenticated(): void
@@ -223,18 +211,17 @@ class BiscuitTest extends TestCase
         $authBuilder->addCode('fact("test"); allow if fact("test")');
 
         $authorizer = $authBuilder->buildUnauthenticated();
-        $this->assertInstanceOf(Authorizer::class, $authorizer);
+        static::assertInstanceOf(Authorizer::class, $authorizer);
 
         $policy = $authorizer->authorize();
-        $this->assertEquals(0, $policy);
+        static::assertSame(0, $policy);
     }
 
     public function testCompleteLifecycle(): void
     {
-        $privateKeyHex = "ed25519-private/473b5189232f3f597b5c2f3f9b0d5e28b1ee4e7cce67ec6b7fbf5984157a6b97";
+        $privateKeyHex = 'ed25519-private/473b5189232f3f597b5c2f3f9b0d5e28b1ee4e7cce67ec6b7fbf5984157a6b97';
         $privateKey = new PrivateKey($privateKeyHex);
         $kp = KeyPair::fromPrivateKey($privateKey);
-
 
         $biscuitBuilder = new BiscuitBuilder();
         $biscuitBuilder->addCodeWithParams('user({id})', ['id' => '1234'], []);
@@ -245,22 +232,19 @@ class BiscuitTest extends TestCase
 
         $biscuit = $biscuitBuilder->build($privateKey);
 
-
         $block = new BlockBuilder();
         $block->addCode('check if user($u)');
         $biscuit = $biscuit->append($block);
 
-
         $token = $biscuit->toBase64();
         $parsedToken = Biscuit::fromBase64($token, $kp->public());
-
 
         $authBuilder = new AuthorizerBuilder();
         $authBuilder->addCodeWithParams('allow if user({id})', ['id' => '1234'], []);
         $authorizer = $authBuilder->build($parsedToken);
 
         $policy = $authorizer->authorize();
-        $this->assertEquals(0, $policy);
+        static::assertSame(0, $policy);
     }
 
     public function testAuthorizerQuery(): void
@@ -278,14 +262,14 @@ class BiscuitTest extends TestCase
         $rule = new Rule('u($id) <- user($id)');
         $facts = $authorizer->query($rule);
 
-        $this->assertIsArray($facts);
-        $this->assertCount(1, $facts);
-        $this->assertEquals('u', $facts[0]->name());
+        static::assertIsArray($facts);
+        static::assertCount(1, $facts);
+        static::assertSame('u', $facts[0]->name());
     }
 
     public function testAuthorizerSnapshot(): void
     {
-        $privateKeyHex = "ed25519-private/473b5189232f3f597b5c2f3f9b0d5e28b1ee4e7cce67ec6b7fbf5984157a6b97";
+        $privateKeyHex = 'ed25519-private/473b5189232f3f597b5c2f3f9b0d5e28b1ee4e7cce67ec6b7fbf5984157a6b97';
         $privateKey = new PrivateKey($privateKeyHex);
         $kp = KeyPair::fromPrivateKey($privateKey);
 
@@ -297,25 +281,23 @@ class BiscuitTest extends TestCase
         $authBuilder->addCodeWithParams('allow if user({id})', ['id' => '1234'], []);
         $authorizer = $authBuilder->build($biscuit);
 
-
         $snapshot = $authorizer->base64Snapshot();
-        $this->assertIsString($snapshot);
+        static::assertIsString($snapshot);
 
         $parsed = Authorizer::fromBase64Snapshot($snapshot);
-        $this->assertInstanceOf(Authorizer::class, $parsed);
+        static::assertInstanceOf(Authorizer::class, $parsed);
 
         $policy = $parsed->authorize();
-        $this->assertEquals(0, $policy);
-
+        static::assertSame(0, $policy);
 
         $rawSnapshot = $authorizer->rawSnapshot();
-        $this->assertIsArray($rawSnapshot);
+        static::assertIsArray($rawSnapshot);
 
         $parsedFromRaw = Authorizer::fromRawSnapshot(pack('C*', ...$rawSnapshot));
-        $this->assertInstanceOf(Authorizer::class, $parsedFromRaw);
+        static::assertInstanceOf(Authorizer::class, $parsedFromRaw);
 
         $rawPolicy = $parsedFromRaw->authorize();
-        $this->assertEquals(0, $rawPolicy);
+        static::assertSame(0, $rawPolicy);
     }
 
     public function testAuthorizerBuilderSnapshot(): void
@@ -323,25 +305,23 @@ class BiscuitTest extends TestCase
         $authBuilder = new AuthorizerBuilder();
         $authBuilder->addCodeWithParams('allow if user({id})', ['id' => '1234'], []);
 
-
         $snapshot = $authBuilder->base64Snapshot();
-        $this->assertIsString($snapshot);
+        static::assertIsString($snapshot);
 
         $parsed = AuthorizerBuilder::fromBase64Snapshot($snapshot);
-        $this->assertInstanceOf(AuthorizerBuilder::class, $parsed);
-
+        static::assertInstanceOf(AuthorizerBuilder::class, $parsed);
 
         $rawSnapshot = $authBuilder->rawSnapshot();
-        $this->assertIsArray($rawSnapshot);
+        static::assertIsArray($rawSnapshot);
 
         $parsedFromRaw = AuthorizerBuilder::fromRawSnapshot(pack('C*', ...$rawSnapshot));
-        $this->assertInstanceOf(AuthorizerBuilder::class, $parsedFromRaw);
+        static::assertInstanceOf(AuthorizerBuilder::class, $parsedFromRaw);
     }
 
     public function testUnverifiedBiscuit(): void
     {
         $kp = new KeyPair();
-        $pubkey = new PublicKey("ed25519/acdd6d5b53bfee478bf689f8e012fe7988bf755e3d7c5152947abc149bc20189");
+        $pubkey = new PublicKey('ed25519/acdd6d5b53bfee478bf689f8e012fe7988bf755e3d7c5152947abc149bc20189');
 
         $builder = new BiscuitBuilder();
         $builder->addCode('test(true)');
@@ -359,16 +339,16 @@ class BiscuitTest extends TestCase
         $utoken1 = UnverifiedBiscuit::fromBase64($base64_1);
         $utoken2 = UnverifiedBiscuit::fromBase64($base64_2);
 
-        $this->assertNull($utoken1->rootKeyId());
-        $this->assertEquals(42, $utoken2->rootKeyId());
+        static::assertNull($utoken1->rootKeyId());
+        static::assertSame(42, $utoken2->rootKeyId());
 
-        $this->assertEquals(1, $utoken1->blockCount());
-        $this->assertEquals(2, $utoken2->blockCount());
+        static::assertSame(1, $utoken1->blockCount());
+        static::assertSame(2, $utoken2->blockCount());
     }
 
     public function testUnverifiedBiscuitVerification(): void
     {
-        $privateKeyHex = "ed25519-private/473b5189232f3f597b5c2f3f9b0d5e28b1ee4e7cce67ec6b7fbf5984157a6b97";
+        $privateKeyHex = 'ed25519-private/473b5189232f3f597b5c2f3f9b0d5e28b1ee4e7cce67ec6b7fbf5984157a6b97';
         $privateKey = new PrivateKey($privateKeyHex);
         $kp = KeyPair::fromPrivateKey($privateKey);
 
@@ -380,7 +360,7 @@ class BiscuitTest extends TestCase
         $utoken = UnverifiedBiscuit::fromBase64($base64);
 
         $verified = $utoken->verify($kp->public());
-        $this->assertInstanceOf(Biscuit::class, $verified);
+        static::assertInstanceOf(Biscuit::class, $verified);
     }
 
     public function testUnverifiedBiscuitAppend(): void
@@ -397,7 +377,7 @@ class BiscuitTest extends TestCase
         $block->addCode('check if true');
         $utoken2 = $utoken->append($block);
 
-        $this->assertEquals(2, $utoken2->blockCount());
+        static::assertSame(2, $utoken2->blockCount());
     }
 
     public function testRevocationIds(): void
@@ -408,15 +388,15 @@ class BiscuitTest extends TestCase
         $biscuit = $builder->build($kp->private());
 
         $revocationIds = $biscuit->revocationIds();
-        $this->assertIsArray($revocationIds);
-        $this->assertCount(1, $revocationIds);
+        static::assertIsArray($revocationIds);
+        static::assertCount(1, $revocationIds);
 
         $block = new BlockBuilder();
         $block->addCode('resource("file1")');
         $biscuit2 = $biscuit->append($block);
 
         $revocationIds2 = $biscuit2->revocationIds();
-        $this->assertCount(2, $revocationIds2);
+        static::assertCount(2, $revocationIds2);
     }
 
     public function testThirdPartyBlocks(): void
@@ -431,43 +411,45 @@ class BiscuitTest extends TestCase
         $newBlock->addCodeWithParams('external_fact({fact})', ['fact' => '56'], []);
 
         $thirdPartyRequest = $biscuit->thirdPartyRequest();
-        $this->assertInstanceOf(ThirdPartyRequest::class, $thirdPartyRequest);
+        static::assertInstanceOf(ThirdPartyRequest::class, $thirdPartyRequest);
 
         $thirdPartyBlock = $thirdPartyRequest->createBlock($thirdPartyKp->private(), $newBlock);
-        $this->assertInstanceOf(ThirdPartyBlock::class, $thirdPartyBlock);
+        static::assertInstanceOf(ThirdPartyBlock::class, $thirdPartyBlock);
 
         $biscuitWithThirdParty = $biscuit->appendThirdParty($thirdPartyKp->public(), $thirdPartyBlock);
-        $this->assertInstanceOf(Biscuit::class, $biscuitWithThirdParty);
+        static::assertInstanceOf(Biscuit::class, $biscuitWithThirdParty);
 
-        $this->assertEquals(2, $biscuitWithThirdParty->blockCount());
+        static::assertSame(2, $biscuitWithThirdParty->blockCount());
 
         $externalKey = $biscuitWithThirdParty->blockExternalKey(1);
-        $this->assertInstanceOf(PublicKey::class, $externalKey);
-        $this->assertEquals($thirdPartyKp->public()->toHex(), $externalKey->toHex());
+        static::assertInstanceOf(PublicKey::class, $externalKey);
+        static::assertSame($thirdPartyKp->public()->toHex(), $externalKey->toHex());
     }
 
     public function testPEMKeyImport(): void
     {
         $privatePem = "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIASZaU0NoF3KxABSZj5x1QwVOUZfiSbf6SAzz3qq1T1l\n-----END PRIVATE KEY-----";
-        $privateKeyHex = "ed25519-private/0499694d0da05dcac40052663e71d50c1539465f8926dfe92033cf7aaad53d65";
+        $privateKeyHex = 'ed25519-private/0499694d0da05dcac40052663e71d50c1539465f8926dfe92033cf7aaad53d65';
 
         $privateKey = PrivateKey::fromPem($privatePem);
-        $this->assertEquals($privateKeyHex, $privateKey->toHex());
+        static::assertSame($privateKeyHex, $privateKey->toHex());
 
         $kp = KeyPair::fromPrivateKey($privateKey);
-        $this->assertInstanceOf(KeyPair::class, $kp);
+        static::assertInstanceOf(KeyPair::class, $kp);
     }
 
     public function testDERKeyImport(): void
     {
-        $privateDer = hex2bin("302e020100300506032b6570042204200499694d0da05dcac40052663e71d50c1539465f8926dfe92033cf7aaad53d65");
-        $privateKeyHex = "ed25519-private/0499694d0da05dcac40052663e71d50c1539465f8926dfe92033cf7aaad53d65";
+        $privateDer = hex2bin(
+            '302e020100300506032b6570042204200499694d0da05dcac40052663e71d50c1539465f8926dfe92033cf7aaad53d65',
+        );
+        $privateKeyHex = 'ed25519-private/0499694d0da05dcac40052663e71d50c1539465f8926dfe92033cf7aaad53d65';
 
         $privateKey = PrivateKey::fromDer($privateDer);
-        $this->assertEquals($privateKeyHex, $privateKey->toHex());
+        static::assertSame($privateKeyHex, $privateKey->toHex());
 
         $kp = KeyPair::fromPrivateKey($privateKey);
-        $this->assertInstanceOf(KeyPair::class, $kp);
+        static::assertInstanceOf(KeyPair::class, $kp);
     }
 
     public function testSetRootKeyId(): void
@@ -481,7 +463,7 @@ class BiscuitTest extends TestCase
         $base64 = $biscuit->toBase64();
 
         $utoken = UnverifiedBiscuit::fromBase64($base64);
-        $this->assertEquals(42, $utoken->rootKeyId());
+        static::assertSame(42, $utoken->rootKeyId());
     }
 
     public function testFactWithSet(): void
@@ -489,7 +471,7 @@ class BiscuitTest extends TestCase
         $fact = new Fact('user({name})');
         $fact->set('name', 'alice');
 
-        $this->assertInstanceOf(Fact::class, $fact);
+        static::assertInstanceOf(Fact::class, $fact);
     }
 
     public function testRuleWithSet(): void
@@ -497,7 +479,7 @@ class BiscuitTest extends TestCase
         $rule = new Rule('can_read($u, {res}) <- user($u), resource({res})');
         $rule->set('res', 'file1');
 
-        $this->assertInstanceOf(Rule::class, $rule);
+        static::assertInstanceOf(Rule::class, $rule);
     }
 
     public function testCheckWithSet(): void
@@ -505,7 +487,7 @@ class BiscuitTest extends TestCase
         $check = new Check('check if user({username})');
         $check->set('username', 'alice');
 
-        $this->assertInstanceOf(Check::class, $check);
+        static::assertInstanceOf(Check::class, $check);
     }
 
     public function testPolicyWithSet(): void
@@ -513,7 +495,7 @@ class BiscuitTest extends TestCase
         $policy = new Policy('allow if user({username})');
         $policy->set('username', 'alice');
 
-        $this->assertInstanceOf(Policy::class, $policy);
+        static::assertInstanceOf(Policy::class, $policy);
     }
 
     public function testBlockMerge(): void
@@ -526,7 +508,7 @@ class BiscuitTest extends TestCase
 
         $builder1->merge($builder2);
 
-        $this->assertInstanceOf(BlockBuilder::class, $builder1);
+        static::assertInstanceOf(BlockBuilder::class, $builder1);
     }
 
     public function testAuthorizerBuilderMerge(): void
@@ -539,7 +521,7 @@ class BiscuitTest extends TestCase
 
         $builder1->merge($builder2);
 
-        $this->assertInstanceOf(AuthorizerBuilder::class, $builder1);
+        static::assertInstanceOf(AuthorizerBuilder::class, $builder1);
     }
 
     public function testAuthorizerBuilderMergeBlock(): void
@@ -552,6 +534,6 @@ class BiscuitTest extends TestCase
 
         $authBuilder->mergeBlock($blockBuilder);
 
-        $this->assertInstanceOf(AuthorizerBuilder::class, $authBuilder);
+        static::assertInstanceOf(AuthorizerBuilder::class, $authBuilder);
     }
 }

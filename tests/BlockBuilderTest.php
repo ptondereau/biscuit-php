@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Biscuit\Tests;
 
 use Biscuit\Auth\BlockBuilder;
-use Biscuit\Auth\Fact;
 use Biscuit\Auth\Check;
+use Biscuit\Auth\Fact;
 use PHPUnit\Framework\TestCase;
 
 class BlockBuilderTest extends TestCase
@@ -28,9 +30,6 @@ class BlockBuilderTest extends TestCase
 
         BLOCK;
 
-        self::assertEquals(
-            $expected,
-            (string) $blockBuilder,
-        );
+        static::assertSame($expected, (string) $blockBuilder);
     }
 }

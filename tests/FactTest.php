@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Biscuit\Tests;
 
 use Biscuit\Auth\Fact;
@@ -13,16 +15,15 @@ class FactTest extends TestCase
         $fact = new Fact('user({id})');
         $fact->set('id', 15);
 
-        self::assertEquals(
-            'user(15)',
-            (string) $fact,
-        );
+        static::assertSame('user(15)', (string) $fact);
     }
 
     public function testExcpetionWhenBadFact(): void
     {
         $this->expectException(InvalidFact::class);
-        $this->expectExceptionMessage('error generating Datalog: datalog parsing error: ParseErrors { errors: [ParseError { input: "", message: None }] }');
+        $this->expectExceptionMessage(
+            'error generating Datalog: datalog parsing error: ParseErrors { errors: [ParseError { input: "", message: None }] }',
+        );
 
         new Fact('wrong');
     }

@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Biscuit\Tests;
 
-use Biscuit\Auth\{
-    AuthorizerBuilder,
-    Biscuit,
-    BiscuitBuilder,
-    KeyPair
-};
+use Biscuit\Auth\AuthorizerBuilder;
+use Biscuit\Auth\Biscuit;
+use Biscuit\Auth\BiscuitBuilder;
+use Biscuit\Auth\KeyPair;
 use Biscuit\Exception\AuthorizerError;
 use PHPUnit\Framework\TestCase;
 
@@ -43,11 +41,7 @@ class RbacExampleTest extends TestCase
 
         // 1. CREATE TOKEN: payment-api has service-admin role for critical priority
         $tokenBuilder = new BiscuitBuilder();
-        $tokenBuilder->addCodeWithParams(
-            'user({id})',
-            ['id' => 'payment-api'],
-            []
-        );
+        $tokenBuilder->addCodeWithParams('user({id})', ['id' => 'payment-api'], []);
         $tokenBuilder->addCodeWithParams(
             'user_roles({id}, "api", {priority}, {roles})',
             [
@@ -55,7 +49,7 @@ class RbacExampleTest extends TestCase
                 'priority' => 'critical',
                 'roles' => ['service-admin'],
             ],
-            []
+            [],
         );
 
         $token = $tokenBuilder->build($keyPair->private());
@@ -71,7 +65,7 @@ class RbacExampleTest extends TestCase
                 'role' => 'service-admin',
                 'permissions' => ['api:read', 'api:write', 'api:delete', 'api:admin'],
             ],
-            []
+            [],
         );
 
         // RBAC Logic: Derive rights from user_roles + role definitions
@@ -97,7 +91,7 @@ class RbacExampleTest extends TestCase
         $authorizer = $authBuilder->build($token);
         $authorizer->authorize();
 
-        $this->assertTrue(true, 'Admin service should be able to perform critical operations');
+        static::assertTrue(true, 'Admin service should be able to perform critical operations');
     }
 
     public function testWriterServiceCannotPerformCriticalOperations(): void
@@ -106,11 +100,7 @@ class RbacExampleTest extends TestCase
 
         // 1. CREATE TOKEN: notification-api has service-writer role for normal priority only
         $tokenBuilder = new BiscuitBuilder();
-        $tokenBuilder->addCodeWithParams(
-            'user({id})',
-            ['id' => 'notification-api'],
-            []
-        );
+        $tokenBuilder->addCodeWithParams('user({id})', ['id' => 'notification-api'], []);
         $tokenBuilder->addCodeWithParams(
             'user_roles({id}, "api", {priority}, {roles})',
             [
@@ -118,7 +108,7 @@ class RbacExampleTest extends TestCase
                 'priority' => 'normal',
                 'roles' => ['service-writer'],
             ],
-            []
+            [],
         );
 
         $token = $tokenBuilder->build($keyPair->private());
@@ -134,7 +124,7 @@ class RbacExampleTest extends TestCase
                 'role' => 'service-writer',
                 'permissions' => ['api:read', 'api:write'],
             ],
-            []
+            [],
         );
 
         // Same RBAC logic
@@ -178,7 +168,7 @@ class RbacExampleTest extends TestCase
                 'priority' => 'critical',
                 'roles' => ['service-admin'],
             ],
-            []
+            [],
         );
 
         // Writer for normal priority
@@ -189,7 +179,7 @@ class RbacExampleTest extends TestCase
                 'priority' => 'normal',
                 'roles' => ['service-writer'],
             ],
-            []
+            [],
         );
 
         $token = $tokenBuilder->build($keyPair->private());
@@ -199,7 +189,7 @@ class RbacExampleTest extends TestCase
         $authBuilder1->addCodeWithParams(
             'role("critical", "service-admin", {perms})',
             ['perms' => ['api:read', 'api:write', 'api:delete', 'api:admin']],
-            []
+            [],
         );
         $authBuilder1->addCode('
             right($id, $p, $op, $priority) <-
@@ -212,14 +202,14 @@ class RbacExampleTest extends TestCase
         $authBuilder1->addCode('operation("api:delete"); resource("critical");');
 
         $authBuilder1->build($token)->authorize();
-        $this->assertTrue(true, 'payment-api can perform api:delete at critical priority (admin)');
+        static::assertTrue(true, 'payment-api can perform api:delete at critical priority (admin)');
 
         // TEST 2: payment-api CANNOT perform api:delete at normal priority (only writer role)
         $authBuilder2 = new AuthorizerBuilder();
         $authBuilder2->addCodeWithParams(
             'role("normal", "service-writer", {perms})',
             ['perms' => ['api:read', 'api:write']],
-            []
+            [],
         );
         $authBuilder2->addCode('
             right($id, $p, $op, $priority) <-
