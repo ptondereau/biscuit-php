@@ -1,15 +1,19 @@
 [package]
-name = "ext-biscuit-php"
+name = "biscuit-php"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 license = "Apache-2.0"
 description = "PHP wrapper for Biscuit authorization tokens"
+authors = ["Pierre Tondereau <pierre.tondereau@protonmail.com>"]
 
 [dependencies]
-ext-php-rs = "0.14.2"
+ext-php-rs = "0.15"
 biscuit-auth = { version = "6.0.0", features = ["pem"] }
 hex = "0.4"
 
 [lib]
-name = "ext_biscuit_php"
+name = "biscuit"
 crate-type = ["cdylib"]
+
+[profile.release]
+strip = "debuginfo"

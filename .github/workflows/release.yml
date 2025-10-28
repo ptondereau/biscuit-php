@@ -56,12 +56,12 @@ jobs:
       - name: Prepare binary artifact
         run: |
           mkdir -p dist
-          cp target/x86_64-unknown-linux-gnu/release/libext_biscuit_php.so dist/ext_biscuit_php-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so
+          cp target/x86_64-unknown-linux-gnu/release/libbiscuit.so dist/biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so
 
       - name: Calculate checksums
         run: |
           cd dist
-          sha256sum ext_biscuit_php-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so > ext_biscuit_php-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
+          sha256sum biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so > biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -98,11 +98,11 @@ jobs:
       - name: Verify checksum
         run: |
           cd dist
-          sha256sum -c ext_biscuit_php-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
+          sha256sum -c biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
 
       - name: Test binary loading
         run: |
-          php -dextension=./dist/ext_biscuit_php-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so -m | grep biscuit || echo "Extension loaded successfully"
+          php -dextension=./dist/biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so -m | grep biscuit || echo "Extension loaded successfully"
 
   create-release:
     name: Create GitHub Release
@@ -137,14 +137,14 @@ jobs:
 
           | Platform | PHP Version | Thread Safety | Binary | Checksum |
           |----------|-------------|---------------|--------|----------|
-          | Linux x86_64 | 8.1 | TS | ext_biscuit_php-linux-x86_64-php8.1-ts.so | .sha256 |
-          | Linux x86_64 | 8.1 | NTS | ext_biscuit_php-linux-x86_64-php8.1-nts.so | .sha256 |
-          | Linux x86_64 | 8.2 | TS | ext_biscuit_php-linux-x86_64-php8.2-ts.so | .sha256 |
-          | Linux x86_64 | 8.2 | NTS | ext_biscuit_php-linux-x86_64-php8.2-nts.so | .sha256 |
-          | Linux x86_64 | 8.3 | TS | ext_biscuit_php-linux-x86_64-php8.3-ts.so | .sha256 |
-          | Linux x86_64 | 8.3 | NTS | ext_biscuit_php-linux-x86_64-php8.3-nts.so | .sha256 |
-          | Linux x86_64 | 8.4 | TS | ext_biscuit_php-linux-x86_64-php8.4-ts.so | .sha256 |
-          | Linux x86_64 | 8.4 | NTS | ext_biscuit_php-linux-x86_64-php8.4-nts.so | .sha256 |
+          | Linux x86_64 | 8.1 | TS | biscuit-linux-x86_64-php8.1-ts.so | .sha256 |
+          | Linux x86_64 | 8.1 | NTS | biscuit-linux-x86_64-php8.1-nts.so | .sha256 |
+          | Linux x86_64 | 8.2 | TS | biscuit-linux-x86_64-php8
+          | Linux x86_64 | 8.2 | NTS | biscuit-linux-x86_64-php8.2-nts.so | .sha256 |
+          | Linux x86_64 | 8.3 | TS | biscuit-linux-x86_64-php8.3-ts.so | .sha256 |
+          | Linux x86_64 | 8.3 | NTS | biscuit-linux-x86_64-php8.3-nts.so | .sha256 |
+          | Linux x86_64 | 8.4 | TS | biscuit-linux-x86_64-php8.4-ts.so | .sha256 |
+          | Linux x86_64 | 8.4 | NTS | biscuit-linux-x86_64-php8.4-nts.so | .sha256 |
 
           ### Choosing the Right Binary
 
@@ -162,12 +162,12 @@ jobs:
           2. Download the appropriate binary for your PHP version and thread safety
           3. Verify the checksum:
              ```bash
-             sha256sum -c ext_biscuit_php-linux-x86_64-php8.x-{ts|nts}.so.sha256
+             sha256sum -c biscuit-linux-x86_64-php8.x-{ts|nts}.so.sha256
              ```
           4. Move the binary to your PHP extension directory
           5. Add to your php.ini:
              ```ini
-             extension=ext_biscuit_php-linux-x86_64-php8.x-{ts|nts}.so
+             extension=biscuit-linux-x86_64-php8.x-{ts|nts}.so
              ```
           6. Verify installation:
              ```bash
