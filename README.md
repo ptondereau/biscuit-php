@@ -45,6 +45,23 @@ sudo phpenmod biscuit
 php -m | grep biscuit
 ```
 
+### PIE installation
+
+We support [PIE](https://github.com/php/pie/) installation:
+```bash
+pie install ptondereau/biscuit-php
+```
+
+and you can add in your `composer.json`:
+```json
+{
+    // ...
+    "ext-biscuit": "*",
+    // ...
+}
+```
+
+
 ### Build from Source
 
 If pre-built binaries are not available for your platform:

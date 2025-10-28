@@ -1,8 +1,9 @@
 {
-    "name": "ptondereau/ext-biscuit-php",
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "ptondereau/biscuit-php",
     "description": "PHP bindings for Biscuit authorization tokens",
-    "type": "library",
     "license": "Apache-2.0",
+    "type": "php-ext",
     "authors": [
         {
             "name": "Pierre Tondereau",
@@ -30,5 +31,16 @@
         "allow-plugins": {
             "carthage-software/mago": true
         }
+    },
+    "php-ext": {
+        "build-path": "pie",
+        "extension-name": "biscuit",
+        "configure-options": [
+            {
+                "name": "debug",
+                "description": "Build in debug mode",
+                "needs-value": false
+            }
+        ]
     }
 }
