@@ -35,6 +35,8 @@
     "php-ext": {
         "build-path": "pie",
         "extension-name": "biscuit",
+        "support-zts": true,
+        "support-nts": true,
         "configure-options": [
             {
                 "name": "debug",

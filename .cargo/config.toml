@@ -1,4 +1,4 @@
-[target.'cfg(not(target_os = "windows"))']
+[target.'cfg(target_os = "macos")']
 rustflags = ["-C", "link-arg=-Wl,-undefined,dynamic_lookup"]
 
 [target.x86_64-pc-windows-msvc]
@@ -6,3 +6,9 @@ linker = "rust-lld"
 
 [target.i686-pc-windows-msvc]
 linker = "rust-lld"
+
+[target.x86_64-unknown-linux-musl]
+linker = "musl-gcc"
+
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
