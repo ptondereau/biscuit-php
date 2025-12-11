@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: ["8.1", "8.2", "8.3", "8.4"]
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
         phpts: ["ts", "nts"]
 
     steps:
@@ -75,7 +75,7 @@ jobs:
     needs: build-linux-x86_64
     strategy:
       matrix:
-        php-version: ["8.1", "8.2", "8.3", "8.4"]
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
         phpts: ["ts", "nts"]
 
     steps:
@@ -145,7 +145,8 @@ jobs:
           | Linux x86_64 | 8.3 | NTS | biscuit-linux-x86_64-php8.3-nts.so | .sha256 |
           | Linux x86_64 | 8.4 | TS | biscuit-linux-x86_64-php8.4-ts.so | .sha256 |
           | Linux x86_64 | 8.4 | NTS | biscuit-linux-x86_64-php8.4-nts.so | .sha256 |
-
+          | Linux x86_64 | 8.5 | TS | biscuit-linux-x86_64-php8.5-ts.so | .sha256 |
+          | Linux x86_64 | 8.5 | NTS | biscuit-linux-x86_64-php8.5-nts.so | .sha256 |
           ### Choosing the Right Binary
 
           **Thread-Safe (TS)**: Use with Apache with mod_php, IIS, FrankenPHP,or other multi-threaded web servers
