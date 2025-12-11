@@ -1,9 +1,10 @@
 # Welcome to Mago!
 # For full documentation, see https://mago.carthage.software/tools/overview
-php-version = "8.4.0"
+php-version = "8.5.0"
 
 [source]
-paths = ["tests/"]
+workspace = "."
+paths = ["stubs/Biscuit/", "tests/"]
 includes = ["vendor"]
 excludes = []
 
@@ -19,12 +20,18 @@ integrations = ["phpunit"]
 ambiguous-function-call = { enabled = false }
 literal-named-argument = { enabled = false }
 halstead = { effort-threshold = 7000 }
+strict-types = { enabled = false }
 too-many-methods = { enabled = false }
 
 [analyzer]
 find-unused-definitions = true
 find-unused-expressions = false
 analyze-dead-code = false
-check-throws = true
+memoize-properties = true
 allow-possibly-undefined-array-keys = true
+check-throws = false
 perform-heuristic-checks = true
+strict-list-index-checks = false
+no-boolean-literal-comparison = false
+check-missing-type-hints = false
+register-super-globals = true

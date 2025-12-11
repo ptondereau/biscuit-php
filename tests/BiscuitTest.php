@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Biscuit\Tests;
 
-use Biscuit\Auth\Algorithm;
 use Biscuit\Auth\Authorizer;
 use Biscuit\Auth\AuthorizerBuilder;
 use Biscuit\Auth\Biscuit;

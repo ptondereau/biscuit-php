@@ -4,20 +4,25 @@ use std::str::FromStr;
 use biscuit_auth::builder::Algorithm as BiscuitAlgorithm;
 use biscuit_auth::{KeyPair as BiscuitKeyPair, ThirdPartyBlock as BiscuitThirdPartyBlock};
 use ext_php_rs::binary_slice::BinarySlice;
-use ext_php_rs::zend::{ce, ModuleEntry};
+use ext_php_rs::zend::{ModuleEntry, ce};
 use ext_php_rs::{info_table_end, info_table_row, info_table_start, prelude::*};
 
-// TODO: refactor this to use enum when ext-php-rs supports it
-#[php_const]
-pub const ALGORITHM_ED25519: i64 = 0;
-#[php_const]
-pub const ALGORITHM_SECP256R1: i64 = 1;
+/// Algorithm enum for cryptographic key operations
+#[php_enum]
+#[php(name = "Biscuit\\Auth\\Algorithm")]
+pub enum Algorithm {
+    #[php(value = 0)]
+    Ed25519,
+    #[php(name = "Secp256r1", value = 1)]
+    Secp256r1,
+}
 
-fn algorithm_from_int(value: i64) -> PhpResult<BiscuitAlgorithm> {
-    match value {
-        0 => Ok(BiscuitAlgorithm::Ed25519),
-        1 => Ok(BiscuitAlgorithm::Secp256r1),
-        _ => Err(PhpException::default("Invalid algorithm".to_string())),
+impl From<Algorithm> for BiscuitAlgorithm {
+    fn from(alg: Algorithm) -> Self {
+        match alg {
+            Algorithm::Ed25519 => BiscuitAlgorithm::Ed25519,
+            Algorithm::Secp256r1 => BiscuitAlgorithm::Secp256r1,
+        }
     }
 }
 
@@ -761,9 +766,9 @@ impl KeyPair {
     }
 
     #[php(name = "newWithAlgorithm")]
-    pub fn new_with_algorithm(alg: Option<i64>) -> PhpResult<Self> {
-        let algorithm = algorithm_from_int(alg.unwrap_or(0))?;
-        Ok(Self(BiscuitKeyPair::new_with_algorithm(algorithm)))
+    pub fn new_with_algorithm(alg: Option<Algorithm>) -> Self {
+        let algorithm = alg.unwrap_or(Algorithm::Ed25519).into();
+        Self(BiscuitKeyPair::new_with_algorithm(algorithm))
     }
 
     #[php(name = "fromPrivateKey")]
@@ -794,8 +799,8 @@ impl PublicKey {
     }
 
     #[php(name = "fromBytes")]
-    pub fn from_bytes(data: BinarySlice<u8>, alg: Option<i64>) -> PhpResult<Self> {
-        let algorithm = algorithm_from_int(alg.unwrap_or(0))?;
+    pub fn from_bytes(data: BinarySlice<u8>, alg: Option<Algorithm>) -> PhpResult<Self> {
+        let algorithm = alg.unwrap_or(Algorithm::Ed25519).into();
         biscuit_auth::PublicKey::from_bytes(data.as_ref(), algorithm)
             .map(Self)
             .map_err(|e| PhpException::from_class::<InvalidPublicKey>(e.to_string()))
@@ -842,8 +847,8 @@ impl PrivateKey {
     }
 
     #[php(name = "fromBytes")]
-    pub fn from_bytes(data: BinarySlice<u8>, alg: Option<i64>) -> PhpResult<Self> {
-        let algorithm = algorithm_from_int(alg.unwrap_or(0))?;
+    pub fn from_bytes(data: BinarySlice<u8>, alg: Option<Algorithm>) -> PhpResult<Self> {
+        let algorithm = alg.unwrap_or(Algorithm::Ed25519).into();
         biscuit_auth::PrivateKey::from_bytes(data.as_ref(), algorithm)
             .map(Self)
             .map_err(|e| PhpException::from_class::<InvalidPrivateKey>(e.to_string()))
@@ -965,6 +970,7 @@ pub extern "C" fn php_module_info(_module: *mut ModuleEntry) {
 pub fn get_module(module: ModuleBuilder) -> ModuleBuilder {
     module
         .info_function(php_module_info)
+        .enumeration::<Algorithm>()
         .class::<Biscuit>()
         .class::<UnverifiedBiscuit>()
         .class::<Authorizer>()

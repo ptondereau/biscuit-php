@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Biscuit\Tests;
 
+use Biscuit\Auth\Algorithm;
 use Biscuit\Auth\KeyPair;
 use Biscuit\Auth\PrivateKey;
 use Biscuit\Auth\PublicKey;
@@ -31,7 +32,7 @@ class KeyPairTest extends TestCase
 
     public function testNewWithAlgorithmEd25519(): void
     {
-        $keyPair = KeyPair::newWithAlgorithm(0);
+        $keyPair = KeyPair::newWithAlgorithm(Algorithm::Ed25519);
 
         static::assertInstanceOf(KeyPair::class, $keyPair);
         static::assertStringStartsWith('ed25519/', $keyPair->public()->toHex());
@@ -39,7 +40,7 @@ class KeyPairTest extends TestCase
 
     public function testNewWithAlgorithmSecp256r1(): void
     {
-        $keyPair = KeyPair::newWithAlgorithm(1);
+        $keyPair = KeyPair::newWithAlgorithm(Algorithm::Secp256r1);
 
         static::assertInstanceOf(KeyPair::class, $keyPair);
         static::assertStringStartsWith('secp256r1/', $keyPair->public()->toHex());
@@ -112,7 +113,7 @@ class KeyPairTest extends TestCase
         $privateKey = new PrivateKey($privateKeyHex);
 
         $bytes = $privateKey->toBytes();
-        $reconstructed = PrivateKey::fromBytes(pack('C*', ...$bytes), 0);
+        $reconstructed = PrivateKey::fromBytes(pack('C*', ...$bytes), Algorithm::Ed25519);
 
         static::assertSame($privateKeyHex, $reconstructed->toHex());
     }
@@ -187,7 +188,7 @@ class KeyPairTest extends TestCase
         $publicKey = new PublicKey($publicKeyHex);
 
         $bytes = $publicKey->toBytes();
-        $reconstructed = PublicKey::fromBytes(pack('C*', ...$bytes), 0);
+        $reconstructed = PublicKey::fromBytes(pack('C*', ...$bytes), Algorithm::Ed25519);
 
         static::assertSame($publicKeyHex, $reconstructed->toHex());
     }

@@ -176,17 +176,19 @@ $keyPair = KeyPair::fromPrivateKey($privateKey);
 ### Algorithm Support
 
 ```php
+use Biscuit\Auth\Algorithm;
+
 // Ed25519 is the default algorithm (recommended)
 $keypair1 = new KeyPair(); // Uses Ed25519
 $keypair2 = KeyPair::newWithAlgorithm(); // Uses Ed25519 by default
 
 // Explicitly use Secp256r1
-$keypair3 = KeyPair::newWithAlgorithm(1); // ALGORITHM_SECP256R1
+$keypair3 = KeyPair::newWithAlgorithm(Algorithm::Secp256r1);
 
 // Key import defaults to Ed25519
 $publicKey = PublicKey::fromBytes($bytes); // Defaults to Ed25519
-$publicKey = PublicKey::fromBytes($bytes, 0); // Explicit Ed25519
-$publicKey = PublicKey::fromBytes($bytes, 1); // Explicit Secp256r1
+$publicKey = PublicKey::fromBytes($bytes, Algorithm::Ed25519); // Explicit Ed25519
+$publicKey = PublicKey::fromBytes($bytes, Algorithm::Secp256r1); // Explicit Secp256r1
 ```
 
 ## Testing
