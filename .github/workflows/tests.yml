@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: ["8.1", "8.2", "8.3", "8.4"]
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
 
     name: Build extension and run tests
     steps:
@@ -52,11 +52,11 @@ jobs:
         uses: "ramsey/composer-install@v3"
 
       - name: Setup Mago
-        if: ${{ matrix.php-version == '8.4' }}
+        if: ${{ matrix.php-version == '8.5' }}
         uses: nhedger/setup-mago@v1
 
       - name: Run Mago
-        if: ${{ matrix.php-version == '8.4' }}
+        if: ${{ matrix.php-version == '8.5' }}
         run: |
           mago format --dry-run
           mago lint --reporting-format=github
