@@ -41,16 +41,12 @@ class RbacExampleTest extends TestCase
 
         // 1. CREATE TOKEN: payment-api has service-admin role for critical priority
         $tokenBuilder = new BiscuitBuilder();
-        $tokenBuilder->addCodeWithParams('user({id})', ['id' => 'payment-api'], []);
-        $tokenBuilder->addCodeWithParams(
-            'user_roles({id}, "api", {priority}, {roles})',
-            [
-                'id' => 'payment-api',
-                'priority' => 'critical',
-                'roles' => ['service-admin'],
-            ],
-            [],
-        );
+        $tokenBuilder->addCode('user({id})', ['id' => 'payment-api']);
+        $tokenBuilder->addCode('user_roles({id}, "api", {priority}, {roles})', [
+            'id' => 'payment-api',
+            'priority' => 'critical',
+            'roles' => ['service-admin'],
+        ]);
 
         $token = $tokenBuilder->build($keyPair->getPrivateKey());
 
@@ -58,15 +54,11 @@ class RbacExampleTest extends TestCase
         $authBuilder = new AuthorizerBuilder();
 
         // Define what "service-admin" role can do at "critical" priority level
-        $authBuilder->addCodeWithParams(
-            'role({priority}, {role}, {permissions})',
-            [
-                'priority' => 'critical',
-                'role' => 'service-admin',
-                'permissions' => ['api:read', 'api:write', 'api:delete', 'api:admin'],
-            ],
-            [],
-        );
+        $authBuilder->addCode('role({priority}, {role}, {permissions})', [
+            'priority' => 'critical',
+            'role' => 'service-admin',
+            'permissions' => ['api:read', 'api:write', 'api:delete', 'api:admin'],
+        ]);
 
         // RBAC Logic: Derive rights from user_roles + role definitions
         $authBuilder->addCode('
@@ -100,16 +92,12 @@ class RbacExampleTest extends TestCase
 
         // 1. CREATE TOKEN: notification-api has service-writer role for normal priority only
         $tokenBuilder = new BiscuitBuilder();
-        $tokenBuilder->addCodeWithParams('user({id})', ['id' => 'notification-api'], []);
-        $tokenBuilder->addCodeWithParams(
-            'user_roles({id}, "api", {priority}, {roles})',
-            [
-                'id' => 'notification-api',
-                'priority' => 'normal',
-                'roles' => ['service-writer'],
-            ],
-            [],
-        );
+        $tokenBuilder->addCode('user({id})', ['id' => 'notification-api']);
+        $tokenBuilder->addCode('user_roles({id}, "api", {priority}, {roles})', [
+            'id' => 'notification-api',
+            'priority' => 'normal',
+            'roles' => ['service-writer'],
+        ]);
 
         $token = $tokenBuilder->build($keyPair->getPrivateKey());
 
@@ -117,15 +105,11 @@ class RbacExampleTest extends TestCase
         $authBuilder = new AuthorizerBuilder();
 
         // Define what "service-writer" role can do at "normal" priority (no critical!)
-        $authBuilder->addCodeWithParams(
-            'role({priority}, {role}, {permissions})',
-            [
-                'priority' => 'normal',
-                'role' => 'service-writer',
-                'permissions' => ['api:read', 'api:write'],
-            ],
-            [],
-        );
+        $authBuilder->addCode('role({priority}, {role}, {permissions})', [
+            'priority' => 'normal',
+            'role' => 'service-writer',
+            'permissions' => ['api:read', 'api:write'],
+        ]);
 
         // Same RBAC logic
         $authBuilder->addCode('
@@ -158,39 +142,32 @@ class RbacExampleTest extends TestCase
 
         // CREATE TOKEN: payment-api is admin for critical, writer for normal
         $tokenBuilder = new BiscuitBuilder();
-        $tokenBuilder->addCodeWithParams('user({id})', ['id' => 'payment-api'], []);
+        $tokenBuilder->addCode('user({id})', ['id' => 'payment-api']);
 
         // Admin for critical priority
-        $tokenBuilder->addCodeWithParams(
-            'user_roles({id}, "api", {priority}, {roles})',
-            [
-                'id' => 'payment-api',
-                'priority' => 'critical',
-                'roles' => ['service-admin'],
-            ],
-            [],
-        );
+        $tokenBuilder->addCode('user_roles({id}, "api", {priority}, {roles})', [
+            'id' => 'payment-api',
+            'priority' => 'critical',
+            'roles' => ['service-admin'],
+        ]);
 
         // Writer for normal priority
-        $tokenBuilder->addCodeWithParams(
-            'user_roles({id}, "api", {priority}, {roles})',
-            [
-                'id' => 'payment-api',
-                'priority' => 'normal',
-                'roles' => ['service-writer'],
-            ],
-            [],
-        );
+        $tokenBuilder->addCode('user_roles({id}, "api", {priority}, {roles})', [
+            'id' => 'payment-api',
+            'priority' => 'normal',
+            'roles' => ['service-writer'],
+        ]);
 
         $token = $tokenBuilder->build($keyPair->getPrivateKey());
 
         // TEST 1: payment-api CAN perform api:delete at critical priority (admin role)
         $authBuilder1 = new AuthorizerBuilder();
-        $authBuilder1->addCodeWithParams(
-            'role("critical", "service-admin", {perms})',
-            ['perms' => ['api:read', 'api:write', 'api:delete', 'api:admin']],
-            [],
-        );
+        $authBuilder1->addCode('role("critical", "service-admin", {perms})', ['perms' => [
+            'api:read',
+            'api:write',
+            'api:delete',
+            'api:admin',
+        ]]);
         $authBuilder1->addCode('
             right($id, $p, $op, $priority) <-
                 user($id), operation($op), resource($priority),
@@ -206,11 +183,7 @@ class RbacExampleTest extends TestCase
 
         // TEST 2: payment-api CANNOT perform api:delete at normal priority (only writer role)
         $authBuilder2 = new AuthorizerBuilder();
-        $authBuilder2->addCodeWithParams(
-            'role("normal", "service-writer", {perms})',
-            ['perms' => ['api:read', 'api:write']],
-            [],
-        );
+        $authBuilder2->addCode('role("normal", "service-writer", {perms})', ['perms' => ['api:read', 'api:write']]);
         $authBuilder2->addCode('
             right($id, $p, $op, $priority) <-
                 user($id), operation($op), resource($priority),

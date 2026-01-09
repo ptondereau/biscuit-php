@@ -103,14 +103,59 @@ class BiscuitTest extends TestCase
         $kp = new KeyPair();
         $builder = new BiscuitBuilder();
 
-        $builder->addCodeWithParams(
-            'user({username}); resource({res});',
-            ['username' => 'alice', 'res' => 'file1'],
-            [],
-        );
+        $builder->addCode('user({username}); resource({res});', ['username' => 'alice', 'res' => 'file1']);
 
         $biscuit = $builder->build($kp->getPrivateKey());
         static::assertInstanceOf(Biscuit::class, $biscuit);
+    }
+
+    public function testBiscuitBuilderAddCodeWithOptionalParams(): void
+    {
+        $kp = new KeyPair();
+        $builder = new BiscuitBuilder();
+
+        // Without params (existing behavior)
+        $builder->addCode('user("alice")');
+
+        // With params (new unified API)
+        $builder->addCode('resource({res})', ['res' => 'file1']);
+
+        $biscuit = $builder->build($kp->getPrivateKey());
+        static::assertInstanceOf(Biscuit::class, $biscuit);
+        static::assertStringContainsString('user("alice")', $biscuit->blockSource(0));
+        static::assertStringContainsString('resource("file1")', $biscuit->blockSource(0));
+    }
+
+    public function testBiscuitBuilderConstructorWithCode(): void
+    {
+        $kp = new KeyPair();
+
+        // Constructor with code and params
+        $builder = new BiscuitBuilder('user({id})', ['id' => 'alice']);
+        $biscuit = $builder->build($kp->getPrivateKey());
+
+        static::assertInstanceOf(Biscuit::class, $biscuit);
+        static::assertStringContainsString('user("alice")', $biscuit->blockSource(0));
+    }
+
+    public function testBiscuitBuilderConstructorEmpty(): void
+    {
+        $builder = new BiscuitBuilder();
+        static::assertInstanceOf(BiscuitBuilder::class, $builder);
+    }
+
+    public function testBlockBuilderConstructorWithCode(): void
+    {
+        $builder = new BlockBuilder('resource({res})', ['res' => 'file1']);
+        static::assertStringContainsString('resource("file1")', (string) $builder);
+    }
+
+    public function testAuthorizerBuilderConstructorWithCode(): void
+    {
+        $authBuilder = new AuthorizerBuilder('allow if true');
+        $authorizer = $authBuilder->buildUnauthenticated();
+        $policy = $authorizer->authorize();
+        static::assertSame(0, $policy);
     }
 
     public function testBiscuitSerialization(): void
@@ -167,7 +212,7 @@ class BiscuitTest extends TestCase
     public function testBlockBuilderWithParameters(): void
     {
         $builder = new BlockBuilder();
-        $builder->addCodeWithParams('resource({res}); permission({perm});', ['res' => 'file1', 'perm' => 'read'], []);
+        $builder->addCode('resource({res}); permission({perm});', ['res' => 'file1', 'perm' => 'read']);
 
         static::assertInstanceOf(BlockBuilder::class, $builder);
     }
@@ -198,7 +243,7 @@ class BiscuitTest extends TestCase
         $biscuit = $biscuitBuilder->build($kp->getPrivateKey());
 
         $authBuilder = new AuthorizerBuilder();
-        $authBuilder->addCodeWithParams('allow if user({username})', ['username' => 'alice'], []);
+        $authBuilder->addCode('allow if user({username})', ['username' => 'alice']);
 
         $authorizer = $authBuilder->build($biscuit);
         static::assertInstanceOf(Authorizer::class, $authorizer);
@@ -223,7 +268,7 @@ class BiscuitTest extends TestCase
         $kp = KeyPair::fromPrivateKey($privateKey);
 
         $biscuitBuilder = new BiscuitBuilder();
-        $biscuitBuilder->addCodeWithParams('user({id})', ['id' => '1234'], []);
+        $biscuitBuilder->addCode('user({id})', ['id' => '1234']);
 
         foreach (['read', 'write'] as $right) {
             $biscuitBuilder->addFact(new Fact("right(\"{$right}\")"));
@@ -239,7 +284,7 @@ class BiscuitTest extends TestCase
         $parsedToken = Biscuit::fromBase64($token, $kp->getPublicKey());
 
         $authBuilder = new AuthorizerBuilder();
-        $authBuilder->addCodeWithParams('allow if user({id})', ['id' => '1234'], []);
+        $authBuilder->addCode('allow if user({id})', ['id' => '1234']);
         $authorizer = $authBuilder->build($parsedToken);
 
         $policy = $authorizer->authorize();
@@ -251,7 +296,7 @@ class BiscuitTest extends TestCase
         $kp = new KeyPair();
 
         $biscuitBuilder = new BiscuitBuilder();
-        $biscuitBuilder->addCodeWithParams('user({id})', ['id' => '1234'], []);
+        $biscuitBuilder->addCode('user({id})', ['id' => '1234']);
         $biscuit = $biscuitBuilder->build($kp->getPrivateKey());
 
         $authBuilder = new AuthorizerBuilder();
@@ -273,11 +318,11 @@ class BiscuitTest extends TestCase
         $kp = KeyPair::fromPrivateKey($privateKey);
 
         $biscuitBuilder = new BiscuitBuilder();
-        $biscuitBuilder->addCodeWithParams('user({id})', ['id' => '1234'], []);
+        $biscuitBuilder->addCode('user({id})', ['id' => '1234']);
         $biscuit = $biscuitBuilder->build($privateKey);
 
         $authBuilder = new AuthorizerBuilder();
-        $authBuilder->addCodeWithParams('allow if user({id})', ['id' => '1234'], []);
+        $authBuilder->addCode('allow if user({id})', ['id' => '1234']);
         $authorizer = $authBuilder->build($biscuit);
 
         $snapshot = $authorizer->base64Snapshot();
@@ -302,7 +347,7 @@ class BiscuitTest extends TestCase
     public function testAuthorizerBuilderSnapshot(): void
     {
         $authBuilder = new AuthorizerBuilder();
-        $authBuilder->addCodeWithParams('allow if user({id})', ['id' => '1234'], []);
+        $authBuilder->addCode('allow if user({id})', ['id' => '1234']);
 
         $snapshot = $authBuilder->base64Snapshot();
         static::assertIsString($snapshot);
@@ -402,12 +447,12 @@ class BiscuitTest extends TestCase
     {
         $rootKp = new KeyPair();
         $biscuitBuilder = new BiscuitBuilder();
-        $biscuitBuilder->addCodeWithParams('user({id})', ['id' => '1234'], []);
+        $biscuitBuilder->addCode('user({id})', ['id' => '1234']);
         $biscuit = $biscuitBuilder->build($rootKp->getPrivateKey());
 
         $thirdPartyKp = new KeyPair();
         $newBlock = new BlockBuilder();
-        $newBlock->addCodeWithParams('external_fact({fact})', ['fact' => '56'], []);
+        $newBlock->addCode('external_fact({fact})', ['fact' => '56']);
 
         $thirdPartyRequest = $biscuit->thirdPartyRequest();
         static::assertInstanceOf(ThirdPartyRequest::class, $thirdPartyRequest);
@@ -495,6 +540,24 @@ class BiscuitTest extends TestCase
         $policy->set('username', 'alice');
 
         static::assertInstanceOf(Policy::class, $policy);
+    }
+
+    public function testRuleConstructorWithParams(): void
+    {
+        $rule = new Rule('can_read($u, {res}) <- user($u)', ['res' => 'file1']);
+        static::assertStringContainsString('can_read($u, "file1")', (string) $rule);
+    }
+
+    public function testCheckConstructorWithParams(): void
+    {
+        $check = new Check('check if user({username})', ['username' => 'alice']);
+        static::assertStringContainsString('user("alice")', (string) $check);
+    }
+
+    public function testPolicyConstructorWithParams(): void
+    {
+        $policy = new Policy('allow if user({username})', ['username' => 'alice']);
+        static::assertStringContainsString('user("alice")', (string) $policy);
     }
 
     public function testBlockMerge(): void

@@ -261,44 +261,44 @@ pub struct AuthorizerBuilder(biscuit_auth::AuthorizerBuilder);
 
 #[php_impl]
 impl AuthorizerBuilder {
-    pub fn __construct() -> Self {
-        Self(biscuit_auth::AuthorizerBuilder::new())
+    pub fn __construct(
+        source: Option<String>,
+        params: Option<HashMap<String, MixedValue>>,
+        scope_params: Option<HashMap<String, &PublicKey>>,
+    ) -> PhpResult<Self> {
+        let mut builder = Self(biscuit_auth::AuthorizerBuilder::new());
+        if let Some(src) = source {
+            builder.add_code(&src, params, scope_params)?;
+        }
+        Ok(builder)
     }
 
-    pub fn add_code(&mut self, source: &str) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .code(source)
-            .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?;
-        Ok(())
-    }
-
-    pub fn add_code_with_params(
+    pub fn add_code(
         &mut self,
         source: &str,
-        params: HashMap<String, MixedValue>,
-        scope_params: HashMap<String, &PublicKey>,
+        params: Option<HashMap<String, MixedValue>>,
+        scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<()> {
-        let mut term_params: HashMap<String, biscuit_auth::builder::Term> =
-            HashMap::with_capacity(params.len());
+        let term_params: HashMap<String, biscuit_auth::builder::Term> = match params {
+            Some(p) => {
+                let mut map = HashMap::with_capacity(p.len());
+                for (key, value) in p.iter() {
+                    map.insert(key.clone(), mixed_value_to_term(value)?);
+                }
+                map
+            }
+            None => HashMap::new(),
+        };
 
-        for (key, p) in params.iter() {
-            let term_value = mixed_value_to_term(p)?;
-            term_params.insert(key.clone(), term_value);
-        }
-
-        let mut scope_params_cloned: HashMap<String, biscuit_auth::PublicKey> =
-            HashMap::with_capacity(scope_params.len());
-
-        for (key, scope_param) in scope_params.iter() {
-            scope_params_cloned.insert(key.clone(), scope_param.0);
-        }
+        let scope: HashMap<String, biscuit_auth::PublicKey> = match scope_params {
+            Some(sp) => sp.iter().map(|(k, v)| (k.clone(), v.0)).collect(),
+            None => HashMap::new(),
+        };
 
         self.0 = self
             .0
             .clone()
-            .code_with_params(source, term_params, scope_params_cloned)
+            .code_with_params(source, term_params, scope)
             .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?;
         Ok(())
     }
@@ -412,8 +412,16 @@ pub struct BiscuitBuilder(biscuit_auth::builder::BiscuitBuilder);
 
 #[php_impl]
 impl BiscuitBuilder {
-    pub fn __construct() -> Self {
-        Self(biscuit_auth::builder::BiscuitBuilder::new())
+    pub fn __construct(
+        source: Option<String>,
+        params: Option<HashMap<String, MixedValue>>,
+        scope_params: Option<HashMap<String, &PublicKey>>,
+    ) -> PhpResult<Self> {
+        let mut builder = Self(biscuit_auth::builder::BiscuitBuilder::new());
+        if let Some(src) = source {
+            builder.add_code(&src, params, scope_params)?;
+        }
+        Ok(builder)
     }
 
     // Build the biscuit with a private key
@@ -426,40 +434,32 @@ impl BiscuitBuilder {
             .map_err(|e| PhpException::default(format!("Build error: {}", e)))
     }
 
-    pub fn add_code(&mut self, source: &str) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .code(source)
-            .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
-        Ok(())
-    }
-
-    pub fn add_code_with_params(
+    pub fn add_code(
         &mut self,
         source: &str,
-        params: HashMap<String, MixedValue>,
-        scope_params: HashMap<String, &PublicKey>,
+        params: Option<HashMap<String, MixedValue>>,
+        scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<()> {
-        let mut term_params: HashMap<String, biscuit_auth::builder::Term> =
-            HashMap::with_capacity(params.len());
+        let term_params: HashMap<String, biscuit_auth::builder::Term> = match params {
+            Some(p) => {
+                let mut map = HashMap::with_capacity(p.len());
+                for (key, value) in p.iter() {
+                    map.insert(key.clone(), mixed_value_to_term(value)?);
+                }
+                map
+            }
+            None => HashMap::new(),
+        };
 
-        for (key, p) in params.iter() {
-            let term_value = mixed_value_to_term(p)?;
-            term_params.insert(key.clone(), term_value);
-        }
-
-        let mut scope_params_cloned: HashMap<String, biscuit_auth::PublicKey> =
-            HashMap::with_capacity(scope_params.len());
-
-        for (key, scope_param) in scope_params.iter() {
-            scope_params_cloned.insert(key.clone(), scope_param.0);
-        }
+        let scope: HashMap<String, biscuit_auth::PublicKey> = match scope_params {
+            Some(sp) => sp.iter().map(|(k, v)| (k.clone(), v.0)).collect(),
+            None => HashMap::new(),
+        };
 
         self.0 = self
             .0
             .clone()
-            .code_with_params(source, term_params, scope_params_cloned)
+            .code_with_params(source, term_params, scope)
             .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
         Ok(())
     }
@@ -511,8 +511,16 @@ pub struct BlockBuilder(biscuit_auth::builder::BlockBuilder);
 
 #[php_impl]
 impl BlockBuilder {
-    pub fn __construct() -> Self {
-        Self(biscuit_auth::builder::BlockBuilder::default())
+    pub fn __construct(
+        source: Option<String>,
+        params: Option<HashMap<String, MixedValue>>,
+        scope_params: Option<HashMap<String, &PublicKey>>,
+    ) -> PhpResult<Self> {
+        let mut builder = Self(biscuit_auth::builder::BlockBuilder::default());
+        if let Some(src) = source {
+            builder.add_code(&src, params, scope_params)?;
+        }
+        Ok(builder)
     }
 
     pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
@@ -542,40 +550,32 @@ impl BlockBuilder {
         Ok(())
     }
 
-    pub fn add_code(&mut self, source: &str) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .code(source)
-            .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
-        Ok(())
-    }
-
-    pub fn add_code_with_params(
+    pub fn add_code(
         &mut self,
         source: &str,
-        params: HashMap<String, MixedValue>,
-        scope_params: HashMap<String, &PublicKey>,
+        params: Option<HashMap<String, MixedValue>>,
+        scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<()> {
-        let mut term_params: HashMap<String, biscuit_auth::builder::Term> =
-            HashMap::with_capacity(params.len());
+        let term_params: HashMap<String, biscuit_auth::builder::Term> = match params {
+            Some(p) => {
+                let mut map = HashMap::with_capacity(p.len());
+                for (key, value) in p.iter() {
+                    map.insert(key.clone(), mixed_value_to_term(value)?);
+                }
+                map
+            }
+            None => HashMap::new(),
+        };
 
-        for (key, p) in params.iter() {
-            let term_value = mixed_value_to_term(p)?;
-            term_params.insert(key.clone(), term_value);
-        }
-
-        let mut scope_params_cloned: HashMap<String, biscuit_auth::PublicKey> =
-            HashMap::with_capacity(scope_params.len());
-
-        for (key, scope_param) in scope_params.iter() {
-            scope_params_cloned.insert(key.clone(), scope_param.0);
-        }
+        let scope: HashMap<String, biscuit_auth::PublicKey> = match scope_params {
+            Some(sp) => sp.iter().map(|(k, v)| (k.clone(), v.0)).collect(),
+            None => HashMap::new(),
+        };
 
         self.0 = self
             .0
             .clone()
-            .code_with_params(source, term_params, scope_params_cloned)
+            .code_with_params(source, term_params, scope)
             .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
         Ok(())
     }
@@ -626,11 +626,31 @@ pub struct Rule(biscuit_auth::builder::Rule);
 
 #[php_impl]
 impl Rule {
-    pub fn __construct(source: &str) -> PhpResult<Self> {
-        source
+    pub fn __construct(
+        source: &str,
+        params: Option<HashMap<String, MixedValue>>,
+        scope_params: Option<HashMap<String, &PublicKey>>,
+    ) -> PhpResult<Self> {
+        let mut rule: biscuit_auth::builder::Rule = source
             .try_into()
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidRule>(e.to_string()))
+            .map_err(|e| PhpException::from_class::<InvalidRule>(format!("{}", e)))?;
+
+        if let Some(p) = params {
+            for (key, value) in p.iter() {
+                let term_value = mixed_value_to_term(value)?;
+                rule.set(key, term_value)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
+            }
+        }
+
+        if let Some(sp) = scope_params {
+            for (key, pk) in sp.iter() {
+                rule.set_scope(key, pk.0)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
+            }
+        }
+
+        Ok(Self(rule))
     }
 
     /// @param int|string|bool|null $value
@@ -660,11 +680,23 @@ pub struct Fact(biscuit_auth::builder::Fact);
 
 #[php_impl]
 impl Fact {
-    pub fn __construct(source: &str) -> PhpResult<Self> {
-        source
+    pub fn __construct(
+        source: &str,
+        params: Option<HashMap<String, MixedValue>>,
+    ) -> PhpResult<Self> {
+        let mut fact: biscuit_auth::builder::Fact = source
             .try_into()
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidFact>(e.to_string()))
+            .map_err(|e| PhpException::from_class::<InvalidFact>(format!("{}", e)))?;
+
+        if let Some(p) = params {
+            for (key, value) in p.iter() {
+                let term_value = mixed_value_to_term(value)?;
+                fact.set(key, term_value)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
+            }
+        }
+
+        Ok(Self(fact))
     }
 
     /// @param int|string|bool|null $value
@@ -693,11 +725,31 @@ pub struct Check(biscuit_auth::builder::Check);
 
 #[php_impl]
 impl Check {
-    pub fn __construct(source: &str) -> PhpResult<Self> {
-        source
+    pub fn __construct(
+        source: &str,
+        params: Option<HashMap<String, MixedValue>>,
+        scope_params: Option<HashMap<String, &PublicKey>>,
+    ) -> PhpResult<Self> {
+        let mut check: biscuit_auth::builder::Check = source
             .try_into()
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidCheck>(e.to_string()))
+            .map_err(|e| PhpException::from_class::<InvalidCheck>(format!("{}", e)))?;
+
+        if let Some(p) = params {
+            for (key, value) in p.iter() {
+                let term_value = mixed_value_to_term(value)?;
+                check.set(key, term_value)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
+            }
+        }
+
+        if let Some(sp) = scope_params {
+            for (key, pk) in sp.iter() {
+                check.set_scope(key, pk.0)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
+            }
+        }
+
+        Ok(Self(check))
     }
 
     /// @param int|string|bool|null $value
@@ -727,11 +779,31 @@ pub struct Policy(biscuit_auth::builder::Policy);
 
 #[php_impl]
 impl Policy {
-    pub fn __construct(source: &str) -> PhpResult<Self> {
-        source
+    pub fn __construct(
+        source: &str,
+        params: Option<HashMap<String, MixedValue>>,
+        scope_params: Option<HashMap<String, &PublicKey>>,
+    ) -> PhpResult<Self> {
+        let mut policy: biscuit_auth::builder::Policy = source
             .try_into()
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidPolicy>(e.to_string()))
+            .map_err(|e| PhpException::from_class::<InvalidPolicy>(format!("{}", e)))?;
+
+        if let Some(p) = params {
+            for (key, value) in p.iter() {
+                let term_value = mixed_value_to_term(value)?;
+                policy.set(key, term_value)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
+            }
+        }
+
+        if let Some(sp) = scope_params {
+            for (key, pk) in sp.iter() {
+                policy.set_scope(key, pk.0)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
+            }
+        }
+
+        Ok(Self(policy))
     }
 
     /// @param int|string|bool|null $value
@@ -761,12 +833,7 @@ pub struct KeyPair(BiscuitKeyPair);
 
 #[php_impl]
 impl KeyPair {
-    pub fn __construct() -> Self {
-        Self(BiscuitKeyPair::new())
-    }
-
-    #[php(name = "newWithAlgorithm")]
-    pub fn new_with_algorithm(alg: Option<Algorithm>) -> Self {
+    pub fn __construct(alg: Option<Algorithm>) -> Self {
         let algorithm = alg.unwrap_or(Algorithm::Ed25519).into();
         Self(BiscuitKeyPair::new_with_algorithm(algorithm))
     }

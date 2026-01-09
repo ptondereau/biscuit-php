@@ -22,25 +22,25 @@ class KeyPairTest extends TestCase
         static::assertIsString($keyPair->getPublicKey()->toHex());
     }
 
-    public function testNewWithAlgorithmDefault(): void
+    public function testConstructorDefault(): void
     {
-        $keyPair = KeyPair::newWithAlgorithm();
+        $keyPair = new KeyPair();
 
         static::assertInstanceOf(KeyPair::class, $keyPair);
         static::assertStringStartsWith('ed25519/', $keyPair->getPublicKey()->toHex());
     }
 
-    public function testNewWithAlgorithmEd25519(): void
+    public function testConstructorEd25519(): void
     {
-        $keyPair = KeyPair::newWithAlgorithm(Algorithm::Ed25519);
+        $keyPair = new KeyPair(Algorithm::Ed25519);
 
         static::assertInstanceOf(KeyPair::class, $keyPair);
         static::assertStringStartsWith('ed25519/', $keyPair->getPublicKey()->toHex());
     }
 
-    public function testNewWithAlgorithmSecp256r1(): void
+    public function testConstructorSecp256r1(): void
     {
-        $keyPair = KeyPair::newWithAlgorithm(Algorithm::Secp256r1);
+        $keyPair = new KeyPair(Algorithm::Secp256r1);
 
         static::assertInstanceOf(KeyPair::class, $keyPair);
         static::assertStringStartsWith('secp256r1/', $keyPair->getPublicKey()->toHex());

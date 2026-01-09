@@ -18,6 +18,18 @@ class FactTest extends TestCase
         static::assertSame('user(15)', (string) $fact);
     }
 
+    public function testConstructorWithParams(): void
+    {
+        $fact = new Fact('user({id})', ['id' => 'alice']);
+        static::assertSame('user("alice")', (string) $fact);
+    }
+
+    public function testConstructorWithoutParams(): void
+    {
+        $fact = new Fact('user("bob")');
+        static::assertSame('user("bob")', (string) $fact);
+    }
+
     public function testExcpetionWhenBadFact(): void
     {
         $this->expectException(InvalidFact::class);
