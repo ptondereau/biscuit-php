@@ -11,9 +11,9 @@
         }
     ],
     "autoload": {
-        "psr-4": {
-            "Biscuit\\": "stubs/Biscuit/"
-        }
+        "classmap": [
+            "biscuit-php.stubs.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

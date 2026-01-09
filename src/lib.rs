@@ -776,11 +776,13 @@ impl KeyPair {
         Self(BiscuitKeyPair::from(&private_key.0))
     }
 
-    pub fn public(&self) -> PublicKey {
+    #[php(getter)]
+    pub fn get_public_key(&self) -> PublicKey {
         PublicKey(self.0.public())
     }
 
-    pub fn private(&self) -> PrivateKey {
+    #[php(getter)]
+    pub fn get_private_key(&self) -> PrivateKey {
         PrivateKey(self.0.private())
     }
 }

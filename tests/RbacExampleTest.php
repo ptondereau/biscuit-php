@@ -52,7 +52,7 @@ class RbacExampleTest extends TestCase
             [],
         );
 
-        $token = $tokenBuilder->build($keyPair->private());
+        $token = $tokenBuilder->build($keyPair->getPrivateKey());
 
         // 2. VERIFY TOKEN: Check if payment-api can perform api:delete at critical priority
         $authBuilder = new AuthorizerBuilder();
@@ -111,7 +111,7 @@ class RbacExampleTest extends TestCase
             [],
         );
 
-        $token = $tokenBuilder->build($keyPair->private());
+        $token = $tokenBuilder->build($keyPair->getPrivateKey());
 
         // 2. VERIFY TOKEN: Check if notification-api can perform api:delete at critical priority
         $authBuilder = new AuthorizerBuilder();
@@ -182,7 +182,7 @@ class RbacExampleTest extends TestCase
             [],
         );
 
-        $token = $tokenBuilder->build($keyPair->private());
+        $token = $tokenBuilder->build($keyPair->getPrivateKey());
 
         // TEST 1: payment-api CAN perform api:delete at critical priority (admin role)
         $authBuilder1 = new AuthorizerBuilder();

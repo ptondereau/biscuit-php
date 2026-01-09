@@ -17,9 +17,9 @@ class KeyPairTest extends TestCase
         $keyPair = new KeyPair();
 
         static::assertInstanceOf(KeyPair::class, $keyPair);
-        static::assertInstanceOf(PublicKey::class, $keyPair->public());
-        static::assertInstanceOf(PrivateKey::class, $keyPair->private());
-        static::assertIsString($keyPair->public()->toHex());
+        static::assertInstanceOf(PublicKey::class, $keyPair->getPublicKey());
+        static::assertInstanceOf(PrivateKey::class, $keyPair->getPrivateKey());
+        static::assertIsString($keyPair->getPublicKey()->toHex());
     }
 
     public function testNewWithAlgorithmDefault(): void
@@ -27,7 +27,7 @@ class KeyPairTest extends TestCase
         $keyPair = KeyPair::newWithAlgorithm();
 
         static::assertInstanceOf(KeyPair::class, $keyPair);
-        static::assertStringStartsWith('ed25519/', $keyPair->public()->toHex());
+        static::assertStringStartsWith('ed25519/', $keyPair->getPublicKey()->toHex());
     }
 
     public function testNewWithAlgorithmEd25519(): void
@@ -35,7 +35,7 @@ class KeyPairTest extends TestCase
         $keyPair = KeyPair::newWithAlgorithm(Algorithm::Ed25519);
 
         static::assertInstanceOf(KeyPair::class, $keyPair);
-        static::assertStringStartsWith('ed25519/', $keyPair->public()->toHex());
+        static::assertStringStartsWith('ed25519/', $keyPair->getPublicKey()->toHex());
     }
 
     public function testNewWithAlgorithmSecp256r1(): void
@@ -43,7 +43,7 @@ class KeyPairTest extends TestCase
         $keyPair = KeyPair::newWithAlgorithm(Algorithm::Secp256r1);
 
         static::assertInstanceOf(KeyPair::class, $keyPair);
-        static::assertStringStartsWith('secp256r1/', $keyPair->public()->toHex());
+        static::assertStringStartsWith('secp256r1/', $keyPair->getPublicKey()->toHex());
     }
 
     public function testFromPrivateKey(): void
@@ -54,18 +54,18 @@ class KeyPairTest extends TestCase
         $keyPair = KeyPair::fromPrivateKey($privateKey);
 
         static::assertInstanceOf(KeyPair::class, $keyPair);
-        static::assertSame($privateKeyHex, $keyPair->private()->toHex());
+        static::assertSame($privateKeyHex, $keyPair->getPrivateKey()->toHex());
     }
 
     public function testFromPrivateKeyRoundTrip(): void
     {
         $originalKeyPair = new KeyPair();
-        $privateKey = $originalKeyPair->private();
+        $privateKey = $originalKeyPair->getPrivateKey();
 
         $reconstructedKeyPair = KeyPair::fromPrivateKey($privateKey);
 
-        static::assertSame($originalKeyPair->public()->toHex(), $reconstructedKeyPair->public()->toHex());
-        static::assertSame($originalKeyPair->private()->toHex(), $reconstructedKeyPair->private()->toHex());
+        static::assertSame($originalKeyPair->getPublicKey()->toHex(), $reconstructedKeyPair->getPublicKey()->toHex());
+        static::assertSame($originalKeyPair->getPrivateKey()->toHex(), $reconstructedKeyPair->getPrivateKey()->toHex());
     }
 
     public function testPrivateKeyConstruction(): void
@@ -196,7 +196,7 @@ class KeyPairTest extends TestCase
     public function testPublicKeyFromKeyPair(): void
     {
         $keyPair = new KeyPair();
-        $publicKey = $keyPair->public();
+        $publicKey = $keyPair->getPublicKey();
 
         static::assertInstanceOf(PublicKey::class, $publicKey);
         static::assertStringStartsWith('ed25519/', $publicKey->toHex());
@@ -213,14 +213,14 @@ class KeyPairTest extends TestCase
     public function testKeyPairPublicPrivateConsistency(): void
     {
         $keyPair = new KeyPair();
-        $publicKey = $keyPair->public();
-        $privateKey = $keyPair->private();
+        $publicKey = $keyPair->getPublicKey();
+        $privateKey = $keyPair->getPrivateKey();
 
         static::assertMatchesRegularExpression('/^ed25519\/[0-9a-f]{64}$/', $publicKey->toHex());
         static::assertMatchesRegularExpression('/^ed25519-private\/[0-9a-f]{64}$/', $privateKey->toHex());
 
         $reconstructed = KeyPair::fromPrivateKey($privateKey);
-        static::assertSame($publicKey->toHex(), $reconstructed->public()->toHex());
+        static::assertSame($publicKey->toHex(), $reconstructed->getPublicKey()->toHex());
     }
 
     public function testMultipleKeyPairsAreUnique(): void
@@ -229,14 +229,14 @@ class KeyPairTest extends TestCase
         $keyPair2 = new KeyPair();
 
         static::assertNotSame(
-            $keyPair1->public()->toHex(),
-            $keyPair2->public()->toHex(),
+            $keyPair1->getPublicKey()->toHex(),
+            $keyPair2->getPublicKey()->toHex(),
             'Different KeyPair instances should generate different keys',
         );
 
         static::assertNotSame(
-            $keyPair1->private()->toHex(),
-            $keyPair2->private()->toHex(),
+            $keyPair1->getPrivateKey()->toHex(),
+            $keyPair2->getPrivateKey()->toHex(),
             'Different KeyPair instances should generate different private keys',
         );
     }
@@ -245,15 +245,15 @@ class KeyPairTest extends TestCase
     {
         $originalKeyPair = new KeyPair();
 
-        $publicBytes = $originalKeyPair->public()->toBytes();
+        $publicBytes = $originalKeyPair->getPublicKey()->toBytes();
         $publicReconstructed = PublicKey::fromBytes(pack('C*', ...$publicBytes));
-        static::assertSame($originalKeyPair->public()->toHex(), $publicReconstructed->toHex());
+        static::assertSame($originalKeyPair->getPublicKey()->toHex(), $publicReconstructed->toHex());
 
-        $privateBytes = $originalKeyPair->private()->toBytes();
+        $privateBytes = $originalKeyPair->getPrivateKey()->toBytes();
         $privateReconstructed = PrivateKey::fromBytes(pack('C*', ...$privateBytes));
-        static::assertSame($originalKeyPair->private()->toHex(), $privateReconstructed->toHex());
+        static::assertSame($originalKeyPair->getPrivateKey()->toHex(), $privateReconstructed->toHex());
 
         $reconstructedKeyPair = KeyPair::fromPrivateKey($privateReconstructed);
-        static::assertSame($originalKeyPair->public()->toHex(), $reconstructedKeyPair->public()->toHex());
+        static::assertSame($originalKeyPair->getPublicKey()->toHex(), $reconstructedKeyPair->getPublicKey()->toHex());
     }
 }
