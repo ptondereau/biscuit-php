@@ -4,7 +4,7 @@ php-version = "8.5.0"
 
 [source]
 workspace = "."
-paths = ["stubs/Biscuit/", "tests/"]
+paths = ["tests/"]
 includes = ["vendor"]
 excludes = []
 
