@@ -9,6 +9,7 @@ PHP bindings for [Biscuit](https://www.biscuitsec.org), a bearer token supportin
 - [Biscuit Website](https://www.biscuitsec.org) - Documentation and examples
 - [Biscuit Specification](https://github.com/biscuit-auth/biscuit)
 - [Biscuit Rust](https://github.com/biscuit-auth/biscuit-rust) - Technical details
+- [Upgrading Guide](./UPGRADING.md) - Migration guide for breaking changes
 
 ## Requirements
 
@@ -94,24 +95,23 @@ composer require ptondereau/ext-biscuit-php
 ```php
 <?php
 
-use Biscuit\Auth\{BiscuitBuilder, KeyPair, AuthorizerBuilder};
+use Biscuit\Auth\{Biscuit, BiscuitBuilder, KeyPair, AuthorizerBuilder};
 
 // Generate a keypair
 $root = new KeyPair();
 
-// Create a biscuit token
-$builder = new BiscuitBuilder();
-$builder->addCode('user("alice"); resource("file1")');
-$biscuit = $builder->build($root->private());
+// Create a biscuit token (can pass code directly to constructor)
+$builder = new BiscuitBuilder('user("alice"); resource("file1")');
+$biscuit = $builder->build($root->getPrivateKey());
 
 // Serialize to base64
 $token = $biscuit->toBase64();
 
 // Parse and authorize
-$parsed = Biscuit::fromBase64($token, $root->public());
+$parsed = Biscuit::fromBase64($token, $root->getPublicKey());
 
-$authBuilder = new AuthorizerBuilder();
-$authBuilder->addCode('allow if user("alice"), resource("file1")');
+// Authorizer with inline code
+$authBuilder = new AuthorizerBuilder('allow if user("alice"), resource("file1")');
 $authorizer = $authBuilder->build($parsed);
 
 // Check authorization
@@ -141,12 +141,34 @@ $biscuitWithAttestation = $biscuit->appendThirdParty(
 );
 ```
 
+### Parameterized Primitives
+
+```php
+use Biscuit\Auth\{Fact, Rule, Check, Policy};
+
+// Fact with constructor params
+$fact = new Fact('user({id})', ['id' => 'alice']);
+
+// Rule with params
+$rule = new Rule('can_read($u, {res}) <- user($u)', ['res' => 'file1']);
+
+// Check with params
+$check = new Check('check if user({name})', ['name' => 'alice']);
+
+// Policy with params
+$policy = new Policy('allow if user({name})', ['name' => 'alice']);
+
+// Or use set() method for dynamic values
+$fact = new Fact('user({id})');
+$fact->set('id', $userId);
+```
+
 ### Authorizer Queries
 
 ```php
 $authorizer = $authBuilder->build($biscuit);
 
-$rule = new Rule('users($id) <- user($id);');
+$rule = new Rule('users($id) <- user($id)');
 $facts = $authorizer->query($rule);
 
 foreach ($facts as $fact) {
@@ -180,10 +202,9 @@ use Biscuit\Auth\Algorithm;
 
 // Ed25519 is the default algorithm (recommended)
 $keypair1 = new KeyPair(); // Uses Ed25519
-$keypair2 = KeyPair::newWithAlgorithm(); // Uses Ed25519 by default
 
 // Explicitly use Secp256r1
-$keypair3 = KeyPair::newWithAlgorithm(Algorithm::Secp256r1);
+$keypair2 = new KeyPair(Algorithm::Secp256r1);
 
 // Key import defaults to Ed25519
 $publicKey = PublicKey::fromBytes($bytes); // Defaults to Ed25519

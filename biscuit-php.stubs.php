@@ -70,11 +70,9 @@ namespace Biscuit\Auth {
     }
 
     class AuthorizerBuilder {
-        public function addCode(string $source): mixed {}
+        public function addCode(string $source, ?array $params = null, ?array $scope_params = null): void {}
 
-        public function addCodeWithParams(string $source, array $params, array $scope_params): mixed {}
-
-        public function addFact(\Biscuit\Auth\Fact $fact): mixed {}
+        public function addFact(\Biscuit\Auth\Fact $fact): void {}
 
         public function addRule(\Biscuit\Auth\Rule $rule): mixed {}
 
@@ -102,17 +100,15 @@ namespace Biscuit\Auth {
 
         public function __toString(): string {}
 
-        public function __construct() {}
+        public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
     }
 
     class BiscuitBuilder {
         public function build(\Biscuit\Auth\PrivateKey $root): \Biscuit\Auth\Biscuit {}
 
-        public function addCode(string $source): mixed {}
+        public function addCode(string $source, ?array $params = null, ?array $scope_params = null): void {}
 
-        public function addCodeWithParams(string $source, array $params, array $scope_params): mixed {}
-
-        public function merge(\Biscuit\Auth\BlockBuilder $other) {}
+        public function merge(\Biscuit\Auth\BlockBuilder $other): void {}
 
         public function addFact(\Biscuit\Auth\Fact $fact): mixed {}
 
@@ -124,25 +120,23 @@ namespace Biscuit\Auth {
 
         public function __toString(): string {}
 
-        public function __construct() {}
+        public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
     }
 
     class BlockBuilder {
-        public function addFact(\Biscuit\Auth\Fact $fact): mixed {}
+        public function addFact(\Biscuit\Auth\Fact $fact): void {}
 
-        public function addRule(\Biscuit\Auth\Rule $rule): mixed {}
+        public function addRule(\Biscuit\Auth\Rule $rule): void {}
 
-        public function addCheck(\Biscuit\Auth\Check $check): mixed {}
+        public function addCheck(\Biscuit\Auth\Check $check): void {}
 
-        public function addCode(string $source): mixed {}
+        public function addCode(string $source, ?array $params = null, ?array $scope_params = null): void {}
 
-        public function addCodeWithParams(string $source, array $params, array $scope_params): mixed {}
-
-        public function merge(\Biscuit\Auth\BlockBuilder $other) {}
+        public function merge(\Biscuit\Auth\BlockBuilder $other): void {}
 
         public function __toString(): string {}
 
-        public function __construct() {}
+        public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
     }
 
     class ThirdPartyRequest {
@@ -165,7 +159,7 @@ namespace Biscuit\Auth {
 
         public function __toString(): string {}
 
-        public function __construct(string $source) {}
+        public function __construct(string $source, ?array $params = null, ?array $scope_params = null) {}
     }
 
     class Fact {
@@ -178,7 +172,7 @@ namespace Biscuit\Auth {
 
         public function __toString(): string {}
 
-        public function __construct(string $source) {}
+        public function __construct(string $source, ?array $params = null) {}
     }
 
     class Check {
@@ -191,7 +185,7 @@ namespace Biscuit\Auth {
 
         public function __toString(): string {}
 
-        public function __construct(string $source) {}
+        public function __construct(string $source, ?array $params = null, ?array $scope_params = null) {}
     }
 
     class Policy {
@@ -204,19 +198,17 @@ namespace Biscuit\Auth {
 
         public function __toString(): string {}
 
-        public function __construct(string $source) {}
+        public function __construct(string $source, ?array $params = null, ?array $scope_params = null) {}
     }
 
     class KeyPair {
-        public static function newWithAlgorithm(?\Biscuit\Auth\Algorithm $alg = null): \Biscuit\Auth\KeyPair {}
-
         public static function fromPrivateKey(\Biscuit\Auth\PrivateKey $private_key): \Biscuit\Auth\KeyPair {}
 
         public function getPublicKey(): \Biscuit\Auth\PublicKey {}
 
         public function getPrivateKey(): \Biscuit\Auth\PrivateKey {}
 
-        public function __construct() {}
+        public function __construct(?\Biscuit\Auth\Algorithm $alg = null) {}
     }
 
     class PublicKey {
