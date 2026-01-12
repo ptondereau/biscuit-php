@@ -280,13 +280,10 @@ impl AuthorizerBuilder {
         scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<()> {
         let term_params: HashMap<String, biscuit_auth::builder::Term> = match params {
-            Some(p) => {
-                let mut map = HashMap::with_capacity(p.len());
-                for (key, value) in p.iter() {
-                    map.insert(key.clone(), mixed_value_to_term(value)?);
-                }
-                map
-            }
+            Some(p) => p
+                .iter()
+                .map(|(k, v)| mixed_value_to_term(v).map(|term| (k.clone(), term)))
+                .collect::<Result<HashMap<String, biscuit_auth::builder::Term>, PhpException>>()?,
             None => HashMap::new(),
         };
 
@@ -441,13 +438,10 @@ impl BiscuitBuilder {
         scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<()> {
         let term_params: HashMap<String, biscuit_auth::builder::Term> = match params {
-            Some(p) => {
-                let mut map = HashMap::with_capacity(p.len());
-                for (key, value) in p.iter() {
-                    map.insert(key.clone(), mixed_value_to_term(value)?);
-                }
-                map
-            }
+            Some(p) => p
+                .iter()
+                .map(|(k, v)| mixed_value_to_term(v).map(|term| (k.clone(), term)))
+                .collect::<Result<HashMap<String, biscuit_auth::builder::Term>, PhpException>>()?,
             None => HashMap::new(),
         };
 
@@ -557,13 +551,10 @@ impl BlockBuilder {
         scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<()> {
         let term_params: HashMap<String, biscuit_auth::builder::Term> = match params {
-            Some(p) => {
-                let mut map = HashMap::with_capacity(p.len());
-                for (key, value) in p.iter() {
-                    map.insert(key.clone(), mixed_value_to_term(value)?);
-                }
-                map
-            }
+            Some(p) => p
+                .iter()
+                .map(|(k, v)| mixed_value_to_term(v).map(|term| (k.clone(), term)))
+                .collect::<Result<HashMap<String, biscuit_auth::builder::Term>, PhpException>>()?,
             None => HashMap::new(),
         };
 
@@ -636,18 +627,17 @@ impl Rule {
             .map_err(|e| PhpException::from_class::<InvalidRule>(format!("{}", e)))?;
 
         if let Some(p) = params {
-            for (key, value) in p.iter() {
-                let term_value = mixed_value_to_term(value)?;
-                rule.set(key, term_value)
-                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
-            }
+            p.iter().try_for_each(|(key, value)| {
+                rule.set(key, mixed_value_to_term(value)?)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))
+            })?;
         }
 
         if let Some(sp) = scope_params {
-            for (key, pk) in sp.iter() {
+            sp.iter().try_for_each(|(key, pk)| {
                 rule.set_scope(key, pk.0)
-                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
-            }
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))
+            })?;
         }
 
         Ok(Self(rule))
@@ -689,11 +679,10 @@ impl Fact {
             .map_err(|e| PhpException::from_class::<InvalidFact>(format!("{}", e)))?;
 
         if let Some(p) = params {
-            for (key, value) in p.iter() {
-                let term_value = mixed_value_to_term(value)?;
-                fact.set(key, term_value)
-                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
-            }
+            p.iter().try_for_each(|(key, value)| {
+                fact.set(key, mixed_value_to_term(value)?)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))
+            })?;
         }
 
         Ok(Self(fact))
@@ -735,18 +724,19 @@ impl Check {
             .map_err(|e| PhpException::from_class::<InvalidCheck>(format!("{}", e)))?;
 
         if let Some(p) = params {
-            for (key, value) in p.iter() {
-                let term_value = mixed_value_to_term(value)?;
-                check.set(key, term_value)
-                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
-            }
+            p.iter().try_for_each(|(key, value)| {
+                check
+                    .set(key, mixed_value_to_term(value)?)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))
+            })?;
         }
 
         if let Some(sp) = scope_params {
-            for (key, pk) in sp.iter() {
-                check.set_scope(key, pk.0)
-                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
-            }
+            sp.iter().try_for_each(|(key, pk)| {
+                check
+                    .set_scope(key, pk.0)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))
+            })?;
         }
 
         Ok(Self(check))
@@ -789,18 +779,19 @@ impl Policy {
             .map_err(|e| PhpException::from_class::<InvalidPolicy>(format!("{}", e)))?;
 
         if let Some(p) = params {
-            for (key, value) in p.iter() {
-                let term_value = mixed_value_to_term(value)?;
-                policy.set(key, term_value)
-                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
-            }
+            p.iter().try_for_each(|(key, value)| {
+                policy
+                    .set(key, mixed_value_to_term(value)?)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))
+            })?;
         }
 
         if let Some(sp) = scope_params {
-            for (key, pk) in sp.iter() {
-                policy.set_scope(key, pk.0)
-                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
-            }
+            sp.iter().try_for_each(|(key, pk)| {
+                policy
+                    .set_scope(key, pk.0)
+                    .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))
+            })?;
         }
 
         Ok(Self(policy))
