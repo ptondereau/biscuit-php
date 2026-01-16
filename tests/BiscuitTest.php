@@ -19,6 +19,7 @@ use Biscuit\Auth\Rule;
 use Biscuit\Auth\ThirdPartyBlock;
 use Biscuit\Auth\ThirdPartyRequest;
 use Biscuit\Auth\UnverifiedBiscuit;
+use Biscuit\Exception\BuilderConsumed;
 use PHPUnit\Framework\TestCase;
 
 class BiscuitTest extends TestCase
@@ -367,14 +368,16 @@ class BiscuitTest extends TestCase
         $kp = new KeyPair();
         $pubkey = new PublicKey('ed25519/acdd6d5b53bfee478bf689f8e012fe7988bf755e3d7c5152947abc149bc20189');
 
-        $builder = new BiscuitBuilder();
-        $builder->addCode('test(true)');
+        $builder1 = new BiscuitBuilder();
+        $builder1->addCode('test(true)');
 
-        $token1 = $builder->build($kp->getPrivateKey());
+        $token1 = $builder1->build($kp->getPrivateKey());
         $base64_1 = $token1->toBase64();
 
-        $builder->setRootKeyId(42);
-        $token2 = $builder->build($kp->getPrivateKey());
+        $builder2 = new BiscuitBuilder();
+        $builder2->addCode('test(true)');
+        $builder2->setRootKeyId(42);
+        $token2 = $builder2->build($kp->getPrivateKey());
         $block = new BlockBuilder();
         $block->addCode('test(false)');
         $token2 = $token2->append($block);
@@ -597,5 +600,94 @@ class BiscuitTest extends TestCase
         $authBuilder->mergeBlock($blockBuilder);
 
         static::assertInstanceOf(AuthorizerBuilder::class, $authBuilder);
+    }
+
+    public function testBiscuitBuilderReusableAfterBuild(): void
+    {
+        $kp = new KeyPair();
+        $builder = new BiscuitBuilder();
+        $builder->addCode('user("alice")');
+
+        // Build the first biscuit
+        $biscuit1 = $builder->build($kp->getPrivateKey());
+        static::assertInstanceOf(Biscuit::class, $biscuit1);
+
+        // Builder should be reusable - can build again (clones internally)
+        $biscuit2 = $builder->build($kp->getPrivateKey());
+        static::assertInstanceOf(Biscuit::class, $biscuit2);
+    }
+
+    public function testBiscuitBuilderAddCodeAfterBuild(): void
+    {
+        $kp = new KeyPair();
+        $builder = new BiscuitBuilder();
+        $builder->addCode('user("alice")');
+        $builder->build($kp->getPrivateKey());
+
+        // Can still add code after build since build() clones instead of consuming
+        $builder->addCode('resource("file1")');
+        $biscuit = $builder->build($kp->getPrivateKey());
+        static::assertStringContainsString('resource("file1")', $biscuit->blockSource(0));
+    }
+
+    public function testBiscuitBuilderToStringAfterBuild(): void
+    {
+        $kp = new KeyPair();
+        $builder = new BiscuitBuilder();
+        $builder->addCode('user("alice")');
+        $builder->build($kp->getPrivateKey());
+
+        // Can still convert to string after build
+        $str = (string) $builder;
+        static::assertStringContainsString('user("alice")', $str);
+    }
+
+    public function testAuthorizerBuilderReusableAfterBuild(): void
+    {
+        $kp = new KeyPair();
+        $builder = new BiscuitBuilder();
+        $builder->addCode('user("alice")');
+        $biscuit = $builder->build($kp->getPrivateKey());
+
+        $authBuilder = new AuthorizerBuilder();
+        $authBuilder->addCode('allow if user("alice")');
+
+        // Build first authorizer
+        $authorizer1 = $authBuilder->build($biscuit);
+        static::assertInstanceOf(Authorizer::class, $authorizer1);
+
+        // Builder should be reusable - can build again (clones internally)
+        $authorizer2 = $authBuilder->build($biscuit);
+        static::assertInstanceOf(Authorizer::class, $authorizer2);
+    }
+
+    public function testAuthorizerBuilderReusableAfterBuildUnauthenticated(): void
+    {
+        $authBuilder = new AuthorizerBuilder();
+        $authBuilder->addCode('allow if true');
+
+        // Build first authorizer
+        $authorizer1 = $authBuilder->buildUnauthenticated();
+        static::assertInstanceOf(Authorizer::class, $authorizer1);
+
+        // Builder should be reusable - can build again (clones internally)
+        $authorizer2 = $authBuilder->buildUnauthenticated();
+        static::assertInstanceOf(Authorizer::class, $authorizer2);
+    }
+
+    public function testBlockBuilderConsumedAfterMerge(): void
+    {
+        $kp = new KeyPair();
+
+        $authBuilder = new AuthorizerBuilder();
+        $authBuilder->addCode('user("alice")');
+
+        $blockBuilder = new BlockBuilder();
+        $blockBuilder->addCode('resource("file1")');
+
+        $authBuilder->mergeBlock($blockBuilder);
+
+        $this->expectException(BuilderConsumed::class);
+        $blockBuilder->addCode('resource("file2")');
     }
 }

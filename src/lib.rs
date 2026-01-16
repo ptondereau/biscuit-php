@@ -46,7 +46,7 @@ impl Biscuit {
     // Static method to create a builder
     #[php(name = "builder")]
     pub fn builder() -> BiscuitBuilder {
-        BiscuitBuilder(biscuit_auth::builder::BiscuitBuilder::new())
+        BiscuitBuilder(Some(biscuit_auth::builder::BiscuitBuilder::new()))
     }
 
     // Deserialize from bytes with public key verification
@@ -94,7 +94,7 @@ impl Biscuit {
     // Append a first-party block
     pub fn append(&self, block: &BlockBuilder) -> PhpResult<Self> {
         self.0
-            .append(block.0.clone())
+            .append(get_builder(&block.0)?.clone())
             .map(Self)
             .map_err(|e| PhpException::default(format!("Append error: {}", e)))
     }
@@ -175,7 +175,7 @@ impl UnverifiedBiscuit {
     // Append a block
     pub fn append(&self, block: &BlockBuilder) -> PhpResult<Self> {
         self.0
-            .append(block.0.clone())
+            .append(get_builder(&block.0)?.clone())
             .map(Self)
             .map_err(|e| PhpException::default(format!("Append error: {}", e)))
     }
@@ -257,7 +257,7 @@ impl Authorizer {
 
 #[php_class]
 #[php(name = "Biscuit\\Auth\\AuthorizerBuilder")]
-pub struct AuthorizerBuilder(biscuit_auth::AuthorizerBuilder);
+pub struct AuthorizerBuilder(Option<biscuit_auth::AuthorizerBuilder>);
 
 #[php_impl]
 impl AuthorizerBuilder {
@@ -266,7 +266,7 @@ impl AuthorizerBuilder {
         params: Option<HashMap<String, MixedValue>>,
         scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<Self> {
-        let mut builder = Self(biscuit_auth::AuthorizerBuilder::new());
+        let mut builder = Self(Some(biscuit_auth::AuthorizerBuilder::new()));
         if let Some(src) = source {
             builder.add_code(&src, params, scope_params)?;
         }
@@ -292,65 +292,68 @@ impl AuthorizerBuilder {
             None => HashMap::new(),
         };
 
-        self.0 = self
-            .0
-            .clone()
-            .code_with_params(source, term_params, scope)
-            .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .code_with_params(source, term_params, scope)
+                .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?,
+        );
         Ok(())
     }
 
     pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .fact(fact.0.clone())
-            .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .fact(fact.0.clone())
+                .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?,
+        );
         Ok(())
     }
 
     pub fn add_rule(&mut self, rule: &Rule) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .rule(rule.0.clone())
-            .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .rule(rule.0.clone())
+                .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?,
+        );
         Ok(())
     }
 
     pub fn add_check(&mut self, check: &Check) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .check(check.0.clone())
-            .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .check(check.0.clone())
+                .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?,
+        );
         Ok(())
     }
 
     pub fn add_policy(&mut self, policy: &Policy) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .policy(policy.0.clone())
-            .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .policy(policy.0.clone())
+                .map_err(|e| PhpException::from_class::<AuthorizerError>(e.to_string()))?,
+        );
         Ok(())
     }
 
-    pub fn set_time(&mut self) {
-        self.0 = self.0.clone().time();
+    pub fn set_time(&mut self) -> PhpResult<()> {
+        self.0 = Some(take_builder(&mut self.0)?.time());
+        Ok(())
     }
 
-    pub fn merge(&mut self, other: &AuthorizerBuilder) {
-        self.0 = self.0.clone().merge(other.0.clone());
+    pub fn merge(&mut self, other: &mut AuthorizerBuilder) -> PhpResult<()> {
+        self.0 = Some(take_builder(&mut self.0)?.merge(take_builder(&mut other.0)?));
+        Ok(())
     }
 
-    pub fn merge_block(&mut self, block: &BlockBuilder) {
-        self.0 = self.0.clone().merge_block(block.0.clone());
+    pub fn merge_block(&mut self, block: &mut BlockBuilder) -> PhpResult<()> {
+        self.0 = Some(take_builder(&mut self.0)?.merge_block(take_builder(&mut block.0)?));
+        Ok(())
     }
 
     // Serialize to base64 snapshot
     pub fn base64_snapshot(&self) -> PhpResult<String> {
-        self.0
+        get_builder(&self.0)?
             .clone()
             .to_base64_snapshot()
             .map_err(|e| PhpException::default(format!("Serialization error: {}", e)))
@@ -358,7 +361,7 @@ impl AuthorizerBuilder {
 
     // Serialize to raw snapshot
     pub fn raw_snapshot(&self) -> PhpResult<Vec<u8>> {
-        self.0
+        get_builder(&self.0)?
             .clone()
             .to_raw_snapshot()
             .map_err(|e| PhpException::default(format!("Serialization error: {}", e)))
@@ -368,7 +371,7 @@ impl AuthorizerBuilder {
     #[php(name = "fromBase64Snapshot")]
     pub fn from_base64_snapshot(input: &str) -> PhpResult<Self> {
         biscuit_auth::AuthorizerBuilder::from_base64_snapshot(input)
-            .map(Self)
+            .map(|b| Self(Some(b)))
             .map_err(|e| PhpException::default(format!("Validation error: {}", e)))
     }
 
@@ -376,13 +379,14 @@ impl AuthorizerBuilder {
     #[php(name = "fromRawSnapshot")]
     pub fn from_raw_snapshot(input: BinarySlice<u8>) -> PhpResult<Self> {
         biscuit_auth::AuthorizerBuilder::from_raw_snapshot(input.as_ref())
-            .map(Self)
+            .map(|b| Self(Some(b)))
             .map_err(|e| PhpException::default(format!("Validation error: {}", e)))
     }
 
     // Build with token
+    // Clone the builder to allow reuse after build (matching biscuit-python approach)
     pub fn build(&self, token: &Biscuit) -> PhpResult<Authorizer> {
-        self.0
+        get_builder(&self.0)?
             .clone()
             .build(&token.0)
             .map(Authorizer)
@@ -390,22 +394,23 @@ impl AuthorizerBuilder {
     }
 
     // Build without token
+    // Clone the builder to allow reuse after build (matching biscuit-python approach)
     pub fn build_unauthenticated(&self) -> PhpResult<Authorizer> {
-        self.0
+        get_builder(&self.0)?
             .clone()
             .build_unauthenticated()
             .map(Authorizer)
             .map_err(|e| PhpException::default(format!("Build error: {}", e)))
     }
 
-    pub fn __to_string(&self) -> String {
-        self.0.to_string()
+    pub fn __to_string(&self) -> PhpResult<String> {
+        Ok(get_builder(&self.0)?.to_string())
     }
 }
 
 #[php_class]
 #[php(name = "Biscuit\\Auth\\BiscuitBuilder")]
-pub struct BiscuitBuilder(biscuit_auth::builder::BiscuitBuilder);
+pub struct BiscuitBuilder(Option<biscuit_auth::builder::BiscuitBuilder>);
 
 #[php_impl]
 impl BiscuitBuilder {
@@ -414,7 +419,7 @@ impl BiscuitBuilder {
         params: Option<HashMap<String, MixedValue>>,
         scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<Self> {
-        let mut builder = Self(biscuit_auth::builder::BiscuitBuilder::new());
+        let mut builder = Self(Some(biscuit_auth::builder::BiscuitBuilder::new()));
         if let Some(src) = source {
             builder.add_code(&src, params, scope_params)?;
         }
@@ -422,9 +427,10 @@ impl BiscuitBuilder {
     }
 
     // Build the biscuit with a private key
+    // Clone the builder to allow reuse after build (matching biscuit-python approach)
     pub fn build(&self, root: &PrivateKey) -> PhpResult<Biscuit> {
         let keypair = BiscuitKeyPair::from(&root.0);
-        self.0
+        get_builder(&self.0)?
             .clone()
             .build(&keypair)
             .map(Biscuit)
@@ -450,58 +456,60 @@ impl BiscuitBuilder {
             None => HashMap::new(),
         };
 
-        self.0 = self
-            .0
-            .clone()
-            .code_with_params(source, term_params, scope)
-            .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .code_with_params(source, term_params, scope)
+                .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?,
+        );
         Ok(())
     }
 
-    pub fn merge(&mut self, other: &BlockBuilder) {
-        self.0 = self.0.clone().merge(other.0.clone());
+    pub fn merge(&mut self, other: &mut BlockBuilder) -> PhpResult<()> {
+        self.0 = Some(take_builder(&mut self.0)?.merge(take_builder(&mut other.0)?));
+        Ok(())
     }
 
     pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .fact(fact.0.clone())
-            .map_err(|e| PhpException::from_class::<InvalidFact>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .fact(fact.0.clone())
+                .map_err(|e| PhpException::from_class::<InvalidFact>(e.to_string()))?,
+        );
         Ok(())
     }
 
     pub fn add_rule(&mut self, rule: &Rule) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .rule(rule.0.clone())
-            .map_err(|e| PhpException::from_class::<InvalidRule>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .rule(rule.0.clone())
+                .map_err(|e| PhpException::from_class::<InvalidRule>(e.to_string()))?,
+        );
         Ok(())
     }
 
     pub fn add_check(&mut self, check: &Check) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .check(check.0.clone())
-            .map_err(|e| PhpException::from_class::<InvalidCheck>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .check(check.0.clone())
+                .map_err(|e| PhpException::from_class::<InvalidCheck>(e.to_string()))?,
+        );
         Ok(())
     }
 
-    pub fn set_root_key_id(&mut self, root_key_id: u32) {
-        self.0 = self.0.clone().root_key_id(root_key_id);
+    pub fn set_root_key_id(&mut self, root_key_id: u32) -> PhpResult<()> {
+        self.0 = Some(take_builder(&mut self.0)?.root_key_id(root_key_id));
+        Ok(())
     }
 
-    pub fn __to_string(&self) -> String {
-        self.0.to_string()
+    pub fn __to_string(&self) -> PhpResult<String> {
+        Ok(get_builder(&self.0)?.to_string())
     }
 }
 
 #[php_class]
 #[php(name = "Biscuit\\Auth\\BlockBuilder")]
-#[derive(Debug, Clone)]
-pub struct BlockBuilder(biscuit_auth::builder::BlockBuilder);
+#[derive(Debug)]
+pub struct BlockBuilder(Option<biscuit_auth::builder::BlockBuilder>);
 
 #[php_impl]
 impl BlockBuilder {
@@ -510,7 +518,7 @@ impl BlockBuilder {
         params: Option<HashMap<String, MixedValue>>,
         scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<Self> {
-        let mut builder = Self(biscuit_auth::builder::BlockBuilder::default());
+        let mut builder = Self(Some(biscuit_auth::builder::BlockBuilder::default()));
         if let Some(src) = source {
             builder.add_code(&src, params, scope_params)?;
         }
@@ -518,29 +526,29 @@ impl BlockBuilder {
     }
 
     pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .fact(fact.0.clone())
-            .map_err(|e| PhpException::from_class::<InvalidFact>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .fact(fact.0.clone())
+                .map_err(|e| PhpException::from_class::<InvalidFact>(e.to_string()))?,
+        );
         Ok(())
     }
 
     pub fn add_rule(&mut self, rule: &Rule) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .rule(rule.0.clone())
-            .map_err(|e| PhpException::from_class::<InvalidRule>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .rule(rule.0.clone())
+                .map_err(|e| PhpException::from_class::<InvalidRule>(e.to_string()))?,
+        );
         Ok(())
     }
 
     pub fn add_check(&mut self, check: &Check) -> PhpResult<()> {
-        self.0 = self
-            .0
-            .clone()
-            .check(check.0.clone())
-            .map_err(|e| PhpException::from_class::<InvalidCheck>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .check(check.0.clone())
+                .map_err(|e| PhpException::from_class::<InvalidCheck>(e.to_string()))?,
+        );
         Ok(())
     }
 
@@ -563,20 +571,21 @@ impl BlockBuilder {
             None => HashMap::new(),
         };
 
-        self.0 = self
-            .0
-            .clone()
-            .code_with_params(source, term_params, scope)
-            .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?;
+        self.0 = Some(
+            take_builder(&mut self.0)?
+                .code_with_params(source, term_params, scope)
+                .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?,
+        );
         Ok(())
     }
 
-    pub fn merge(&mut self, other: &BlockBuilder) {
-        self.0 = self.0.clone().merge(other.0.clone());
+    pub fn merge(&mut self, other: &mut BlockBuilder) -> PhpResult<()> {
+        self.0 = Some(take_builder(&mut self.0)?.merge(take_builder(&mut other.0)?));
+        Ok(())
     }
 
-    pub fn __to_string(&self) -> String {
-        format!("{}", self.0)
+    pub fn __to_string(&self) -> PhpResult<String> {
+        Ok(format!("{}", get_builder(&self.0)?))
     }
 }
 
@@ -599,7 +608,7 @@ impl ThirdPartyRequest {
         })?;
 
         request
-            .create_block(&private_key.0, block.0.clone())
+            .create_block(&private_key.0, get_builder(&block.0)?.clone())
             .map(ThirdPartyBlock)
             .map_err(|e| PhpException::from_class::<ThirdPartyRequestError>(e.to_string()))
     }
@@ -1014,6 +1023,26 @@ pub struct ThirdPartyRequestError;
 #[derive(Default)]
 pub struct AuthorizerError;
 
+#[php_class]
+#[php(name = "Biscuit\\Exception\\BuilderConsumed")]
+#[php(extends(ce = ce::exception, stub = "\\Exception"))]
+#[derive(Default)]
+pub struct BuilderConsumed;
+
+/// Helper to take a builder from an Option, returning an error if already consumed
+fn take_builder<T>(opt: &mut Option<T>) -> PhpResult<T> {
+    opt.take().ok_or_else(|| {
+        PhpException::from_class::<BuilderConsumed>("Builder has already been consumed".to_string())
+    })
+}
+
+/// Helper to get a reference to a builder from an Option, returning an error if already consumed
+fn get_builder<T>(opt: &Option<T>) -> PhpResult<&T> {
+    opt.as_ref().ok_or_else(|| {
+        PhpException::from_class::<BuilderConsumed>("Builder has already been consumed".to_string())
+    })
+}
+
 pub fn startup(_ty: i32, _mod_num: i32) -> i32 {
     0
 }
@@ -1055,4 +1084,5 @@ pub fn get_module(module: ModuleBuilder) -> ModuleBuilder {
         .class::<InvalidTerm>()
         .class::<ThirdPartyRequestError>()
         .class::<AuthorizerError>()
+        .class::<BuilderConsumed>()
 }
