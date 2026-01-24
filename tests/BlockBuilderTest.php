@@ -25,10 +25,10 @@ class BlockBuilderTest extends TestCase
         $blockBuilder->addCheck($check);
 
         $expected = <<<'BLOCK'
-        user(15);
-        check if resource("uuid"), operation("read") or admin("authority");
+            user(15);
+            check if resource("uuid"), operation("read") or admin("authority");
 
-        BLOCK;
+            BLOCK;
 
         static::assertSame($expected, (string) $blockBuilder);
     }
