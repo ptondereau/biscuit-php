@@ -101,8 +101,15 @@ jobs:
             pkgconfig \
             git \
             clang \
+            clang-libs \
+            clang-dev \
             llvm \
+            llvm-dev \
             musl-dev
+
+      - name: Set LIBCLANG_PATH
+        run: |
+          echo "LIBCLANG_PATH=/usr/lib" >> $GITHUB_ENV
 
       - name: Install Rust toolchain
         run: |
