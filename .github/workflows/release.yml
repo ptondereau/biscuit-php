@@ -3,13 +3,13 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Dry run (skip release creation)'
+        description: "Dry run (skip release creation)"
         required: false
-        default: 'true'
+        default: "true"
         type: boolean
 
 env:
@@ -86,7 +86,7 @@ jobs:
         php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
         phpts: ["ts", "nts"]
     env:
-      RUSTFLAGS: "-C target-feature=-crt-static"
+      RUSTFLAGS: "-C target-feature=-crt-static -C linker=gcc"
 
     steps:
       - uses: actions/checkout@v6
@@ -99,7 +99,10 @@ jobs:
             build-base \
             openssl-dev \
             pkgconfig \
-            git
+            git \
+            clang \
+            llvm \
+            musl-dev
 
       - name: Install Rust toolchain
         run: |
