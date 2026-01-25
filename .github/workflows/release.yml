@@ -4,6 +4,13 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (skip release creation)'
+        required: false
+        default: 'true'
+        type: boolean
 
 env:
   CARGO_TERM_COLOR: always
@@ -22,10 +29,10 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Cache Cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -34,10 +41,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - uses: actions-rs/toolchain@v1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: x86_64-unknown-linux-gnu
+          targets: x86_64-unknown-linux-gnu
 
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
         uses: shivammathur/setup-php@v2
@@ -64,9 +71,70 @@ jobs:
           sha256sum biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so > biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: binary-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist/*
+
+  build-linux-x86_64-musl:
+    name: Build Linux x86_64 musl - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-musl-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-musl-
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
+      - name: Install musl tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends musl-tools
+
+      - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          ini-values: memory_limit=-1
+          extensions: mbstring
+        env:
+          phpts: ${{ matrix.phpts }}
+
+      - name: Build release binary
+        run: |
+          cargo build --release --target x86_64-unknown-linux-musl
+
+      - name: Prepare binary artifact
+        run: |
+          mkdir -p dist
+          cp target/x86_64-unknown-linux-musl/release/libbiscuit.so dist/biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so
+
+      - name: Calculate checksums
+        run: |
+          cd dist
+          sha256sum biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so > biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: binary-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*
 
   verify-binaries:
@@ -79,7 +147,7 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
         uses: shivammathur/setup-php@v2
@@ -90,7 +158,7 @@ jobs:
           phpts: ${{ matrix.phpts }}
 
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: binary-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist
@@ -104,18 +172,41 @@ jobs:
         run: |
           php -dextension=./dist/biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so -m | grep biscuit || echo "Extension loaded successfully"
 
+  verify-binaries-musl:
+    name: Verify musl binaries
+    runs-on: ubuntu-latest
+    needs: build-linux-x86_64-musl
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: binary-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist
+
+      - name: Verify checksum
+        run: |
+          cd dist
+          sha256sum -c biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
+
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: verify-binaries
+    needs: [verify-binaries, verify-binaries-musl]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
 
@@ -131,25 +222,47 @@ jobs:
           cat > release_notes.md << 'EOF'
           ## Pre-built Binaries
 
-          This release includes pre-built binaries for Linux x86_64 across multiple PHP versions, with both Thread-Safe (TS) and Non-Thread-Safe (NTS) variants.
+          This release includes pre-built binaries for Linux x86_64 (glibc and musl) across multiple PHP versions, with both Thread-Safe (TS) and Non-Thread-Safe (NTS) variants.
 
           ### Available Binaries
 
-          | Platform | PHP Version | Thread Safety | Binary | Checksum |
-          |----------|-------------|---------------|--------|----------|
-          | Linux x86_64 | 8.1 | TS | biscuit-linux-x86_64-php8.1-ts.so | .sha256 |
-          | Linux x86_64 | 8.1 | NTS | biscuit-linux-x86_64-php8.1-nts.so | .sha256 |
-          | Linux x86_64 | 8.2 | TS | biscuit-linux-x86_64-php8
-          | Linux x86_64 | 8.2 | NTS | biscuit-linux-x86_64-php8.2-nts.so | .sha256 |
-          | Linux x86_64 | 8.3 | TS | biscuit-linux-x86_64-php8.3-ts.so | .sha256 |
-          | Linux x86_64 | 8.3 | NTS | biscuit-linux-x86_64-php8.3-nts.so | .sha256 |
-          | Linux x86_64 | 8.4 | TS | biscuit-linux-x86_64-php8.4-ts.so | .sha256 |
-          | Linux x86_64 | 8.4 | NTS | biscuit-linux-x86_64-php8.4-nts.so | .sha256 |
-          | Linux x86_64 | 8.5 | TS | biscuit-linux-x86_64-php8.5-ts.so | .sha256 |
-          | Linux x86_64 | 8.5 | NTS | biscuit-linux-x86_64-php8.5-nts.so | .sha256 |
+          #### Linux x86_64 (glibc)
+
+          | PHP Version | Thread Safety | Binary | Checksum |
+          |-------------|---------------|--------|----------|
+          | 8.1 | TS | biscuit-linux-x86_64-php8.1-ts.so | .sha256 |
+          | 8.1 | NTS | biscuit-linux-x86_64-php8.1-nts.so | .sha256 |
+          | 8.2 | TS | biscuit-linux-x86_64-php8.2-ts.so | .sha256 |
+          | 8.2 | NTS | biscuit-linux-x86_64-php8.2-nts.so | .sha256 |
+          | 8.3 | TS | biscuit-linux-x86_64-php8.3-ts.so | .sha256 |
+          | 8.3 | NTS | biscuit-linux-x86_64-php8.3-nts.so | .sha256 |
+          | 8.4 | TS | biscuit-linux-x86_64-php8.4-ts.so | .sha256 |
+          | 8.4 | NTS | biscuit-linux-x86_64-php8.4-nts.so | .sha256 |
+          | 8.5 | TS | biscuit-linux-x86_64-php8.5-ts.so | .sha256 |
+          | 8.5 | NTS | biscuit-linux-x86_64-php8.5-nts.so | .sha256 |
+
+          #### Linux x86_64 musl (Alpine Linux)
+
+          | PHP Version | Thread Safety | Binary | Checksum |
+          |-------------|---------------|--------|----------|
+          | 8.1 | TS | biscuit-linux-x86_64-musl-php8.1-ts.so | .sha256 |
+          | 8.1 | NTS | biscuit-linux-x86_64-musl-php8.1-nts.so | .sha256 |
+          | 8.2 | TS | biscuit-linux-x86_64-musl-php8.2-ts.so | .sha256 |
+          | 8.2 | NTS | biscuit-linux-x86_64-musl-php8.2-nts.so | .sha256 |
+          | 8.3 | TS | biscuit-linux-x86_64-musl-php8.3-ts.so | .sha256 |
+          | 8.3 | NTS | biscuit-linux-x86_64-musl-php8.3-nts.so | .sha256 |
+          | 8.4 | TS | biscuit-linux-x86_64-musl-php8.4-ts.so | .sha256 |
+          | 8.4 | NTS | biscuit-linux-x86_64-musl-php8.4-nts.so | .sha256 |
+          | 8.5 | TS | biscuit-linux-x86_64-musl-php8.5-ts.so | .sha256 |
+          | 8.5 | NTS | biscuit-linux-x86_64-musl-php8.5-nts.so | .sha256 |
+
           ### Choosing the Right Binary
 
-          **Thread-Safe (TS)**: Use with Apache with mod_php, IIS, FrankenPHP,or other multi-threaded web servers
+          **glibc vs musl**:
+          - **glibc**: Use for standard Linux distributions (Ubuntu, Debian, Fedora, CentOS, etc.)
+          - **musl**: Use for Alpine Linux or other musl-based distributions
+
+          **Thread-Safe (TS)**: Use with Apache with mod_php, IIS, FrankenPHP, or other multi-threaded web servers
           **Non-Thread-Safe (NTS)**: Use with PHP-FPM, CLI, or FastCGI deployments
 
           To check your PHP thread safety:
@@ -157,18 +270,23 @@ jobs:
           php -i | grep "Thread Safety"
           ```
 
+          To check if you're using musl or glibc:
+          ```bash
+          ldd --version 2>&1 | head -1
+          ```
+
           ### Installation
 
-          1. Determine your PHP thread safety (see above)
-          2. Download the appropriate binary for your PHP version and thread safety
+          1. Determine your libc (glibc or musl) and PHP thread safety (see above)
+          2. Download the appropriate binary for your platform, PHP version, and thread safety
           3. Verify the checksum:
              ```bash
-             sha256sum -c biscuit-linux-x86_64-php8.x-{ts|nts}.so.sha256
+             sha256sum -c biscuit-linux-x86_64[-musl]-php8.x-{ts|nts}.so.sha256
              ```
           4. Move the binary to your PHP extension directory
           5. Add to your php.ini:
              ```ini
-             extension=biscuit-linux-x86_64-php8.x-{ts|nts}.so
+             extension=biscuit-linux-x86_64[-musl]-php8.x-{ts|nts}.so
              ```
           6. Verify installation:
              ```bash
@@ -185,6 +303,7 @@ jobs:
           EOF
 
       - name: Create Release
+        if: ${{ !inputs.dry_run }}
         uses: softprops/action-gh-release@v2
         with:
           files: release/*
@@ -194,3 +313,10 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dry run summary
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo "🧪 Dry run completed successfully!"
+          echo "📦 Artifacts that would be released:"
+          ls -la release/
