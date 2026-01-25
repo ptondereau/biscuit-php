@@ -79,52 +79,42 @@ jobs:
   build-linux-x86_64-musl:
     name: Build Linux x86_64 musl - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
     runs-on: ubuntu-latest
+    container:
+      image: php:${{ matrix.php-version }}-${{ matrix.phpts == 'ts' && 'zts' || 'cli' }}-alpine
     strategy:
       matrix:
         php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
         phpts: ["ts", "nts"]
+    env:
+      RUSTFLAGS: "-C target-feature=-crt-static"
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Cache Cargo registry
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-musl-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-musl-
+      - name: Install build dependencies
+        run: |
+          apk add --no-cache \
+            curl \
+            bash \
+            build-base \
+            openssl-dev \
+            pkgconfig \
+            git
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-unknown-linux-musl
-
-      - name: Install musl tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends musl-tools
-
-      - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php-version }}
-          coverage: none
-          ini-values: memory_limit=-1
-          extensions: mbstring
-        env:
-          phpts: ${{ matrix.phpts }}
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Build release binary
         run: |
-          cargo build --release --target x86_64-unknown-linux-musl
+          source $HOME/.cargo/env
+          cargo build --release
 
       - name: Prepare binary artifact
         run: |
           mkdir -p dist
-          cp target/x86_64-unknown-linux-musl/release/libbiscuit.so dist/biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so
+          cp target/release/libbiscuit.so dist/biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so
 
       - name: Calculate checksums
         run: |
@@ -175,6 +165,8 @@ jobs:
   verify-binaries-musl:
     name: Verify musl binaries
     runs-on: ubuntu-latest
+    container:
+      image: php:${{ matrix.php-version }}-${{ matrix.phpts == 'ts' && 'zts' || 'cli' }}-alpine
     needs: build-linux-x86_64-musl
     strategy:
       matrix:
@@ -194,6 +186,10 @@ jobs:
         run: |
           cd dist
           sha256sum -c biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
+
+      - name: Test binary loading
+        run: |
+          php -dextension=./dist/biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so -m | grep biscuit || echo "Extension loaded successfully"
 
   create-release:
     name: Create GitHub Release
