@@ -241,6 +241,73 @@ class KeyPairTest extends TestCase
         );
     }
 
+    public function testPrivateKeyGenerate(): void
+    {
+        $privateKey = PrivateKey::generate();
+
+        static::assertInstanceOf(PrivateKey::class, $privateKey);
+        static::assertStringStartsWith('ed25519-private/', $privateKey->toHex());
+    }
+
+    public function testPrivateKeyGenerateWithEd25519(): void
+    {
+        $privateKey = PrivateKey::generate(Algorithm::Ed25519);
+
+        static::assertInstanceOf(PrivateKey::class, $privateKey);
+        static::assertStringStartsWith('ed25519-private/', $privateKey->toHex());
+    }
+
+    public function testPrivateKeyGenerateWithSecp256r1(): void
+    {
+        $privateKey = PrivateKey::generate(Algorithm::Secp256r1);
+
+        static::assertInstanceOf(PrivateKey::class, $privateKey);
+        static::assertStringStartsWith('secp256r1-private/', $privateKey->toHex());
+    }
+
+    public function testPrivateKeyGenerateIsUnique(): void
+    {
+        $privateKey1 = PrivateKey::generate();
+        $privateKey2 = PrivateKey::generate();
+
+        static::assertNotSame(
+            $privateKey1->toHex(),
+            $privateKey2->toHex(),
+            'Different generate() calls should produce different keys',
+        );
+    }
+
+    public function testPrivateKeyGetPublicKey(): void
+    {
+        $privateKey = PrivateKey::generate();
+        $publicKey = $privateKey->getPublicKey();
+
+        static::assertInstanceOf(PublicKey::class, $publicKey);
+        static::assertStringStartsWith('ed25519/', $publicKey->toHex());
+    }
+
+    public function testPrivateKeyGetPublicKeyConsistency(): void
+    {
+        $privateKey = PrivateKey::generate();
+
+        $publicKey1 = $privateKey->getPublicKey();
+        $publicKey2 = $privateKey->getPublicKey();
+
+        static::assertSame($publicKey1->toHex(), $publicKey2->toHex());
+    }
+
+    public function testPrivateKeyGetPublicKeyMatchesKeyPair(): void
+    {
+        $keyPair = new KeyPair();
+        $privateKey = $keyPair->getPrivateKey();
+
+        static::assertSame(
+            $keyPair->getPublicKey()->toHex(),
+            $privateKey->getPublicKey()->toHex(),
+            'Public key from PrivateKey::getPublicKey() should match KeyPair::getPublicKey()',
+        );
+    }
+
     public function testKeySerializationRoundTrip(): void
     {
         $originalKeyPair = new KeyPair();

@@ -195,6 +195,21 @@ $privateKey = PrivateKey::fromPem($pem);
 $keyPair = KeyPair::fromPrivateKey($privateKey);
 ```
 
+### Direct Private Key Generation
+
+```php
+use Biscuit\Auth\{PrivateKey, Algorithm};
+
+// Generate a random private key (Ed25519 by default)
+$privateKey = PrivateKey::generate();
+
+// Generate with specific algorithm
+$privateKey = PrivateKey::generate(Algorithm::Secp256r1);
+
+// Get the corresponding public key
+$publicKey = $privateKey->getPublicKey();
+```
+
 ### Algorithm Support
 
 ```php

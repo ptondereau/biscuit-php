@@ -392,6 +392,12 @@ namespace Biscuit\Auth {
 
     class PrivateKey {
         /**
+         * Generates a new random private key with the specified algorithm.
+         * Defaults to Ed25519 if no algorithm is specified.
+         */
+        public static function generate(?\Biscuit\Auth\Algorithm $alg = null): \Biscuit\Auth\PrivateKey {}
+
+        /**
          * @throws \Biscuit\Exception\InvalidPrivateKey If the data is invalid
          */
         public static function fromBytes(string $data, ?\Biscuit\Auth\Algorithm $alg = null): \Biscuit\Auth\PrivateKey {}
@@ -405,6 +411,11 @@ namespace Biscuit\Auth {
          * @throws \Biscuit\Exception\InvalidPrivateKey If the DER is invalid
          */
         public static function fromDer(string $der): \Biscuit\Auth\PrivateKey {}
+
+        /**
+         * Returns the public key corresponding to this private key.
+         */
+        public function getPublicKey(): \Biscuit\Auth\PublicKey {}
 
         public function toBytes(): array {}
 

@@ -937,6 +937,23 @@ impl PrivateKey {
             .map_err(|e| PhpException::from_class::<InvalidPrivateKey>(e.to_string()))
     }
 
+    /// Generates a new random private key with the specified algorithm.
+    ///
+    /// This is a convenience method that creates a new KeyPair and returns
+    /// just the private key.
+    pub fn generate(alg: Option<Algorithm>) -> Self {
+        let algorithm = alg.unwrap_or(Algorithm::Ed25519).into();
+        let keypair = BiscuitKeyPair::new_with_algorithm(algorithm);
+        Self(keypair.private())
+    }
+
+    /// Returns the public key corresponding to this private key.
+    #[php(name = "getPublicKey")]
+    pub fn get_public_key(&self) -> PublicKey {
+        let keypair = BiscuitKeyPair::from(&self.0);
+        PublicKey(keypair.public())
+    }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         self.0.to_bytes().to_vec()
     }
