@@ -9,7 +9,7 @@ on:
       dry_run:
         description: "Dry run (skip release creation)"
         required: false
-        default: "true"
+        default: true
         type: boolean
 
 env:

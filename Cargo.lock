@@ -132,7 +132,7 @@ dependencies = [
 
 [[package]]
 name = "biscuit-php"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "biscuit-auth",
  "ext-php-rs",
@@ -596,15 +596,16 @@ dependencies = [
 
 [[package]]
 name = "ext-php-rs"
-version = "0.15.3"
+version = "0.15.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "babf1838a191c62b88c73351100b55d2b3ffee4d3a91b4101190574352c6c426"
+checksum = "c719e3bb9dbffdac2b5db25bc5f5a9cbb237033dc5b2861f84b3e11e0cf297e3"
 dependencies = [
  "anyhow",
  "bindgen",
  "bitflags",
  "cc",
  "cfg-if",
+ "ext-php-rs-build",
  "ext-php-rs-derive",
  "native-tls",
  "once_cell",
@@ -615,10 +616,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "ext-php-rs-derive"
-version = "0.11.6"
+name = "ext-php-rs-build"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ad2ea3a19621a895ee396903a0e493a7128cde28306d922e4da55805b0dc3f9"
+checksum = "caec1c4b5c5b46d49c1831bc0567012f1189222755c074f58292829c670c6520"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
+name = "ext-php-rs-derive"
+version = "0.11.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "392cae7cdb924b08b91ba28b35e2d72012e6f54fc11a8d4abc0cf37dc6255978"
 dependencies = [
  "convert_case",
  "darling",
