@@ -87,7 +87,7 @@ php -dextension=target/release/libext_biscuit_php.so -m | grep biscuit
 We're exposing PHP stubs for IDE integration
 
 ```bash
-composer require ptondereau/ext-biscuit-php
+composer require --dev ptondereau/biscuit-php
 ```
 
 ## Quick Start
