@@ -91,7 +91,6 @@ final class MakeBiscuitPolicyTest extends TestCase
         self::assertIsString($content);
         self::assertStringContainsString('declare(strict_types=1)', $content);
         self::assertStringContainsString('namespace <?php echo $namespace; ?>', $content);
-        self::assertStringContainsString('BiscuitPolicy', $content);
         self::assertStringContainsString('final class <?php echo $class_name; ?>', $content);
         self::assertStringContainsString('const NAME', $content);
         self::assertStringContainsString('const POLICY', $content);
@@ -108,7 +107,9 @@ final class MakeBiscuitPolicyTest extends TestCase
         self::assertIsString($content);
         self::assertStringContainsString('Biscuit policy class', $content);
         self::assertStringContainsString('#[BiscuitPolicy]', $content);
-        self::assertStringContainsString('Example usage', $content);
+        self::assertStringContainsString('#[IsGranted]', $content);
+        self::assertStringContainsString('OPTION 1: Using #[BiscuitPolicy]', $content);
+        self::assertStringContainsString('OPTION 2: Using #[IsGranted]', $content);
     }
 
     #[Test]
