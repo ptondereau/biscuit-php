@@ -1,0 +1,296 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% block page_title 'Biscuit' %}
+
+{% block toolbar %}
+    {% set icon %}
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span class="sf-toolbar-value">{{ collector.policyCheckCount }}</span>
+    {% endset %}
+
+    {% set text %}
+        <div class="sf-toolbar-info-group">
+            <div class="sf-toolbar-info-piece">
+                <b>Token</b>
+                <span class="sf-toolbar-status sf-toolbar-status-{{ collector.hasToken ? 'green' : 'red' }}">
+                    {{ collector.hasToken ? 'Present' : 'None' }}
+                </span>
+            </div>
+
+            {% if collector.hasToken %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Blocks</b>
+                    <span>{{ collector.blockCount }}</span>
+                </div>
+            {% endif %}
+
+            <div class="sf-toolbar-info-piece">
+                <b>Policy Checks</b>
+                <span>{{ collector.policyCheckCount }}</span>
+            </div>
+
+            {% if collector.policyCheckCount > 0 %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Passed</b>
+                    <span class="sf-toolbar-status sf-toolbar-status-green">{{ collector.passedChecks }}</span>
+                </div>
+                <div class="sf-toolbar-info-piece">
+                    <b>Failed</b>
+                    <span class="sf-toolbar-status sf-toolbar-status-{{ collector.failedChecks > 0 ? 'red' : 'green' }}">{{ collector.failedChecks }}</span>
+                </div>
+            {% endif %}
+        </div>
+    {% endset %}
+
+    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: profiler_url }) }}
+{% endblock %}
+
+{% block menu %}
+    <span class="label {{ not collector.hasToken ? 'disabled' }}">
+        <span class="icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+        </span>
+        <strong>Biscuit</strong>
+        {% if collector.policyCheckCount > 0 %}
+            <span class="count">
+                <span>{{ collector.policyCheckCount }}</span>
+            </span>
+        {% endif %}
+    </span>
+{% endblock %}
+
+{% block head %}
+    {{ parent() }}
+    <script type="module" src="{{ asset('bundles/biscuit/index.js') }}"></script>
+    <style>
+        /* Biscuit Sandbox - Clean minimal styling */
+        .biscuit-sandbox {
+            padding: 0;
+        }
+
+        .biscuit-sandbox-section {
+            margin-bottom: 2em;
+        }
+
+        .biscuit-sandbox-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .biscuit-sandbox h4 {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin: 0 0 0.5em 0;
+            padding: 0;
+        }
+
+        .biscuit-sandbox .description {
+            font-size: 0.85em;
+            color: var(--color-muted);
+            margin: 0 0 1em 0;
+        }
+
+        /* Make web components fill width nicely */
+        .biscuit-sandbox bc-datalog-playground,
+        .biscuit-sandbox bc-token-printer {
+            display: block;
+        }
+    </style>
+{% endblock %}
+
+{% block panel %}
+    <h2>Biscuit Token</h2>
+
+    {% if collector.hasToken %}
+        <div class="sf-tabs">
+            <div class="tab">
+                <h3 class="tab-title">Token Info</h3>
+                <div class="tab-content">
+                    <div class="metrics">
+                        <div class="metric">
+                            <span class="value">{{ source('@WebProfiler/Icon/yes.svg') }}</span>
+                            <span class="label">Token Present</span>
+                        </div>
+                        <div class="metric">
+                            <span class="value">{{ collector.blockCount }}</span>
+                            <span class="label">Blocks</span>
+                        </div>
+                        <div class="metric">
+                            <span class="value">{{ collector.revocationIds|length }}</span>
+                            <span class="label">Revocation IDs</span>
+                        </div>
+                    </div>
+
+                    {% if collector.revocationIds|length > 0 %}
+                        <h3>Revocation IDs</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">ID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for id in collector.revocationIds %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><code>{{ id }}</code></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="tab {{ collector.blocks is empty ? 'disabled' }}">
+                <h3 class="tab-title">Blocks <span class="badge">{{ collector.blockCount }}</span></h3>
+                <div class="tab-content">
+                    {% if collector.blocks is not empty %}
+                        {% for block in collector.blocks %}
+                            <div class="card" style="margin-bottom: 1em;">
+                                <h4>Block {{ loop.index0 }}{% if loop.first %} (Authority){% endif %}</h4>
+                                <pre style="background: var(--page-background); padding: 1em; border-radius: 4px; overflow-x: auto;"><code>{{ block }}</code></pre>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty">
+                            <p>No blocks available.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="tab {{ collector.policyChecks is empty ? 'disabled' }}">
+                <h3 class="tab-title">Policy Checks <span class="badge">{{ collector.policyCheckCount }}</span></h3>
+                <div class="tab-content">
+                    {% if collector.policyChecks is not empty %}
+                        <div class="metrics">
+                            <div class="metric">
+                                <span class="value">{{ collector.passedChecks }}</span>
+                                <span class="label">Passed</span>
+                            </div>
+                            <div class="metric">
+                                <span class="value">{{ collector.failedChecks }}</span>
+                                <span class="label">Failed</span>
+                            </div>
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Result</th>
+                                    <th scope="col">Policy</th>
+                                    <th scope="col">Parameters</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for check in collector.policyChecks %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            {% if check.result %}
+                                                <span class="label status-success">GRANTED</span>
+                                            {% else %}
+                                                <span class="label status-error">DENIED</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><code>{{ check.policy }}</code></td>
+                                        <td>
+                                            {% if check.params is not empty %}
+                                                {{ profiler_dump(check.params, maxDepth=2) }}
+                                            {% else %}
+                                                <em>none</em>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="empty">
+                            <p>No policy checks were performed during this request.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="tab">
+                <h3 class="tab-title">Sandbox</h3>
+                <div class="tab-content">
+                    <div class="biscuit-sandbox">
+                        <div class="biscuit-sandbox-section">
+                            <h4>Datalog Playground</h4>
+                            <p class="description">Test authorization policies interactively. Edit the facts and policies below, results update in real-time.</p>
+                            <bc-datalog-playground showBlocks="true">
+                                <code class="block">
+{% for block in collector.blocks %}
+{{ block }}
+{% else %}
+user(123);
+role(123, "admin");
+{% endfor %}
+                                </code>
+                                <code class="authorizer">
+{% for name, policy in collector.policies %}
+// {{ name }}
+{{ policy }};
+{% else %}
+allow if user($u);
+{% endfor %}
+                                </code>
+                            </bc-datalog-playground>
+                        </div>
+
+                        <div class="biscuit-sandbox-section">
+                            <h4>Token Inspector</h4>
+                            <p class="description">Inspect any Biscuit token. Paste a base64-encoded token to view its contents.</p>
+                            <bc-token-printer showAuthorizer="true"{% if collector.serializedToken %} biscuit="{{ collector.serializedToken }}"{% endif %}{% if collector.publicKey %} rootPublicKey="{{ collector.publicKey }}"{% endif %}></bc-token-printer>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="empty">
+            <p>No Biscuit token was present for this request.</p>
+        </div>
+
+        <div class="sf-tabs">
+            <div class="tab">
+                <h3 class="tab-title">Sandbox</h3>
+                <div class="tab-content">
+                    <div class="biscuit-sandbox">
+                        <div class="biscuit-sandbox-section">
+                            <h4>Datalog Playground</h4>
+                            <p class="description">Test authorization policies interactively. Edit the facts and policies below.</p>
+                            <bc-datalog-playground showBlocks="true">
+                                <code class="block">
+user(123);
+role(123, "admin");
+                                </code>
+                                <code class="authorizer">
+allow if user($u), role($u, "admin");
+                                </code>
+                            </bc-datalog-playground>
+                        </div>
+
+                        <div class="biscuit-sandbox-section">
+                            <h4>Token Inspector</h4>
+                            <p class="description">Paste a base64-encoded Biscuit token to inspect its contents.</p>
+                            <bc-token-printer showAuthorizer="true"></bc-token-printer>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+    bootstrap="tests/bootstrap.php"
+    colors="true"
+    failOnRisky="true"
+    failOnWarning="true"
+    cacheDirectory=".phpunit.cache"
+>
+  <testsuites>
+    <testsuite name="BiscuitBundle Test Suite">
+      <directory>tests</directory>
+    </testsuite>
+  </testsuites>
+  <php>
+    <ini name="error_reporting" value="-1" />
+    <server
+            name="KERNEL_CLASS"
+            value="Biscuit\BiscuitBundle\Tests\TestKernel"
+        />
+    <server name="APP_ENV" value="test" />
+    <server name="SHELL_VERBOSITY" value="-1" />
+  </php>
+  <source>
+    <include>
+      <directory suffix=".php">src</directory>
+    </include>
+  </source>
+</phpunit>

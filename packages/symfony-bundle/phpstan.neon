@@ -1,0 +1,65 @@
+parameters:
+    level: 8
+
+    paths:
+        - src
+        - tests
+
+    excludePaths:
+        - vendor
+        - src/Resources/skeleton
+        - stubs
+
+    bootstrapFiles:
+        - vendor/autoload.php
+
+    stubFiles:
+        - stubs/biscuit-php.stubs.php
+
+    symfony:
+        containerXmlPath: null
+
+    ignoreErrors:
+        # Stub file array type specifications - these are external stubs we can't modify
+        -
+            message: '#no value type specified in iterable type array#'
+            path: stubs/*
+            reportUnmatched: false
+        # Symfony Console compatibility - add() exists in 6.4/7.x, addCommand() in 8.0+
+        -
+            message: '#Call to an undefined method Symfony\\Component\\Console\\Application::add\(\)#'
+            path: tests/*
+            reportUnmatched: false
+        # PHPUnit assertion type narrowing
+        -
+            message: '#will always evaluate to true#'
+            path: tests/*
+            reportUnmatched: false
+        # Symfony AbstractAuthenticator requires nullable return types in method signatures
+        -
+            message: '#Method Biscuit\\BiscuitBundle\\Security\\Authenticator\\BiscuitAuthenticator::supports\(\) never returns null so it can be removed from the return type#'
+            reportUnmatched: false
+        -
+            message: '#Method Biscuit\\BiscuitBundle\\Security\\Authenticator\\BiscuitAuthenticator::onAuthenticationFailure\(\) never returns null so it can be removed from the return type#'
+            reportUnmatched: false
+        # Symfony AbstractDataCollector requires nullable return type in signature
+        -
+            message: '#Method Biscuit\\BiscuitBundle\\DataCollector\\BiscuitDataCollector::getTemplate\(\) never returns null so it can be removed from the return type#'
+            reportUnmatched: false
+        # Test authenticator signature matching
+        -
+            message: '#Method Biscuit\\BiscuitBundle\\Security\\Authenticator\\TestBiscuitAuthenticator::supports\(\) never returns null so it can be removed from the return type#'
+            reportUnmatched: false
+        # Test fixture loader YAML parsing defensive checks
+        -
+            message: '#Call to function is_array\(\) with array.* will always evaluate to true#'
+            path: src/Test/*
+            reportUnmatched: false
+        -
+            message: '#Call to function is_string\(\) with string will always evaluate to true#'
+            path: src/Test/*
+            reportUnmatched: false
+
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-symfony/extension.neon
