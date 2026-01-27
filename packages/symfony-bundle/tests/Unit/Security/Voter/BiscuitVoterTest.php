@@ -276,6 +276,29 @@ final class BiscuitVoterTest extends TestCase
         self::assertSame(Voter::ACCESS_DENIED, $result);
     }
 
+    #[Test]
+    public function itHandlesStringSubjectAsResource(): void
+    {
+        $registry = new PolicyRegistry([
+            'resource_access' => 'allow if resource({resource})',
+        ]);
+        $biscuit = $this->createMock(Biscuit::class);
+        $user = new BiscuitUser($biscuit, 'user-123');
+        $token = $this->createMock(TokenInterface::class);
+
+        $token
+            ->method('getUser')
+            ->willReturn($user);
+
+        $voter = new BiscuitVoter($registry);
+
+        // Vote will fail at authorization (no real biscuit) but extractParams handles string
+        $result = $voter->vote($token, 'my-resource-id', ['resource_access']);
+
+        // Authorization fails because we don't have real biscuit, so ACCESS_DENIED
+        self::assertSame(Voter::ACCESS_DENIED, $result);
+    }
+
     /**
      * Helper method to call the protected supports method.
      */

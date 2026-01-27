@@ -71,6 +71,10 @@ final class BiscuitVoter extends Voter
             return $subject;
         }
 
+        if (\is_string($subject)) {
+            return ['resource' => $subject];
+        }
+
         if (\is_object($subject) && method_exists($subject, 'getId')) {
             return ['resource' => (string) $subject->getId()];
         }
