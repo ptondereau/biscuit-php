@@ -10,6 +10,9 @@ namespace Biscuit\Auth {
 
         public static function fromBase64(string $data, \Biscuit\Auth\PublicKey $root): \Biscuit\Auth\Biscuit {}
 
+        /**
+         * @return list<int>
+         */
         public function toBytes(): array {}
 
         public function toBase64(): string {}
@@ -27,6 +30,9 @@ namespace Biscuit\Auth {
 
         public function thirdPartyRequest(): \Biscuit\Auth\ThirdPartyRequest {}
 
+        /**
+         * @return list<string>
+         */
         public function revocationIds(): array {}
 
         public function blockExternalKey(int $index): ?\Biscuit\Auth\PublicKey {}
@@ -50,6 +56,9 @@ namespace Biscuit\Auth {
          */
         public function append(\Biscuit\Auth\BlockBuilder $block): \Biscuit\Auth\UnverifiedBiscuit {}
 
+        /**
+         * @return list<string>
+         */
         public function revocationIds(): array {}
 
         public function verify(\Biscuit\Auth\PublicKey $root): \Biscuit\Auth\Biscuit {}
@@ -64,12 +73,16 @@ namespace Biscuit\Auth {
         public function authorize(): int {}
 
         /**
+         * @return list<\Biscuit\Auth\Fact>
          * @throws \Biscuit\Exception\AuthorizerError If the query fails
          */
         public function query(\Biscuit\Auth\Rule $rule): array {}
 
         public function base64Snapshot(): string {}
 
+        /**
+         * @return list<int>
+         */
         public function rawSnapshot(): array {}
 
         public static function fromBase64Snapshot(string $input): \Biscuit\Auth\Authorizer {}
@@ -83,6 +96,8 @@ namespace Biscuit\Auth {
 
     class AuthorizerBuilder {
         /**
+         * @param array<string, int|string|bool|null>|null $params
+         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
          * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
          * @throws \Biscuit\Exception\AuthorizerError If the code is invalid
          */
@@ -128,11 +143,13 @@ namespace Biscuit\Auth {
         public function mergeBlock(\Biscuit\Auth\BlockBuilder $block): void {}
 
         /**
+         * @return string
          * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
          */
         public function base64Snapshot(): string {}
 
         /**
+         * @return list<int>
          * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
          */
         public function rawSnapshot(): array {}
@@ -159,6 +176,8 @@ namespace Biscuit\Auth {
         public function __toString(): string {}
 
         /**
+         * @param array<string, int|string|bool|null>|null $params
+         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
          * @throws \Biscuit\Exception\AuthorizerError If the source code is invalid
          */
         public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
@@ -172,6 +191,8 @@ namespace Biscuit\Auth {
         public function build(\Biscuit\Auth\PrivateKey $root): \Biscuit\Auth\Biscuit {}
 
         /**
+         * @param array<string, int|string|bool|null>|null $params
+         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
          * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
          * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
          */
@@ -211,6 +232,8 @@ namespace Biscuit\Auth {
         public function __toString(): string {}
 
         /**
+         * @param array<string, int|string|bool|null>|null $params
+         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
          * @throws \Biscuit\Exception\InvalidTerm If the source code contains invalid terms
          */
         public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
@@ -236,6 +259,8 @@ namespace Biscuit\Auth {
         public function addCheck(\Biscuit\Auth\Check $check): void {}
 
         /**
+         * @param array<string, int|string|bool|null>|null $params
+         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
          * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
          * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
          */
@@ -252,6 +277,8 @@ namespace Biscuit\Auth {
         public function __toString(): string {}
 
         /**
+         * @param array<string, int|string|bool|null>|null $params
+         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
          * @throws \Biscuit\Exception\InvalidTerm If the source code contains invalid terms
          */
         public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
@@ -286,6 +313,8 @@ namespace Biscuit\Auth {
         public function __toString(): string {}
 
         /**
+         * @param array<string, int|string|bool|null>|null $params
+         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
          * @throws \Biscuit\Exception\InvalidRule If the rule syntax is invalid
          * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
          */
@@ -304,6 +333,7 @@ namespace Biscuit\Auth {
         public function __toString(): string {}
 
         /**
+         * @param array<string, int|string|bool|null>|null $params
          * @throws \Biscuit\Exception\InvalidFact If the fact syntax is invalid
          * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
          */
@@ -325,6 +355,8 @@ namespace Biscuit\Auth {
         public function __toString(): string {}
 
         /**
+         * @param array<string, int|string|bool|null>|null $params
+         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
          * @throws \Biscuit\Exception\InvalidCheck If the check syntax is invalid
          * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
          */
@@ -346,6 +378,8 @@ namespace Biscuit\Auth {
         public function __toString(): string {}
 
         /**
+         * @param array<string, int|string|bool|null>|null $params
+         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
          * @throws \Biscuit\Exception\InvalidPolicy If the policy syntax is invalid
          * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
          */
@@ -378,6 +412,9 @@ namespace Biscuit\Auth {
          */
         public static function fromDer(string $der): \Biscuit\Auth\PublicKey {}
 
+        /**
+         * @return list<int>
+         */
         public function toBytes(): array {}
 
         public function toHex(): string {}
@@ -417,6 +454,9 @@ namespace Biscuit\Auth {
          */
         public function getPublicKey(): \Biscuit\Auth\PublicKey {}
 
+        /**
+         * @return list<int>
+         */
         public function toBytes(): array {}
 
         public function toHex(): string {}

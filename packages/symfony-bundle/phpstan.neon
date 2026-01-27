@@ -20,11 +20,6 @@ parameters:
         containerXmlPath: null
 
     ignoreErrors:
-        # Stub file array type specifications - these are external stubs we can't modify
-        -
-            message: '#no value type specified in iterable type array#'
-            path: stubs/*
-            reportUnmatched: false
         # Symfony Console compatibility - add() exists in 6.4/7.x, addCommand() in 8.0+
         -
             message: '#Call to an undefined method Symfony\\Component\\Console\\Application::add\(\)#'
