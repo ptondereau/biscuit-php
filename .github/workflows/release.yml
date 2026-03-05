@@ -200,48 +200,30 @@ jobs:
   build-linux-arm64-musl:
     name: Build Linux arm64 musl - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
     runs-on: ubuntu-24.04-arm
-    container:
-      image: php:${{ matrix.php-version }}-${{ matrix.phpts == 'ts' && 'zts' || 'cli' }}-alpine
     strategy:
       matrix:
         php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
         phpts: ["ts", "nts"]
-    env:
-      RUSTFLAGS: "-C target-feature=-crt-static -C linker=gcc"
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install build dependencies
+      - name: Build in Alpine container
         run: |
-          apk add --no-cache \
-            curl \
-            bash \
-            build-base \
-            openssl-dev \
-            pkgconfig \
-            git \
-            clang \
-            clang-libs \
-            clang-dev \
-            llvm \
-            llvm-dev \
-            musl-dev \
-            zip
-
-      - name: Set LIBCLANG_PATH
-        run: |
-          echo "LIBCLANG_PATH=/usr/lib" >> $GITHUB_ENV
-
-      - name: Install Rust toolchain
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      - name: Build release binary
-        run: |
-          source $HOME/.cargo/env
-          cargo build --release
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            -e RUSTFLAGS="-C target-feature=-crt-static -C linker=gcc" \
+            -e LIBCLANG_PATH=/usr/lib \
+            php:${{ matrix.php-version }}-${{ matrix.phpts == 'ts' && 'zts' || 'cli' }}-alpine \
+            sh -c '
+              apk add --no-cache \
+                curl bash build-base openssl-dev pkgconfig git \
+                clang clang-libs clang-dev llvm llvm-dev musl-dev &&
+              curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable &&
+              source $HOME/.cargo/env &&
+              cargo build --release
+            '
 
       - name: Package PIE binary
         run: |
@@ -464,8 +446,6 @@ jobs:
   verify-linux-arm64-musl:
     name: Verify Linux arm64 musl - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
     runs-on: ubuntu-24.04-arm
-    container:
-      image: php:${{ matrix.php-version }}-${{ matrix.phpts == 'ts' && 'zts' || 'cli' }}-alpine
     needs: build-linux-arm64-musl
     strategy:
       matrix:
@@ -473,20 +453,23 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - name: Install unzip
-        run: apk add --no-cache unzip
-
       - name: Download artifact
         uses: actions/download-artifact@v7
         with:
           name: pie-linux-arm64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist
 
-      - name: Verify binary
+      - name: Verify binary in Alpine container
         run: |
-          cd dist
-          unzip *.zip
-          php -dextension=./biscuit.so -m | grep biscuit
+          docker run --rm \
+            -v "${{ github.workspace }}/dist:/dist" \
+            -w /dist \
+            php:${{ matrix.php-version }}-${{ matrix.phpts == 'ts' && 'zts' || 'cli' }}-alpine \
+            sh -c '
+              apk add --no-cache unzip &&
+              unzip *.zip &&
+              php -dextension=./biscuit.so -m | grep biscuit
+            '
 
   verify-macos-x86_64:
     name: Verify macOS x86_64 - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
