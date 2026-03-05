@@ -843,12 +843,12 @@ impl KeyPair {
         Self(BiscuitKeyPair::from(&private_key.0))
     }
 
-    #[php(getter)]
+    #[php(name = "getPublicKey")]
     pub fn get_public_key(&self) -> PublicKey {
         PublicKey(self.0.public())
     }
 
-    #[php(getter)]
+    #[php(name = "getPrivateKey")]
     pub fn get_private_key(&self) -> PrivateKey {
         PrivateKey(self.0.private())
     }

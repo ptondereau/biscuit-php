@@ -41,6 +41,7 @@ jobs:
           coverage: "none"
           ini-values: "memory_limit=-1"
           extensions: mbstring
+          tools: composer:v2.9.5
 
       - name: Build
         run: cargo build --release --all-features

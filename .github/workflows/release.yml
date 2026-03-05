@@ -60,21 +60,22 @@ jobs:
         run: |
           cargo build --release --target x86_64-unknown-linux-gnu
 
-      - name: Prepare binary artifact
+      - name: Package PIE binary
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
+          ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-x86_64-linux-glibc-${TSMODE}.zip"
           mkdir -p dist
-          cp target/x86_64-unknown-linux-gnu/release/libbiscuit.so dist/biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so
-
-      - name: Calculate checksums
-        run: |
+          cp target/x86_64-unknown-linux-gnu/release/libbiscuit.so dist/biscuit.so
           cd dist
-          sha256sum biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so > biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
+          zip "${ARCHIVE_NAME}" biscuit.so
+          rm biscuit.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
-          name: binary-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
-          path: dist/*
+          name: pie-linux-x86_64-glibc-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist/*.zip
 
   build-linux-x86_64-musl:
     name: Build Linux x86_64 musl - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
@@ -105,7 +106,8 @@ jobs:
             clang-dev \
             llvm \
             llvm-dev \
-            musl-dev
+            musl-dev \
+            zip
 
       - name: Set LIBCLANG_PATH
         run: |
@@ -121,26 +123,26 @@ jobs:
           source $HOME/.cargo/env
           cargo build --release
 
-      - name: Prepare binary artifact
+      - name: Package PIE binary
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
+          ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-x86_64-linux-musl-${TSMODE}.zip"
           mkdir -p dist
-          cp target/release/libbiscuit.so dist/biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so
-
-      - name: Calculate checksums
-        run: |
+          cp target/release/libbiscuit.so dist/biscuit.so
           cd dist
-          sha256sum biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so > biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
+          zip "${ARCHIVE_NAME}" biscuit.so
+          rm biscuit.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
-          name: binary-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
-          path: dist/*
+          name: pie-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist/*.zip
 
-  verify-binaries:
-    name: Verify binaries
-    runs-on: ubuntu-latest
-    needs: build-linux-x86_64
+  build-linux-arm64:
+    name: Build Linux arm64 - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
         php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
@@ -149,6 +151,239 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Cache Cargo registry
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-arm64-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-arm64-cargo-
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-gnu
+
+      - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          ini-values: memory_limit=-1
+          extensions: mbstring
+        env:
+          phpts: ${{ matrix.phpts }}
+
+      - name: Build release binary
+        run: |
+          cargo build --release --target aarch64-unknown-linux-gnu
+
+      - name: Package PIE binary
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
+          ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-arm64-linux-glibc-${TSMODE}.zip"
+          mkdir -p dist
+          cp target/aarch64-unknown-linux-gnu/release/libbiscuit.so dist/biscuit.so
+          cd dist
+          zip "${ARCHIVE_NAME}" biscuit.so
+          rm biscuit.so
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: pie-linux-arm64-glibc-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist/*.zip
+
+  build-linux-arm64-musl:
+    name: Build Linux arm64 musl - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: php:${{ matrix.php-version }}-${{ matrix.phpts == 'ts' && 'zts' || 'cli' }}-alpine
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+    env:
+      RUSTFLAGS: "-C target-feature=-crt-static -C linker=gcc"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install build dependencies
+        run: |
+          apk add --no-cache \
+            curl \
+            bash \
+            build-base \
+            openssl-dev \
+            pkgconfig \
+            git \
+            clang \
+            clang-libs \
+            clang-dev \
+            llvm \
+            llvm-dev \
+            musl-dev \
+            zip
+
+      - name: Set LIBCLANG_PATH
+        run: |
+          echo "LIBCLANG_PATH=/usr/lib" >> $GITHUB_ENV
+
+      - name: Install Rust toolchain
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Build release binary
+        run: |
+          source $HOME/.cargo/env
+          cargo build --release
+
+      - name: Package PIE binary
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
+          ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-arm64-linux-musl-${TSMODE}.zip"
+          mkdir -p dist
+          cp target/release/libbiscuit.so dist/biscuit.so
+          cd dist
+          zip "${ARCHIVE_NAME}" biscuit.so
+          rm biscuit.so
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: pie-linux-arm64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist/*.zip
+
+  build-macos-x86_64:
+    name: Build macOS x86_64 - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: macos-15-intel
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: macos-x86_64-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            macos-x86_64-cargo-
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+
+      - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          ini-values: memory_limit=-1
+          extensions: mbstring
+        env:
+          phpts: ${{ matrix.phpts }}
+
+      - name: Build release binary
+        run: |
+          cargo build --release --target x86_64-apple-darwin
+
+      - name: Package PIE binary
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
+          ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-x86_64-darwin-bsdlibc-${TSMODE}.zip"
+          mkdir -p dist
+          cp target/x86_64-apple-darwin/release/libbiscuit.dylib dist/biscuit.so
+          cd dist
+          zip "${ARCHIVE_NAME}" biscuit.so
+          rm biscuit.so
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: pie-macos-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist/*.zip
+
+  build-macos-arm64:
+    name: Build macOS arm64 - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: macos-arm64-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            macos-arm64-cargo-
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          ini-values: memory_limit=-1
+          extensions: mbstring
+        env:
+          phpts: ${{ matrix.phpts }}
+
+      - name: Build release binary
+        run: |
+          cargo build --release --target aarch64-apple-darwin
+
+      - name: Package PIE binary
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
+          ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-arm64-darwin-bsdlibc-${TSMODE}.zip"
+          mkdir -p dist
+          cp target/aarch64-apple-darwin/release/libbiscuit.dylib dist/biscuit.so
+          cd dist
+          zip "${ARCHIVE_NAME}" biscuit.so
+          rm biscuit.so
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: pie-macos-arm64-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist/*.zip
+
+  verify-linux-x86_64:
+    name: Verify Linux x86_64 - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: ubuntu-latest
+    needs: build-linux-x86_64
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+
+    steps:
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
         uses: shivammathur/setup-php@v2
         with:
@@ -160,20 +395,17 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v7
         with:
-          name: binary-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          name: pie-linux-x86_64-glibc-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist
 
-      - name: Verify checksum
+      - name: Verify binary
         run: |
           cd dist
-          sha256sum -c biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
+          unzip *.zip
+          php -dextension=./biscuit.so -m | grep biscuit
 
-      - name: Test binary loading
-        run: |
-          php -dextension=./dist/biscuit-linux-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}.so -m | grep biscuit || echo "Extension loaded successfully"
-
-  verify-binaries-musl:
-    name: Verify musl binaries
+  verify-linux-x86_64-musl:
+    name: Verify Linux x86_64 musl - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
     runs-on: ubuntu-latest
     container:
       image: php:${{ matrix.php-version }}-${{ matrix.phpts == 'ts' && 'zts' || 'cli' }}-alpine
@@ -184,27 +416,148 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v6
+      - name: Install unzip
+        run: apk add --no-cache unzip
 
       - name: Download artifact
         uses: actions/download-artifact@v7
         with:
-          name: binary-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          name: pie-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist
 
-      - name: Verify checksum
+      - name: Verify binary
         run: |
           cd dist
-          sha256sum -c biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so.sha256
+          unzip *.zip
+          php -dextension=./biscuit.so -m | grep biscuit
 
-      - name: Test binary loading
+  verify-linux-arm64:
+    name: Verify Linux arm64 - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: ubuntu-24.04-arm
+    needs: build-linux-arm64
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+
+    steps:
+      - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+        env:
+          phpts: ${{ matrix.phpts }}
+
+      - name: Download artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: pie-linux-arm64-glibc-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist
+
+      - name: Verify binary
         run: |
-          php -dextension=./dist/biscuit-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}.so -m | grep biscuit || echo "Extension loaded successfully"
+          cd dist
+          unzip *.zip
+          php -dextension=./biscuit.so -m | grep biscuit
+
+  verify-linux-arm64-musl:
+    name: Verify Linux arm64 musl - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: php:${{ matrix.php-version }}-${{ matrix.phpts == 'ts' && 'zts' || 'cli' }}-alpine
+    needs: build-linux-arm64-musl
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+
+    steps:
+      - name: Install unzip
+        run: apk add --no-cache unzip
+
+      - name: Download artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: pie-linux-arm64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist
+
+      - name: Verify binary
+        run: |
+          cd dist
+          unzip *.zip
+          php -dextension=./biscuit.so -m | grep biscuit
+
+  verify-macos-x86_64:
+    name: Verify macOS x86_64 - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: macos-15-intel
+    needs: build-macos-x86_64
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+
+    steps:
+      - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+        env:
+          phpts: ${{ matrix.phpts }}
+
+      - name: Download artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: pie-macos-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist
+
+      - name: Verify binary
+        run: |
+          cd dist
+          unzip *.zip
+          php -dextension=./biscuit.so -m | grep biscuit
+
+  verify-macos-arm64:
+    name: Verify macOS arm64 - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: macos-latest
+    needs: build-macos-arm64
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+
+    steps:
+      - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+        env:
+          phpts: ${{ matrix.phpts }}
+
+      - name: Download artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: pie-macos-arm64-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist
+
+      - name: Verify binary
+        run: |
+          cd dist
+          unzip *.zip
+          php -dextension=./biscuit.so -m | grep biscuit
 
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [verify-binaries, verify-binaries-musl]
+    needs:
+      - verify-linux-x86_64
+      - verify-linux-x86_64-musl
+      - verify-linux-arm64
+      - verify-linux-arm64-musl
+      - verify-macos-x86_64
+      - verify-macos-arm64
 
     steps:
       - uses: actions/checkout@v6
@@ -219,101 +572,13 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release
-          find artifacts -name "*.so" -exec cp {} release/ \;
-          find artifacts -name "*.sha256" -exec cp {} release/ \;
-
-      - name: Generate release notes
-        id: release_notes
-        run: |
-          cat > release_notes.md << 'EOF'
-          ## Pre-built Binaries
-
-          This release includes pre-built binaries for Linux x86_64 (glibc and musl) across multiple PHP versions, with both Thread-Safe (TS) and Non-Thread-Safe (NTS) variants.
-
-          ### Available Binaries
-
-          #### Linux x86_64 (glibc)
-
-          | PHP Version | Thread Safety | Binary | Checksum |
-          |-------------|---------------|--------|----------|
-          | 8.1 | TS | biscuit-linux-x86_64-php8.1-ts.so | .sha256 |
-          | 8.1 | NTS | biscuit-linux-x86_64-php8.1-nts.so | .sha256 |
-          | 8.2 | TS | biscuit-linux-x86_64-php8.2-ts.so | .sha256 |
-          | 8.2 | NTS | biscuit-linux-x86_64-php8.2-nts.so | .sha256 |
-          | 8.3 | TS | biscuit-linux-x86_64-php8.3-ts.so | .sha256 |
-          | 8.3 | NTS | biscuit-linux-x86_64-php8.3-nts.so | .sha256 |
-          | 8.4 | TS | biscuit-linux-x86_64-php8.4-ts.so | .sha256 |
-          | 8.4 | NTS | biscuit-linux-x86_64-php8.4-nts.so | .sha256 |
-          | 8.5 | TS | biscuit-linux-x86_64-php8.5-ts.so | .sha256 |
-          | 8.5 | NTS | biscuit-linux-x86_64-php8.5-nts.so | .sha256 |
-
-          #### Linux x86_64 musl (Alpine Linux)
-
-          | PHP Version | Thread Safety | Binary | Checksum |
-          |-------------|---------------|--------|----------|
-          | 8.1 | TS | biscuit-linux-x86_64-musl-php8.1-ts.so | .sha256 |
-          | 8.1 | NTS | biscuit-linux-x86_64-musl-php8.1-nts.so | .sha256 |
-          | 8.2 | TS | biscuit-linux-x86_64-musl-php8.2-ts.so | .sha256 |
-          | 8.2 | NTS | biscuit-linux-x86_64-musl-php8.2-nts.so | .sha256 |
-          | 8.3 | TS | biscuit-linux-x86_64-musl-php8.3-ts.so | .sha256 |
-          | 8.3 | NTS | biscuit-linux-x86_64-musl-php8.3-nts.so | .sha256 |
-          | 8.4 | TS | biscuit-linux-x86_64-musl-php8.4-ts.so | .sha256 |
-          | 8.4 | NTS | biscuit-linux-x86_64-musl-php8.4-nts.so | .sha256 |
-          | 8.5 | TS | biscuit-linux-x86_64-musl-php8.5-ts.so | .sha256 |
-          | 8.5 | NTS | biscuit-linux-x86_64-musl-php8.5-nts.so | .sha256 |
-
-          ### Choosing the Right Binary
-
-          **glibc vs musl**:
-          - **glibc**: Use for standard Linux distributions (Ubuntu, Debian, Fedora, CentOS, etc.)
-          - **musl**: Use for Alpine Linux or other musl-based distributions
-
-          **Thread-Safe (TS)**: Use with Apache with mod_php, IIS, FrankenPHP, or other multi-threaded web servers
-          **Non-Thread-Safe (NTS)**: Use with PHP-FPM, CLI, or FastCGI deployments
-
-          To check your PHP thread safety:
-          ```bash
-          php -i | grep "Thread Safety"
-          ```
-
-          To check if you're using musl or glibc:
-          ```bash
-          ldd --version 2>&1 | head -1
-          ```
-
-          ### Installation
-
-          1. Determine your libc (glibc or musl) and PHP thread safety (see above)
-          2. Download the appropriate binary for your platform, PHP version, and thread safety
-          3. Verify the checksum:
-             ```bash
-             sha256sum -c biscuit-linux-x86_64[-musl]-php8.x-{ts|nts}.so.sha256
-             ```
-          4. Move the binary to your PHP extension directory
-          5. Add to your php.ini:
-             ```ini
-             extension=biscuit-linux-x86_64[-musl]-php8.x-{ts|nts}.so
-             ```
-          6. Verify installation:
-             ```bash
-             php -m | grep biscuit
-             ```
-
-          ### Building from Source
-
-          If pre-built binaries are not available for your platform, you can build from source:
-          ```bash
-          cargo build --release
-          ```
-
-          EOF
+          find artifacts -name "*.zip" -exec cp {} release/ \;
 
       - name: Create Release
         if: ${{ !inputs.dry_run }}
         uses: softprops/action-gh-release@v2
         with:
           files: release/*
-          body_path: release_notes.md
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           generate_release_notes: true
@@ -323,6 +588,6 @@ jobs:
       - name: Dry run summary
         if: ${{ inputs.dry_run }}
         run: |
-          echo "🧪 Dry run completed successfully!"
-          echo "📦 Artifacts that would be released:"
+          echo "Dry run completed successfully!"
+          echo "Artifacts that would be released:"
           ls -la release/
