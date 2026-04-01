@@ -62,7 +62,7 @@ jobs:
 
       - name: Package PIE binary
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME}"
           TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
           ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-x86_64-linux-glibc-${TSMODE}.zip"
           mkdir -p dist
@@ -125,7 +125,7 @@ jobs:
 
       - name: Package PIE binary
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME}"
           TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
           ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-x86_64-linux-musl-${TSMODE}.zip"
           mkdir -p dist
@@ -182,7 +182,7 @@ jobs:
 
       - name: Package PIE binary
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME}"
           TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
           ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-arm64-linux-glibc-${TSMODE}.zip"
           mkdir -p dist
@@ -227,7 +227,7 @@ jobs:
 
       - name: Package PIE binary
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME}"
           TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
           ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-arm64-linux-musl-${TSMODE}.zip"
           mkdir -p dist
@@ -284,7 +284,7 @@ jobs:
 
       - name: Package PIE binary
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME}"
           TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
           ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-x86_64-darwin-bsdlibc-${TSMODE}.zip"
           mkdir -p dist
@@ -348,7 +348,7 @@ jobs:
       - name: Package PIE binary
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME}"
           TSMODE="${{ matrix.phpts }}"
           BASE_NAME="php_biscuit-${VERSION}-${{ matrix.php-version }}-${TSMODE}-${{ matrix.compiler }}-x86_64"
           mkdir -p dist
@@ -405,7 +405,7 @@ jobs:
 
       - name: Package PIE binary
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME}"
           TSMODE=${{ matrix.phpts == 'ts' && 'zts' || 'nts' }}
           ARCHIVE_NAME="php_biscuit-${VERSION}_php${{ matrix.php-version }}-arm64-darwin-bsdlibc-${TSMODE}.zip"
           mkdir -p dist
@@ -628,7 +628,7 @@ jobs:
       - name: Verify binary
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${GITHUB_REF_NAME}"
           TSMODE="${{ matrix.phpts }}"
           DLL_NAME="php_biscuit-${VERSION}-${{ matrix.php-version }}-${TSMODE}-${{ matrix.compiler }}-x86_64.dll"
           cd dist
