@@ -1,3 +1,5 @@
+#![cfg_attr(windows, feature(abi_vectorcall))]
+
 mod authorizer;
 mod biscuit;
 mod builders;
