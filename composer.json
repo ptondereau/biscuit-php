@@ -10,12 +10,10 @@
             "email": "pierre.tondereau@protonmail.com"
         }
     ],
-    "autoload": {
+    "autoload-dev": {
         "classmap": [
             "biscuit-php.stubs.php"
-        ]
-    },
-    "autoload-dev": {
+        ],
         "psr-4": {
             "Biscuit\\Tests\\": "tests/"
         }
