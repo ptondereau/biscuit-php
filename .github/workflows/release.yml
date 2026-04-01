@@ -299,6 +299,70 @@ jobs:
           name: pie-macos-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
 
+  build-windows:
+    name: Build Windows x86_64 - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+        include:
+          - { php-version: "8.1", compiler: "vs16" }
+          - { php-version: "8.2", compiler: "vs16" }
+          - { php-version: "8.3", compiler: "vs16" }
+          - { php-version: "8.4", compiler: "vs17" }
+          - { php-version: "8.5", compiler: "vs17" }
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: windows-x86_64-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            windows-x86_64-cargo-
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: x86_64-pc-windows-msvc
+          components: rustfmt
+
+      - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          ini-values: memory_limit=-1
+          extensions: mbstring
+        env:
+          phpts: ${{ matrix.phpts }}
+
+      - name: Build release binary
+        run: cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Package PIE binary
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          TSMODE="${{ matrix.phpts }}"
+          BASE_NAME="php_biscuit-${VERSION}-${{ matrix.php-version }}-${TSMODE}-${{ matrix.compiler }}-x86_64"
+          mkdir -p dist
+          cp target/x86_64-pc-windows-msvc/release/biscuit.dll dist/${BASE_NAME}.dll
+          cd dist
+          7z a "${BASE_NAME}.zip" "${BASE_NAME}.dll"
+          rm "${BASE_NAME}.dll"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: pie-windows-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist/*.zip
+
   build-macos-arm64:
     name: Build macOS arm64 - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
     runs-on: macos-latest
@@ -531,6 +595,46 @@ jobs:
           unzip *.zip
           php -dextension=./biscuit.so -m | grep biscuit
 
+  verify-windows:
+    name: Verify Windows x86_64 - PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+    runs-on: windows-latest
+    needs: build-windows
+    strategy:
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: ["ts", "nts"]
+        include:
+          - { php-version: "8.1", compiler: "vs16" }
+          - { php-version: "8.2", compiler: "vs16" }
+          - { php-version: "8.3", compiler: "vs16" }
+          - { php-version: "8.4", compiler: "vs17" }
+          - { php-version: "8.5", compiler: "vs17" }
+
+    steps:
+      - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+        env:
+          phpts: ${{ matrix.phpts }}
+
+      - name: Download artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: pie-windows-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist
+
+      - name: Verify binary
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          TSMODE="${{ matrix.phpts }}"
+          DLL_NAME="php_biscuit-${VERSION}-${{ matrix.php-version }}-${TSMODE}-${{ matrix.compiler }}-x86_64.dll"
+          cd dist
+          7z x *.zip
+          php -dextension=./${DLL_NAME} -m | grep biscuit
+
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
@@ -541,6 +645,7 @@ jobs:
       - verify-linux-arm64-musl
       - verify-macos-x86_64
       - verify-macos-arm64
+      - verify-windows
 
     steps:
       - uses: actions/checkout@v6
