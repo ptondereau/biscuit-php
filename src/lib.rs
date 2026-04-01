@@ -39,6 +39,7 @@ pub enum MixedValue {
 
 #[php_class]
 #[php(name = "Biscuit\\Auth\\Biscuit")]
+#[derive(Clone)]
 pub struct Biscuit(biscuit_auth::Biscuit);
 
 #[php_impl]
@@ -143,6 +144,7 @@ impl Biscuit {
 
 #[php_class]
 #[php(name = "Biscuit\\Auth\\UnverifiedBiscuit")]
+#[derive(Clone)]
 pub struct UnverifiedBiscuit(biscuit_auth::UnverifiedBiscuit);
 
 #[php_impl]
@@ -201,6 +203,7 @@ impl UnverifiedBiscuit {
 
 #[php_class]
 #[php(name = "Biscuit\\Auth\\Authorizer")]
+#[derive(Clone)]
 pub struct Authorizer(biscuit_auth::Authorizer);
 
 #[php_impl]
@@ -257,6 +260,7 @@ impl Authorizer {
 
 #[php_class]
 #[php(name = "Biscuit\\Auth\\AuthorizerBuilder")]
+#[derive(Clone)]
 pub struct AuthorizerBuilder(Option<biscuit_auth::AuthorizerBuilder>);
 
 #[php_impl]
@@ -410,6 +414,7 @@ impl AuthorizerBuilder {
 
 #[php_class]
 #[php(name = "Biscuit\\Auth\\BiscuitBuilder")]
+#[derive(Clone)]
 pub struct BiscuitBuilder(Option<biscuit_auth::builder::BiscuitBuilder>);
 
 #[php_impl]
@@ -508,7 +513,7 @@ impl BiscuitBuilder {
 
 #[php_class]
 #[php(name = "Biscuit\\Auth\\BlockBuilder")]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BlockBuilder(Option<biscuit_auth::builder::BlockBuilder>);
 
 #[php_impl]
@@ -989,61 +994,61 @@ fn mixed_value_to_term(value: &MixedValue) -> PhpResult<biscuit_auth::builder::T
 #[php_class]
 #[php(name = "Biscuit\\Exception\\InvalidPrivateKey")]
 #[php(extends(ce = ce::exception, stub = "\\Exception"))]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct InvalidPrivateKey;
 
 #[php_class]
 #[php(name = "Biscuit\\Exception\\InvalidPublicKey")]
 #[php(extends(ce = ce::exception, stub = "\\Exception"))]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct InvalidPublicKey;
 
 #[php_class]
 #[php(name = "Biscuit\\Exception\\InvalidCheck")]
 #[php(extends(ce = ce::exception, stub = "\\Exception"))]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct InvalidCheck;
 
 #[php_class]
 #[php(name = "Biscuit\\Exception\\InvalidPolicy")]
 #[php(extends(ce = ce::exception, stub = "\\Exception"))]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct InvalidPolicy;
 
 #[php_class]
 #[php(name = "Biscuit\\Exception\\InvalidFact")]
 #[php(extends(ce = ce::exception, stub = "\\Exception"))]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct InvalidFact;
 
 #[php_class]
 #[php(name = "Biscuit\\Exception\\InvalidRule")]
 #[php(extends(ce = ce::exception, stub = "\\Exception"))]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct InvalidRule;
 
 #[php_class]
 #[php(name = "Biscuit\\Exception\\InvalidTerm")]
 #[php(extends(ce = ce::exception, stub = "\\Exception"))]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct InvalidTerm;
 
 #[php_class]
 #[php(name = "Biscuit\\Exception\\ThirdPartyRequestError")]
 #[php(extends(ce = ce::exception, stub = "\\Exception"))]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ThirdPartyRequestError;
 
 #[php_class]
 #[php(name = "Biscuit\\Exception\\AuthorizerError")]
 #[php(extends(ce = ce::exception, stub = "\\Exception"))]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct AuthorizerError;
 
 #[php_class]
 #[php(name = "Biscuit\\Exception\\BuilderConsumed")]
 #[php(extends(ce = ce::exception, stub = "\\Exception"))]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct BuilderConsumed;
 
 /// Helper to take a builder from an Option, returning an error if already consumed
