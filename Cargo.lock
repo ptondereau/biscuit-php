@@ -103,7 +103,7 @@ dependencies = [
 
 [[package]]
 name = "biscuit-php"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "biscuit-auth",
  "ext-php-rs",
