@@ -53,6 +53,8 @@ jobs:
       - name: Setup Mago
         if: ${{ matrix.php-version == '8.5' }}
         uses: nhedger/setup-mago@v1
+        with:
+          version: 1.25.2
 
       - name: Run Mago
         if: ${{ matrix.php-version == '8.5' }}
