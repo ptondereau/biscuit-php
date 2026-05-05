@@ -530,9 +530,9 @@ dependencies = [
 
 [[package]]
 name = "ext-php-rs"
-version = "0.15.11"
+version = "0.15.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e31d80d6762073b876fe2745820d2241f3309dd42227e26197fa40b54599a220"
+checksum = "0525834a3e26fdf0a60a8e7c27ec9521a35808eba8e41a15e135c22f670bc937"
 dependencies = [
  "anyhow",
  "bitflags",
