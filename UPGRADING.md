@@ -1,5 +1,71 @@
 # Upgrading Guide
 
+## Upgrading from v0.3.x to v0.4.0
+
+v0.4.0 aligns the extension name across the Rust crate, the `.so` filename, the Composer `extension-name`, and what `php -m` reports. There are no API changes; the migration is purely about how the extension is named, packaged, and loaded.
+
+### What changed
+
+| Concern | Before (v0.3.x) | After (v0.4.0) |
+|---------|-----------------|----------------|
+| Registered PHP module name (`php -m`) | `biscuit-php` | `biscuit-php` (unchanged) |
+| Cargo `[lib]` name | `biscuit` | `biscuit_php` |
+| Local cargo build output | `libbiscuit.so` | `libbiscuit_php.so` |
+| Composer `php-ext.extension-name` | `biscuit` | `biscuit-php` |
+| PIE-installed file | `biscuit.so` | `biscuit-php.so` |
+| Linux/macOS release archive prefix | `php_biscuit-` | `php_biscuit-php-` |
+| `extension=` directive in php.ini | `extension=biscuit.so` | `extension=biscuit-php.so` |
+
+The Composer ext requirement was already `ext-biscuit-php` in practice (because `php -m` reported `biscuit-php`); v0.4.0 just makes every other surface agree with that. See [issue #30](https://github.com/ptondereau/biscuit-php/issues/30) for context.
+
+### Migration
+
+**1. Composer requires**
+
+If your `composer.json` was working before, no change is needed:
+
+```json
+"require": {
+    "ext-biscuit-php": "*"
+}
+```
+
+If you were following the old README and used `"ext-biscuit"`, change it to `"ext-biscuit-php"`.
+
+**2. PIE users**
+
+```bash
+pie install ptondereau/biscuit-php:^0.4
+```
+
+Then enable the new filename:
+
+```bash
+docker-php-ext-enable biscuit-php
+# or, manually:
+# extension=biscuit-php.so
+```
+
+If you previously enabled `biscuit`, disable it (`docker-php-ext-disable biscuit` or remove the old `extension=biscuit.so` line) before enabling `biscuit-php` to avoid loading the module twice.
+
+**3. Manual install (zip from GitHub release)**
+
+The archive name now starts with `php_biscuit-php-` and contains `biscuit-php.so` rather than `biscuit.so`. Update your `extension=` line in php.ini accordingly.
+
+**4. Building from source**
+
+`cargo build` now produces `libbiscuit_php.so` (not `libbiscuit.so`). Update any local scripts:
+
+```bash
+# Before
+php -dextension=./target/release/libbiscuit.so vendor/bin/phpunit
+
+# After
+php -dextension=./target/release/libbiscuit_php.so vendor/bin/phpunit
+```
+
+---
+
 ## Upgrading from v0.2.x to v0.3.0
 
 v0.3.0 introduces API simplification changes that consolidate redundant methods and add optional parameters to constructors. This is a **breaking change** release.

@@ -22,28 +22,25 @@ PHP bindings for [Biscuit](https://www.biscuitsec.org), a bearer token supportin
 
 ### Pre-built Binaries (Recommended)
 
-Pre-built binaries are available for Linux x86_64 across multiple PHP versions, with both Thread-Safe (TS) and Non-Thread-Safe (NTS) variants. Download the appropriate binary for your PHP version and thread safety from the [latest release](https://github.com/ptondereau/biscuit-php/releases/latest).
+Pre-built binaries are available for Linux (glibc/musl, x86_64/arm64), macOS (x86_64/arm64), and Windows (x86_64) across PHP 8.1 through 8.5, with both Thread-Safe (TS) and Non-Thread-Safe (NTS) variants. Download the appropriate archive for your platform from the [latest release](https://github.com/ptondereau/biscuit-php/releases/latest).
 
-#### Quick Installation
+#### Quick Installation (Linux glibc x86_64, PHP 8.3 NTS shown)
 
 ```bash
-# Download binary for your PHP version and thread safety
-# Replace 8.3 with your version and ts/nts based on your thread safety
-wget https://github.com/ptondereau/biscuit-php/releases/latest/download/ext_biscuit_php-linux-x86_64-php8.3-nts.so
-
-# Verify checksum
-wget https://github.com/ptondereau/biscuit-php/releases/latest/download/ext_biscuit_php-linux-x86_64-php8.3-nts.so.sha256
-sha256sum -c ext_biscuit_php-linux-x86_64-php8.3-nts.so.sha256
+# Pick the archive matching your PHP version, libc, arch, and TS/NTS:
+VERSION=v0.4.0
+wget https://github.com/ptondereau/biscuit-php/releases/download/${VERSION}/php_biscuit-php-${VERSION}_php8.3-x86_64-linux-glibc-nts.zip
+unzip php_biscuit-php-${VERSION}_php8.3-x86_64-linux-glibc-nts.zip
 
 # Move to PHP extension directory (adjust path for your system)
-sudo mv ext_biscuit_php-linux-x86_64-php8.3-nts.so /usr/lib/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/
+sudo mv biscuit-php.so /usr/lib/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/
 
 # Enable the extension
-echo "extension=ext_biscuit_php-linux-x86_64-php8.3-nts.so" | sudo tee /etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/mods-available/biscuit.ini
-sudo phpenmod biscuit
+echo "extension=biscuit-php.so" | sudo tee /etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/mods-available/biscuit-php.ini
+sudo phpenmod biscuit-php
 
 # Verify installation
-php -m | grep biscuit
+php -m | grep biscuit-php
 ```
 
 ### PIE installation
@@ -57,7 +54,7 @@ and you can add in your `composer.json`:
 ```json
 {
     // ...
-    "ext-biscuit": "*",
+    "ext-biscuit-php": "*",
     // ...
 }
 ```
@@ -79,7 +76,7 @@ composer install
 cargo build --release
 
 # Load the extension
-php -dextension=target/release/libext_biscuit_php.so -m | grep biscuit
+php -dextension=target/release/libbiscuit_php.so -m | grep biscuit-php
 ```
 
 ### Using stubs for autocompletion
@@ -232,7 +229,7 @@ $publicKey = PublicKey::fromBytes($bytes, Algorithm::Secp256r1); // Explicit Sec
 ```bash
 cargo build
 php \
-    -dextension=target/debug/libext_biscuit_php.so \
+    -dextension=target/debug/libbiscuit_php.so \
     vendor/bin/phpunit
 ```
 
@@ -244,7 +241,7 @@ We're using [Mago](https://mago.carthage.software/) as code-style formatter for 
 composer install
 cargo build
 php \
-    -dextension=target/debug/libext_biscuit_php.so \
+    -dextension=target/debug/libbiscuit_php.so \
     vendor/bin/mago lint // and format
 ```
 
@@ -253,7 +250,7 @@ php \
 ```bash
 cargo build
 php \
-    -dextension=target/debug/libext_biscuit_php.so \
+    -dextension=target/debug/libbiscuit_php.so \
     php-extension-stub-generator.phar dump-files ext-biscuit-php stubs
 ```
 
