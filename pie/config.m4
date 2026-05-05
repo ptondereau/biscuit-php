@@ -18,7 +18,8 @@ if test "$PHP_DEBUG" == "yes"; then
   CARGO_BUILD_DIR="target/debug"
 fi
 cat >>Makefile.objects<< EOF
-EXT_NAME = biscuit
+EXT_LIB_NAME = biscuit_php
+EXT_INSTALL_NAME = biscuit-php
 all: cargo_build
 
 clean: cargo_clean
@@ -26,7 +27,7 @@ clean: cargo_clean
 cargo_build:
 	@echo "Building the Rust extension"
 	PHP_CONFIG=$(which $PHP_PHP_CONFIG) PHP=$PHP_EXECUTABLE cargo build $CARGO_FLAGS
-	cp $CARGO_BUILD_DIR/AS_ESCAPE([lib$(EXT_NAME)]).so AS_ESCAPE([$(phplibdir)])/AS_ESCAPE([$(EXT_NAME)]).so
+	cp $CARGO_BUILD_DIR/AS_ESCAPE([lib$(EXT_LIB_NAME)]).so AS_ESCAPE([$(phplibdir)])/AS_ESCAPE([$(EXT_INSTALL_NAME)]).so
 
 cargo_clean:
 	@echo "Cleaning the Rust extension"
