@@ -27,7 +27,7 @@ pub fn startup(_ty: i32, _mod_num: i32) -> i32 {
 
 pub extern "C" fn php_module_info(_module: *mut ModuleEntry) {
     info_table_start!();
-    info_table_row!("ext-biscuit-php", "enabled");
+    info_table_row!("ext-biscuit_php", "enabled");
     info_table_row!("version", env!("CARGO_PKG_VERSION"));
     info_table_row!("biscuit-auth version", "6.0.0");
     info_table_end!();

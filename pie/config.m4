@@ -19,7 +19,7 @@ if test "$PHP_DEBUG" == "yes"; then
 fi
 cat >>Makefile.objects<< EOF
 EXT_LIB_NAME = biscuit_php
-EXT_INSTALL_NAME = biscuit-php
+EXT_INSTALL_NAME = biscuit_php
 all: cargo_build
 
 clean: cargo_clean

@@ -32,7 +32,7 @@
     },
     "php-ext": {
         "build-path": "pie",
-        "extension-name": "biscuit-php",
+        "extension-name": "biscuit_php",
         "support-zts": true,
         "support-nts": true,
         "download-url-method": ["pre-packaged-binary", "composer-default"],

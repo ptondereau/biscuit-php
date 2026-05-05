@@ -29,18 +29,18 @@ Pre-built binaries are available for Linux (glibc/musl, x86_64/arm64), macOS (x8
 ```bash
 # Pick the archive matching your PHP version, libc, arch, and TS/NTS:
 VERSION=v0.4.0
-wget https://github.com/ptondereau/biscuit-php/releases/download/${VERSION}/php_biscuit-php-${VERSION}_php8.3-x86_64-linux-glibc-nts.zip
-unzip php_biscuit-php-${VERSION}_php8.3-x86_64-linux-glibc-nts.zip
+wget https://github.com/ptondereau/biscuit-php/releases/download/${VERSION}/php_biscuit_php-${VERSION}_php8.3-x86_64-linux-glibc-nts.zip
+unzip php_biscuit_php-${VERSION}_php8.3-x86_64-linux-glibc-nts.zip
 
 # Move to PHP extension directory (adjust path for your system)
-sudo mv biscuit-php.so /usr/lib/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/
+sudo mv biscuit_php.so /usr/lib/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/
 
 # Enable the extension
-echo "extension=biscuit-php.so" | sudo tee /etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/mods-available/biscuit-php.ini
-sudo phpenmod biscuit-php
+echo "extension=biscuit_php.so" | sudo tee /etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/mods-available/biscuit_php.ini
+sudo phpenmod biscuit_php
 
 # Verify installation
-php -m | grep biscuit-php
+php -m | grep biscuit_php
 ```
 
 ### PIE installation
@@ -54,7 +54,7 @@ and you can add in your `composer.json`:
 ```json
 {
     // ...
-    "ext-biscuit-php": "*",
+    "ext-biscuit_php": "*",
     // ...
 }
 ```
@@ -76,7 +76,7 @@ composer install
 cargo build --release
 
 # Load the extension
-php -dextension=target/release/libbiscuit_php.so -m | grep biscuit-php
+php -dextension=target/release/libbiscuit_php.so -m | grep biscuit_php
 ```
 
 ### Using stubs for autocompletion
@@ -251,7 +251,7 @@ php \
 cargo build
 php \
     -dextension=target/debug/libbiscuit_php.so \
-    php-extension-stub-generator.phar dump-files ext-biscuit-php stubs
+    php-extension-stub-generator.phar dump-files ext-biscuit_php stubs
 ```
 
 ## Contributing

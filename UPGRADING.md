@@ -4,33 +4,35 @@
 
 v0.4.0 aligns the extension name across the Rust crate, the `.so` filename, the Composer `extension-name`, and what `php -m` reports. There are no API changes; the migration is purely about how the extension is named, packaged, and loaded.
 
+The aligned name is `biscuit_php` (with an underscore). PIE's `extension-name` validator only accepts letters, digits, and underscores, so a hyphen variant is not an option.
+
 ### What changed
 
 | Concern | Before (v0.3.x) | After (v0.4.0) |
 |---------|-----------------|----------------|
-| Registered PHP module name (`php -m`) | `biscuit-php` | `biscuit-php` (unchanged) |
+| Registered PHP module name (`php -m`) | `biscuit-php` | `biscuit_php` |
+| Cargo `[package]` name | `biscuit-php` | `biscuit_php` |
 | Cargo `[lib]` name | `biscuit` | `biscuit_php` |
 | Local cargo build output | `libbiscuit.so` | `libbiscuit_php.so` |
-| Composer `php-ext.extension-name` | `biscuit` | `biscuit-php` |
-| PIE-installed file | `biscuit.so` | `biscuit-php.so` |
-| Linux/macOS release archive prefix | `php_biscuit-` | `php_biscuit-php-` |
-| `extension=` directive in php.ini | `extension=biscuit.so` | `extension=biscuit-php.so` |
+| Composer `php-ext.extension-name` | `biscuit` | `biscuit_php` |
+| Composer ext requirement | `ext-biscuit-php` | `ext-biscuit_php` |
+| PIE-installed file | `biscuit.so` | `biscuit_php.so` |
+| Linux/macOS release archive prefix | `php_biscuit-` | `php_biscuit_php-` |
+| `extension=` directive in php.ini | `extension=biscuit.so` | `extension=biscuit_php.so` |
 
-The Composer ext requirement was already `ext-biscuit-php` in practice (because `php -m` reported `biscuit-php`); v0.4.0 just makes every other surface agree with that. See [issue #30](https://github.com/ptondereau/biscuit-php/issues/30) for context.
+See [issue #30](https://github.com/ptondereau/biscuit-php/issues/30) for context.
 
 ### Migration
 
 **1. Composer requires**
 
-If your `composer.json` was working before, no change is needed:
-
 ```json
 "require": {
-    "ext-biscuit-php": "*"
+    "ext-biscuit_php": "*"
 }
 ```
 
-If you were following the old README and used `"ext-biscuit"`, change it to `"ext-biscuit-php"`.
+If you were on v0.3.x with `"ext-biscuit-php"` (the only string that worked then) or with the README's old `"ext-biscuit"`, change it to `"ext-biscuit_php"`.
 
 **2. PIE users**
 
@@ -41,16 +43,16 @@ pie install ptondereau/biscuit-php:^0.4
 Then enable the new filename:
 
 ```bash
-docker-php-ext-enable biscuit-php
+docker-php-ext-enable biscuit_php
 # or, manually:
-# extension=biscuit-php.so
+# extension=biscuit_php.so
 ```
 
-If you previously enabled `biscuit`, disable it (`docker-php-ext-disable biscuit` or remove the old `extension=biscuit.so` line) before enabling `biscuit-php` to avoid loading the module twice.
+If you previously enabled `biscuit`, disable it (`docker-php-ext-disable biscuit` or remove the old `extension=biscuit.so` line) before enabling `biscuit_php` to avoid loading the module twice.
 
 **3. Manual install (zip from GitHub release)**
 
-The archive name now starts with `php_biscuit-php-` and contains `biscuit-php.so` rather than `biscuit.so`. Update your `extension=` line in php.ini accordingly.
+The archive name now starts with `php_biscuit_php-` and contains `biscuit_php.so` rather than `biscuit.so`. Update your `extension=` line in php.ini accordingly.
 
 **4. Building from source**
 
