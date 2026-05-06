@@ -54,6 +54,20 @@ parameters:
             message: '#Call to function is_string\(\) with string will always evaluate to true#'
             path: src/Test/*
             reportUnmatched: false
+        # Symfony 7.3+ Vote class used in forward-compatible voter signature; absent on Symfony 6.4
+        -
+            message: '#has invalid type Symfony\\Component\\Security\\Core\\Authorization\\Voter\\Vote#'
+            path: src/Security/Voter/BiscuitVoter.php
+            reportUnmatched: false
+        # Older symfony/config (prefer-lowest) does not expose generic types on TreeBuilder/NodeBuilder
+        -
+            message: '#return type with generic class Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder does not specify its types#'
+            path: src/DependencyInjection/Configuration.php
+            reportUnmatched: false
+        -
+            message: '#Call to method arrayNode\(\) on an unknown class Symfony\\Component\\Config\\Definition\\Builder\\NodeBuilder#'
+            path: src/DependencyInjection/Configuration.php
+            reportUnmatched: false
 
 includes:
     - vendor/phpstan/phpstan-phpunit/extension.neon
