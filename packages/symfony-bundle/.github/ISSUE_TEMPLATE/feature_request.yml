@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest a new feature or enhancement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature. Before opening, please check if a similar request already exists.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this feature solve? Describe the use case that's currently not well-served by the bundle.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe what you'd like to see. Include API sketches, configuration snippets, or example usage where relevant.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches have you considered? Why doesn't an existing feature cover this?
+    validations:
+      required: false
