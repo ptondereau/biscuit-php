@@ -1,5 +1,5 @@
 {
-  "name": "biscuit-auth/biscuit-symfony-bundle",
+  "name": "ptondereau/biscuit-symfony-bundle",
   "description": "Symfony bundle for Biscuit authorization tokens",
   "type": "symfony-bundle",
   "license": "Apache-2.0",
