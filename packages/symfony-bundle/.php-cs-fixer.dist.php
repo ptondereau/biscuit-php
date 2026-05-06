@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-$finder = new PhpCsFixer\Finder()
+$finder = (new PhpCsFixer\Finder())
     ->in(__DIR__)
     ->exclude("vendor")
     ->exclude("stubs")
     ->exclude("var")
     ->exclude("assets");
 
-return new PhpCsFixer\Config()
+return (new PhpCsFixer\Config())
     ->setRules([
         "@PER-CS" => true,
         "@Symfony" => true,
