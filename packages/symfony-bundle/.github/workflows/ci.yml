@@ -44,8 +44,23 @@ jobs:
         env:
           fail-fast: true
 
-      - name: Install biscuit-php extension
-        run: sudo pie install ptondereau/biscuit-php:0.4.0 --no-interaction --auto-install-build-tools --auto-install-system-dependencies
+      - name: Install biscuit-php extension (prebuilt only)
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "::group::pie install attempt $attempt"
+            output=$(sudo pie install ptondereau/biscuit-php:0.4.0 --no-interaction --no-cache 2>&1 || true)
+            echo "$output"
+            echo "::endgroup::"
+            if echo "$output" | grep -q "Pre-packaged binary found"; then
+              echo "✓ Installed prebuilt biscuit_php on attempt $attempt"
+              exit 0
+            fi
+            echo "::warning::pie did not pick the prebuilt binary on attempt $attempt; retrying..."
+            sleep 5
+          done
+          echo "::error::pie failed to install prebuilt biscuit_php after 3 attempts"
+          exit 1
 
       - name: Constrain Symfony version
         run: |
