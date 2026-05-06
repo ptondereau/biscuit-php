@@ -13,7 +13,7 @@ parameters:
     bootstrapFiles:
         - vendor/autoload.php
 
-    stubFiles:
+    scanFiles:
         - stubs/biscuit-php.stubs.php
 
     symfony:
