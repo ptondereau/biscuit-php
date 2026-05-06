@@ -3,8 +3,8 @@
 Symfony bundle for [Biscuit](https://www.biscuitsec.org/) authorization tokens.
 
 [![CI](https://github.com/ptondereau/biscuit-sf-bundle/actions/workflows/ci.yml/badge.svg)](https://github.com/ptondereau/biscuit-sf-bundle/actions/workflows/ci.yml)
-[![Latest Version](https://img.shields.io/packagist/v/biscuit-auth/biscuit-symfony-bundle.svg)](https://packagist.org/packages/biscuit-auth/biscuit-symfony-bundle)
-[![PHP Version](https://img.shields.io/packagist/php-v/biscuit-auth/biscuit-symfony-bundle.svg)](https://packagist.org/packages/biscuit-auth/biscuit-symfony-bundle)
+[![Latest Version](https://img.shields.io/packagist/v/ptondereau/biscuit-symfony-bundle.svg)](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle)
+[![PHP Version](https://img.shields.io/packagist/php-v/ptondereau/biscuit-symfony-bundle.svg)](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 ## About
@@ -41,7 +41,7 @@ pie install ptondereau/biscuit-php:0.4.0
 Install the bundle via Composer:
 
 ```bash
-composer require biscuit-auth/biscuit-symfony-bundle
+composer require ptondereau/biscuit-symfony-bundle
 ```
 
 If you are not using Symfony Flex, register the bundle manually in `config/bundles.php`:
