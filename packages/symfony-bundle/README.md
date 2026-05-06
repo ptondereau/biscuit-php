@@ -3,6 +3,7 @@
 Symfony bundle for [Biscuit](https://www.biscuitsec.org/) authorization tokens.
 
 [![CI](https://github.com/ptondereau/biscuit-sf-bundle/actions/workflows/ci.yml/badge.svg)](https://github.com/ptondereau/biscuit-sf-bundle/actions/workflows/ci.yml)
+[![Coverage Status](https://coveralls.io/repos/github/ptondereau/biscuit-sf-bundle/badge.svg?branch=main)](https://coveralls.io/github/ptondereau/biscuit-sf-bundle?branch=main)
 [![Latest Version](https://img.shields.io/packagist/v/ptondereau/biscuit-symfony-bundle.svg)](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle)
 [![PHP Version](https://img.shields.io/packagist/php-v/ptondereau/biscuit-symfony-bundle.svg)](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)

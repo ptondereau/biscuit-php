@@ -82,3 +82,63 @@ jobs:
 
       - name: Run quality gate
         run: composer check
+
+  coverage:
+    name: Code coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          tools: pie, composer:v2
+          coverage: pcov
+        env:
+          fail-fast: true
+
+      - name: Install biscuit-php extension (prebuilt only)
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "::group::pie install attempt $attempt"
+            output=$(sudo pie install ptondereau/biscuit-php:0.4.0 --no-interaction --no-cache 2>&1 || true)
+            echo "$output"
+            echo "::endgroup::"
+            if echo "$output" | grep -q "Pre-packaged binary found"; then
+              echo "✓ Installed prebuilt biscuit_php on attempt $attempt"
+              exit 0
+            fi
+            echo "::warning::pie did not pick the prebuilt binary on attempt $attempt; retrying..."
+            sleep 5
+          done
+          echo "::error::pie failed to install prebuilt biscuit_php after 3 attempts"
+          exit 1
+
+      - name: Constrain Symfony version
+        run: |
+          composer require --no-update --no-interaction \
+            "symfony/framework-bundle:7.4.*" \
+            "symfony/security-bundle:7.4.*" \
+            "symfony/config:7.4.*" \
+            "symfony/dependency-injection:7.4.*" \
+            "symfony/console:7.4.*"
+          composer require --no-update --no-interaction --dev \
+            "symfony/cache:7.4.*" \
+            "symfony/web-profiler-bundle:7.4.*" \
+            "symfony/yaml:7.4.*"
+
+      - name: Install dependencies
+        uses: ramsey/composer-install@v3
+
+      - name: Run tests with coverage
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          file: coverage.xml
+          format: clover
+          github-token: ${{ secrets.GITHUB_TOKEN }}
