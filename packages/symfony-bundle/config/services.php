@@ -7,7 +7,6 @@ use Biscuit\BiscuitBundle\Command\GenerateKeysCommand;
 use Biscuit\BiscuitBundle\Command\InspectTokenCommand;
 use Biscuit\BiscuitBundle\Command\TestPolicyCommand;
 use Biscuit\BiscuitBundle\DataCollector\BiscuitDataCollector;
-use Biscuit\BiscuitBundle\EventListener\BiscuitPolicyListener;
 use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
 use Biscuit\BiscuitBundle\Security\Authenticator\BiscuitAuthenticator;
@@ -95,17 +94,6 @@ return static function (ContainerConfigurator $container): void {
             service('biscuit.data_collector')->nullOnInvalid(),
         ])
         ->tag('security.voter');
-
-    // Event Listeners
-    $services->set('biscuit.policy_listener', BiscuitPolicyListener::class)
-        ->args([
-            service('security.token_storage'),
-            service('biscuit.policy_registry'),
-        ])
-        ->tag('kernel.event_listener', [
-            'event' => 'kernel.controller_arguments',
-            'priority' => 0,
-        ]);
 
     // Commands
     $services->set(GenerateKeysCommand::class)

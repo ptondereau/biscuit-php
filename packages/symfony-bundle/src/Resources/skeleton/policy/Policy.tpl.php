@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace <?php echo $namespace; ?>;
 
-use Biscuit\BiscuitBundle\Attribute\BiscuitPolicy;
-
 /**
  * Biscuit policy class.
  *
- * Use #[BiscuitPolicy] or #[IsGranted] attribute on your controllers to enforce this policy.
+ * Use the #[IsGranted] attribute on your controllers to enforce this policy.
  */
 final class <?php echo $class_name; ?>
 
@@ -30,34 +28,7 @@ final class <?php echo $class_name; ?>
 
     /**
      * ============================================================================
-     * OPTION 1: Using #[BiscuitPolicy] attribute (Biscuit-native)
-     * ============================================================================
-     *
-     * The #[BiscuitPolicy] attribute is a Biscuit-specific way to enforce policies.
-     * Use @paramName syntax in params to reference route parameters.
-     *
-     * Example with static policy:
-     *
-     *     use Biscuit\BiscuitBundle\Attribute\BiscuitPolicy;
-     *
-     *     #[BiscuitPolicy(self::NAME)]
-     *     public function list(): Response
-     *     {
-     *         // Token must satisfy the policy defined in self::POLICY
-     *     }
-     *
-     * Example with request parameter (like Express.js scope example):
-     *
-     *     #[Route('/protected/{dog}', methods: ['GET'])]
-     *     #[BiscuitPolicy('allow if scope({resource}, "read")', params: ['resource' => '@dog'])]
-     *     public function show(string $dog): Response
-     *     {
-     *         // @dog references the route parameter
-     *         // Token must contain: scope("puna", "read") to access /protected/puna
-     *     }
-     *
-     * ============================================================================
-     * OPTION 2: Using #[IsGranted] attribute (Symfony-native)
+     * Using #[IsGranted] attribute
      * ============================================================================
      *
      * Use Symfony's standard #[IsGranted] with the subject parameter.

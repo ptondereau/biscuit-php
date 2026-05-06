@@ -106,10 +106,8 @@ final class MakeBiscuitPolicyTest extends TestCase
 
         self::assertIsString($content);
         self::assertStringContainsString('Biscuit policy class', $content);
-        self::assertStringContainsString('#[BiscuitPolicy]', $content);
         self::assertStringContainsString('#[IsGranted]', $content);
-        self::assertStringContainsString('OPTION 1: Using #[BiscuitPolicy]', $content);
-        self::assertStringContainsString('OPTION 2: Using #[IsGranted]', $content);
+        self::assertStringContainsString('Using #[IsGranted] attribute', $content);
     }
 
     #[Test]
