@@ -25,7 +25,7 @@ final class BiscuitTestTraitTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itProvidesTestKeyPair(): void
     {
         $keyPair = self::getTestKeyPair();
@@ -34,7 +34,7 @@ final class BiscuitTestTraitTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itReturnsSameKeyPairOnMultipleCalls(): void
     {
         $keyPair1 = self::getTestKeyPair();
@@ -44,7 +44,7 @@ final class BiscuitTestTraitTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itProvidesTestPublicKey(): void
     {
         $publicKey = self::getTestPublicKey();
@@ -53,7 +53,7 @@ final class BiscuitTestTraitTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itProvidesTestPrivateKey(): void
     {
         $privateKey = self::getTestPrivateKey();
@@ -62,7 +62,7 @@ final class BiscuitTestTraitTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTestToken(): void
     {
         $token = $this->createTestToken();
@@ -71,7 +71,7 @@ final class BiscuitTestTraitTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTestTokenWithCustomCode(): void
     {
         $token = $this->createTestToken('user("custom_user"); role("admin")');
@@ -83,7 +83,7 @@ final class BiscuitTestTraitTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTestTokenWithParams(): void
     {
         $token = $this->createTestToken('user({user_id})', ['user_id' => 'param_user']);
@@ -94,7 +94,7 @@ final class BiscuitTestTraitTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTestTokenBase64(): void
     {
         $base64 = $this->createTestTokenBase64();
@@ -104,7 +104,7 @@ final class BiscuitTestTraitTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTestTokenBase64WithCustomCode(): void
     {
         $base64 = $this->createTestTokenBase64('user("base64_user")');
@@ -118,7 +118,7 @@ final class BiscuitTestTraitTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itResetsTestKeyPair(): void
     {
         $keyPair1 = self::getTestKeyPair();
@@ -129,7 +129,7 @@ final class BiscuitTestTraitTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreateValidTokenVerifiableWithPublicKey(): void
     {
         $token = $this->createTestToken('user("verify_test")');

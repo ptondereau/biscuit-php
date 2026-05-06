@@ -25,7 +25,7 @@ final class TestPolicyCommandTest extends TestCase
     use ConsoleApplicationTrait;
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsPassingPolicyWithFacts(): void
     {
         $commandTester = $this->createCommandTester([
@@ -46,7 +46,7 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsFailingPolicy(): void
     {
         $commandTester = $this->createCommandTester([
@@ -64,7 +64,7 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsInlinePolicy(): void
     {
         $commandTester = $this->createCommandTester([]);
@@ -81,7 +81,7 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsPolicyWithToken(): void
     {
         $tokenManager = $this->createTokenManager();
@@ -110,7 +110,7 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsPolicyWithParameters(): void
     {
         $commandTester = $this->createCommandTester([
@@ -130,7 +130,7 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsMultipleFacts(): void
     {
         $commandTester = $this->createCommandTester([
@@ -193,7 +193,7 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itShowsAuthorizerState(): void
     {
         $commandTester = $this->createCommandTester([

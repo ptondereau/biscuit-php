@@ -59,7 +59,7 @@ final class TestBiscuitAuthenticatorTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itAuthenticatesWithDefaultUserIdentifier(): void
     {
         $request = Request::create('/api/test');
@@ -73,7 +73,7 @@ final class TestBiscuitAuthenticatorTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itAuthenticatesWithCustomUserIdentifier(): void
     {
         $request = Request::create('/api/test');
@@ -86,7 +86,7 @@ final class TestBiscuitAuthenticatorTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesBiscuitUser(): void
     {
         $request = Request::create('/api/test');
@@ -100,7 +100,7 @@ final class TestBiscuitAuthenticatorTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itIncludesBiscuitBadge(): void
     {
         $request = Request::create('/api/test');
@@ -152,7 +152,7 @@ final class TestBiscuitAuthenticatorTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesValidBiscuitToken(): void
     {
         $request = Request::create('/api/test');

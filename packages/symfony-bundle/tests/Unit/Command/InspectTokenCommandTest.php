@@ -25,7 +25,7 @@ final class InspectTokenCommandTest extends TestCase
     use ConsoleApplicationTrait;
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itInspectsTokenWithoutVerification(): void
     {
         [$commandTester, $token] = $this->createCommandTesterWithToken();
@@ -43,7 +43,7 @@ final class InspectTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itInspectsTokenWithVerification(): void
     {
         [$commandTester, $token] = $this->createCommandTesterWithToken();
@@ -62,7 +62,7 @@ final class InspectTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itShowsMultipleBlocks(): void
     {
         [$commandTester, $token] = $this->createCommandTesterWithAttenuatedToken();
@@ -79,7 +79,7 @@ final class InspectTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itFailsForInvalidTokenUnverified(): void
     {
         $tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
@@ -94,7 +94,7 @@ final class InspectTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itFailsForInvalidTokenVerified(): void
     {
         $tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
@@ -115,7 +115,7 @@ final class InspectTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itShowsRootKeyIdForUnverifiedToken(): void
     {
         [$commandTester, $token] = $this->createCommandTesterWithToken();

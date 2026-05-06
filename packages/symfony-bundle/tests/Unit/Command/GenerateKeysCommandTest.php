@@ -21,7 +21,7 @@ final class GenerateKeysCommandTest extends TestCase
     use ConsoleApplicationTrait;
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itGeneratesEd25519KeyPairByDefault(): void
     {
         $commandTester = $this->createCommandTester();
@@ -41,7 +41,7 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itGeneratesEd25519KeyPairWithExplicitOption(): void
     {
         $commandTester = $this->createCommandTester();
@@ -55,7 +55,7 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itGeneratesSecp256r1KeyPair(): void
     {
         $commandTester = $this->createCommandTester();
@@ -70,7 +70,7 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itGeneratesShortAlgorithmOption(): void
     {
         $commandTester = $this->createCommandTester();
@@ -81,7 +81,7 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itThrowsForUnknownAlgorithm(): void
     {
         $commandTester = $this->createCommandTester();
@@ -93,7 +93,7 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itShowsSecurityWarning(): void
     {
         $commandTester = $this->createCommandTester();
@@ -105,7 +105,7 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itShowsConfigurationExample(): void
     {
         $commandTester = $this->createCommandTester();

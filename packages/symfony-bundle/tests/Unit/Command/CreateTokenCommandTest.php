@@ -25,7 +25,7 @@ final class CreateTokenCommandTest extends TestCase
     use ConsoleApplicationTrait;
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTokenFromTemplate(): void
     {
         $commandTester = $this->createCommandTester([
@@ -48,7 +48,7 @@ final class CreateTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTokenWithParameters(): void
     {
         $commandTester = $this->createCommandTester([
@@ -70,7 +70,7 @@ final class CreateTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTokenWithMultipleParameters(): void
     {
         $commandTester = $this->createCommandTester([
@@ -91,7 +91,7 @@ final class CreateTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itParsesIntegerParameters(): void
     {
         $commandTester = $this->createCommandTester([
@@ -112,7 +112,7 @@ final class CreateTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itParsesBooleanParameters(): void
     {
         $commandTester = $this->createCommandTester([

@@ -41,7 +41,7 @@ final class BiscuitFixtureLoaderTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itLoadsFixturesFromYamlFile(): void
     {
         $yamlContent = <<<YAML
@@ -67,7 +67,7 @@ final class BiscuitFixtureLoaderTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itLoadsFixturesFromArray(): void
     {
         $data = [
@@ -86,7 +86,7 @@ final class BiscuitFixtureLoaderTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itLoadsTokenWithParams(): void
     {
         $data = [
@@ -149,7 +149,7 @@ final class BiscuitFixtureLoaderTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itUsesDefaultCodeWhenNotProvided(): void
     {
         $data = [

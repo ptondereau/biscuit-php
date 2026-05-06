@@ -31,7 +31,7 @@ final class BiscuitTokenFactoryTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTokenWithFactsFromTemplate(): void
     {
         $factory = $this->createFactory([
@@ -47,7 +47,7 @@ final class BiscuitTokenFactoryTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTokenWithChecksFromTemplate(): void
     {
         $factory = $this->createFactory([
@@ -64,7 +64,7 @@ final class BiscuitTokenFactoryTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTokenWithRulesFromTemplate(): void
     {
         $factory = $this->createFactory([
@@ -81,7 +81,7 @@ final class BiscuitTokenFactoryTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit-php')]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itPassesParamsToPrimitives(): void
     {
         $factory = $this->createFactory([
