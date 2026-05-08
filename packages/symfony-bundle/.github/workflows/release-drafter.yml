@@ -1,0 +1,25 @@
+name: Release Drafter
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@v7
+        with:
+          config-name: release-drafter.yml
+          tag: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          version: ${{ github.ref_name }}
+          publish: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

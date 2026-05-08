@@ -1,0 +1,32 @@
+name-template: '$RESOLVED_VERSION'
+tag-template: '$RESOLVED_VERSION'
+
+categories:
+  - title: 'Added'
+    labels:
+      - 'enhancement'
+      - 'feature'
+  - title: 'Changed'
+    labels:
+      - 'refactor'
+      - 'chore'
+  - title: 'Fixed'
+    labels:
+      - 'bug'
+      - 'fix'
+  - title: 'Security'
+    labels:
+      - 'security'
+  - title: 'Documentation'
+    labels:
+      - 'documentation'
+
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+change-title-escapes: '\<*_&'
+
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_VERSION
