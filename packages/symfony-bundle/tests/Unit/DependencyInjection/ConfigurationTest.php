@@ -263,6 +263,46 @@ final class ConfigurationTest extends TestCase
     }
 
     #[Test]
+    public function itHasEmptyBlockTemplatesByDefault(): void
+    {
+        $config = $this->processConfiguration([]);
+
+        self::assertSame([], $config['block_templates']);
+    }
+
+    #[Test]
+    public function itAcceptsBlockTemplatesConfiguration(): void
+    {
+        $config = $this->processConfiguration([
+            'biscuit' => [
+                'block_templates' => [
+                    'read_only' => [
+                        'checks' => ['check if operation("read")'],
+                    ],
+                    'expires' => [
+                        'checks' => ['check if now($t), $t <= {exp}'],
+                    ],
+                    'mixed' => [
+                        'facts' => ['scope("read")'],
+                        'checks' => ['check if operation("read")'],
+                        'rules' => ['allowed_for($r) <- resource($r), scope("read")'],
+                    ],
+                ],
+            ],
+        ]);
+
+        self::assertCount(3, $config['block_templates']);
+
+        self::assertSame(['check if operation("read")'], $config['block_templates']['read_only']['checks']);
+        self::assertSame([], $config['block_templates']['read_only']['facts']);
+        self::assertSame([], $config['block_templates']['read_only']['rules']);
+
+        self::assertSame(['scope("read")'], $config['block_templates']['mixed']['facts']);
+        self::assertSame(['check if operation("read")'], $config['block_templates']['mixed']['checks']);
+        self::assertSame(['allowed_for($r) <- resource($r), scope("read")'], $config['block_templates']['mixed']['rules']);
+    }
+
+    #[Test]
     public function itAcceptsTokenTemplatesWithEmptyArrays(): void
     {
         $config = $this->processConfiguration([

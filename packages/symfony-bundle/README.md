@@ -17,9 +17,10 @@ What you get:
 - Token extraction from `Authorization` header and/or cookies
 - Symfony authenticator that validates the token's signature against your public key
 - A `BiscuitVoter` that runs your Datalog policies against the request, fully driven by `#[IsGranted]`
+- Token attenuation through reusable block templates, with an event for audit and a console command for debugging
 - Configurable token caching and revocation checking
-- A web profiler panel showing the current token, its blocks, and every policy decision
-- Console commands to generate keys, mint tokens from templates, and inspect tokens
+- A web profiler panel showing the current token, its blocks, every policy decision, and every attenuation performed during the request
+- Console commands to generate keys, mint tokens from templates, attenuate tokens, and inspect tokens
 - A `make:biscuit-policy` maker
 - Test helpers to mint tokens and authenticate functional tests
 
@@ -141,6 +142,14 @@ biscuit:
             checks:
                 - 'check if time($t), $t < {expiry}'
             rules: []
+
+    block_templates:         # Templates used by BiscuitBlockFactory and biscuit:token:attenuate
+        read_only:
+            checks:
+                - 'check if operation("read")'
+        expires:
+            checks:
+                - 'check if now($t), $t <= {exp}'
 ```
 
 ## Key Management
@@ -261,14 +270,60 @@ final class IssueTokenAction
 }
 ```
 
+## Block Templates and Attenuation
+
+A holder of a Biscuit can derive a more restricted token by appending a block. Attenuation can only narrow authority; it can never widen it. The bundle exposes this through `BiscuitBlockFactory`, fed by reusable block templates declared in configuration:
+
+```yaml
+biscuit:
+    block_templates:
+        read_only:
+            checks:
+                - 'check if operation("read")'
+        expires:
+            checks:
+                - 'check if now($t), $t <= {exp}'
+        single_resource:
+            checks:
+                - 'check if resource({res})'
+```
+
+Apply a template to an existing token:
+
+```php
+use Biscuit\Auth\Biscuit;
+use Biscuit\BiscuitBundle\Token\BiscuitBlockFactory;
+
+final class ShareLinkAction
+{
+    public function __construct(private readonly BiscuitBlockFactory $blockFactory) {}
+
+    public function __invoke(Biscuit $parent, string $resource): Biscuit
+    {
+        $derived = $this->blockFactory->attenuate($parent, 'single_resource', [
+            'res' => $resource,
+        ]);
+
+        return $this->blockFactory->attenuate($derived, 'expires', [
+            'exp' => time() + 3600,
+        ]);
+    }
+}
+```
+
+For composing several templates into a single block (one extra block instead of N), use `buildBlock()` plus the underlying `BlockBuilder::merge()` before passing the result to `BiscuitTokenManager::attenuate()`.
+
+Every successful attenuation dispatches `Biscuit\BiscuitBundle\Event\BiscuitTokenAttenuatedEvent` from `BiscuitTokenManager`, with `parent`, `blockSource`, and `child` readonly properties. The bundle's data collector subscribes to it so the profiler shows the full derivation chain; you can subscribe additional listeners for audit logging or metrics.
+
 ## Console Commands
 
 | Command | Purpose |
 |---|---|
-| `biscuit:keys:generate` | Generate an ed25519 or secp256r1 key pair |
-| `biscuit:token:create`  | Mint a token from a configured template |
-| `biscuit:token:inspect` | Decode and pretty-print a Biscuit token |
-| `biscuit:policy:test`   | Run a configured policy against a token |
+| `biscuit:keys:generate`   | Generate an ed25519 or secp256r1 key pair |
+| `biscuit:token:create`    | Mint a token from a configured template |
+| `biscuit:token:attenuate` | Append a block to an existing token, from a template or inline Datalog |
+| `biscuit:token:inspect`   | Decode and pretty-print a Biscuit token |
+| `biscuit:policy:test`     | Run a configured policy against a token |
 
 Each command exposes `--help` for the full option list.
 
@@ -318,6 +373,7 @@ When `symfony/web-profiler-bundle` is installed in the dev environment, the bund
 - Whether a token was attached to the request, with block count and revocation IDs
 - All blocks in the token (Datalog source)
 - Every policy check performed during the request, with parameters and pass/fail outcome
+- Every attenuation performed during the request, with parent and child revocation IDs and the appended block source
 
 The toolbar shows a green/red indicator and the count of policy checks.
 

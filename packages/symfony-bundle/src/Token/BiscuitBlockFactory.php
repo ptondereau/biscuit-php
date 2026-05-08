@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Token;
 
 use Biscuit\Auth\Biscuit;
+use Biscuit\Auth\BlockBuilder;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
-use Biscuit\BiscuitBundle\Token\Template\BiscuitBuilderAdapter;
+use Biscuit\BiscuitBundle\Token\Template\BlockBuilderAdapter;
 use Biscuit\BiscuitBundle\Token\Template\Template;
 use InvalidArgumentException;
 
-final class BiscuitTokenFactory
+final class BiscuitBlockFactory
 {
     /**
      * @param array<string, array{facts?: list<string>, checks?: list<string>, rules?: list<string>}> $templates
@@ -25,20 +26,28 @@ final class BiscuitTokenFactory
     /**
      * @param array<string, mixed> $params
      */
-    public function create(string $template, array $params = []): Biscuit
+    public function attenuate(Biscuit $biscuit, string $template, array $params = []): Biscuit
+    {
+        return $this->tokenManager->attenuate($biscuit, $this->buildBlock($template, $params));
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    public function buildBlock(string $template, array $params = []): BlockBuilder
     {
         if (!isset($this->templates[$template])) {
-            throw new InvalidArgumentException(sprintf('Unknown token template: %s', $template));
+            throw new InvalidArgumentException(sprintf('Unknown block template: %s', $template));
         }
 
-        $builder = $this->tokenManager->createBuilder();
+        $block = $this->tokenManager->createBlockBuilder();
         $this->applier->populate(
-            new BiscuitBuilderAdapter($builder),
+            new BlockBuilderAdapter($block),
             Template::fromArray($this->templates[$template]),
             $params,
         );
 
-        return $this->tokenManager->build($builder);
+        return $block;
     }
 
     public function hasTemplate(string $template): bool

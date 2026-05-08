@@ -48,6 +48,14 @@ final class BiscuitExtensionTest extends TestCase
     }
 
     #[Test]
+    public function itRegistersBlockFactoryService(): void
+    {
+        $this->extension->load([], $this->container);
+
+        self::assertTrue($this->container->hasDefinition('biscuit.block_factory'));
+    }
+
+    #[Test]
     public function itSetsDefaultKeysParameters(): void
     {
         $this->extension->load([], $this->container);
@@ -224,6 +232,34 @@ final class BiscuitExtensionTest extends TestCase
         ], $this->container);
 
         self::assertSame($templates, $this->container->getParameter('biscuit.token_templates'));
+    }
+
+    #[Test]
+    public function itSetsDefaultBlockTemplatesParameter(): void
+    {
+        $this->extension->load([], $this->container);
+
+        self::assertSame([], $this->container->getParameter('biscuit.block_templates'));
+    }
+
+    #[Test]
+    public function itSetsCustomBlockTemplatesParameter(): void
+    {
+        $templates = [
+            'read_only' => [
+                'facts' => [],
+                'checks' => ['check if operation("read")'],
+                'rules' => [],
+            ],
+        ];
+
+        $this->extension->load([
+            'biscuit' => [
+                'block_templates' => $templates,
+            ],
+        ], $this->container);
+
+        self::assertSame($templates, $this->container->getParameter('biscuit.block_templates'));
     }
 
     #[Test]

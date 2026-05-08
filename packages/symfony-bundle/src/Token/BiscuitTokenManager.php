@@ -7,12 +7,15 @@ namespace Biscuit\BiscuitBundle\Token;
 use Biscuit\Auth\Biscuit;
 use Biscuit\Auth\BiscuitBuilder;
 use Biscuit\Auth\BlockBuilder;
+use Biscuit\BiscuitBundle\Event\BiscuitTokenAttenuatedEvent;
 use Biscuit\BiscuitBundle\Key\KeyManager;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final class BiscuitTokenManager implements BiscuitTokenManagerInterface
 {
     public function __construct(
         private readonly KeyManager $keyManager,
+        private readonly ?EventDispatcherInterface $dispatcher = null,
     ) {
     }
 
@@ -42,7 +45,12 @@ final class BiscuitTokenManager implements BiscuitTokenManagerInterface
 
     public function attenuate(Biscuit $biscuit, BlockBuilder $block): Biscuit
     {
-        return $biscuit->append($block);
+        $blockSource = (string) $block;
+        $child = $biscuit->append($block);
+
+        $this->dispatcher?->dispatch(new BiscuitTokenAttenuatedEvent($biscuit, $blockSource, $child));
+
+        return $child;
     }
 
     /**

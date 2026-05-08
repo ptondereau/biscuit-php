@@ -11,6 +11,7 @@ use Biscuit\BiscuitBundle\Tests\ConsoleApplicationTrait;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenFactory;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
+use Biscuit\BiscuitBundle\Token\Template\Applier;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
@@ -208,7 +209,7 @@ final class CreateTokenCommandTest extends TestCase
     private function createCommandTester(array $templates): CommandTester
     {
         $tokenManager = $this->createTokenManager();
-        $factory = new BiscuitTokenFactory($tokenManager, $templates);
+        $factory = new BiscuitTokenFactory($tokenManager, new Applier(), $templates);
 
         $command = new CreateTokenCommand($factory, $tokenManager);
 
@@ -224,7 +225,7 @@ final class CreateTokenCommandTest extends TestCase
     private function createCommandTesterWithMocks(array $templates): CommandTester
     {
         $tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
-        $factory = new BiscuitTokenFactory($tokenManager, $templates);
+        $factory = new BiscuitTokenFactory($tokenManager, new Applier(), $templates);
 
         $command = new CreateTokenCommand($factory, $tokenManager);
 

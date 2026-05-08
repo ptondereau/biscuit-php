@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Biscuit\BiscuitBundle\Command\AttenuateTokenCommand;
 use Biscuit\BiscuitBundle\Command\CreateTokenCommand;
 use Biscuit\BiscuitBundle\Command\GenerateKeysCommand;
 use Biscuit\BiscuitBundle\Command\InspectTokenCommand;
@@ -11,6 +12,7 @@ use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
 use Biscuit\BiscuitBundle\Security\Authenticator\BiscuitAuthenticator;
 use Biscuit\BiscuitBundle\Security\Voter\BiscuitVoter;
+use Biscuit\BiscuitBundle\Token\BiscuitBlockFactory;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenFactory;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
@@ -18,6 +20,7 @@ use Biscuit\BiscuitBundle\Token\Extractor\ChainTokenExtractor;
 use Biscuit\BiscuitBundle\Token\Extractor\CookieTokenExtractor;
 use Biscuit\BiscuitBundle\Token\Extractor\HeaderTokenExtractor;
 use Biscuit\BiscuitBundle\Token\Extractor\TokenExtractorInterface;
+use Biscuit\BiscuitBundle\Token\Template\Applier;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -42,13 +45,26 @@ return static function (ContainerConfigurator $container): void {
     $services->set('biscuit.token_manager', BiscuitTokenManager::class)
         ->args([
             service('biscuit.key_manager'),
+            service('event_dispatcher')->nullOnInvalid(),
         ]);
+
+    // Template Applier (shared by both factories)
+    $services->set('biscuit.template_applier', Applier::class);
 
     // Token Factory
     $services->set('biscuit.token_factory', BiscuitTokenFactory::class)
         ->args([
             service('biscuit.token_manager'),
+            service('biscuit.template_applier'),
             '%biscuit.token_templates%',
+        ]);
+
+    // Block Factory (attenuation)
+    $services->set('biscuit.block_factory', BiscuitBlockFactory::class)
+        ->args([
+            service('biscuit.token_manager'),
+            service('biscuit.template_applier'),
+            '%biscuit.block_templates%',
         ]);
 
     // Policy Registry
@@ -112,6 +128,13 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->tag('console.command');
 
+    $services->set(AttenuateTokenCommand::class)
+        ->args([
+            service('biscuit.block_factory'),
+            service('biscuit.token_manager'),
+        ])
+        ->tag('console.command');
+
     $services->set(TestPolicyCommand::class)
         ->args([
             service('biscuit.policy_registry'),
@@ -130,6 +153,9 @@ return static function (ContainerConfigurator $container): void {
         ->public();
 
     $services->alias(BiscuitTokenFactory::class, 'biscuit.token_factory')
+        ->public();
+
+    $services->alias(BiscuitBlockFactory::class, 'biscuit.block_factory')
         ->public();
 
     $services->alias(PolicyRegistry::class, 'biscuit.policy_registry')

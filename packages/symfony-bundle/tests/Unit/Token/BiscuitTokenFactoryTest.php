@@ -10,6 +10,7 @@ use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenFactory;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
+use Biscuit\BiscuitBundle\Token\Template\Applier;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
@@ -32,7 +33,7 @@ final class BiscuitTokenFactoryTest extends TestCase
 
     #[Test]
     #[RequiresPhpExtension('biscuit_php')]
-    public function itCreatesTokenWithFactsFromTemplate(): void
+    public function itComposesApplierAndProducesBiscuit(): void
     {
         $factory = $this->createFactory([
             'user_token' => [
@@ -44,56 +45,6 @@ final class BiscuitTokenFactoryTest extends TestCase
 
         self::assertInstanceOf(Biscuit::class, $biscuit);
         self::assertStringContainsString('user("test_user")', $biscuit->blockSource(0));
-    }
-
-    #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
-    public function itCreatesTokenWithChecksFromTemplate(): void
-    {
-        $factory = $this->createFactory([
-            'read_only' => [
-                'facts' => ['user("reader")'],
-                'checks' => ['check if operation("read")'],
-            ],
-        ]);
-
-        $biscuit = $factory->create('read_only');
-
-        self::assertInstanceOf(Biscuit::class, $biscuit);
-        self::assertStringContainsString('check if operation("read")', $biscuit->blockSource(0));
-    }
-
-    #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
-    public function itCreatesTokenWithRulesFromTemplate(): void
-    {
-        $factory = $this->createFactory([
-            'with_rules' => [
-                'facts' => ['admin(true)'],
-                'rules' => ['right($resource, $operation) <- admin(true), resource($resource), operation($operation)'],
-            ],
-        ]);
-
-        $biscuit = $factory->create('with_rules');
-
-        self::assertInstanceOf(Biscuit::class, $biscuit);
-        self::assertStringContainsString('admin(true)', $biscuit->blockSource(0));
-    }
-
-    #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
-    public function itPassesParamsToPrimitives(): void
-    {
-        $factory = $this->createFactory([
-            'user_token' => [
-                'facts' => ['user({user_id})'],
-            ],
-        ]);
-
-        $biscuit = $factory->create('user_token', ['user_id' => 'john_doe']);
-
-        self::assertInstanceOf(Biscuit::class, $biscuit);
-        self::assertStringContainsString('user("john_doe")', $biscuit->blockSource(0));
     }
 
     #[Test]
@@ -150,7 +101,7 @@ final class BiscuitTokenFactoryTest extends TestCase
 
         $tokenManager = new BiscuitTokenManager($keyManager);
 
-        return new BiscuitTokenFactory($tokenManager, $templates);
+        return new BiscuitTokenFactory($tokenManager, new Applier(), $templates);
     }
 
     /**
@@ -160,6 +111,6 @@ final class BiscuitTokenFactoryTest extends TestCase
     {
         $tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
 
-        return new BiscuitTokenFactory($tokenManager, $templates);
+        return new BiscuitTokenFactory($tokenManager, new Applier(), $templates);
     }
 }

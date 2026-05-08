@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\DataCollector;
 
 use Biscuit\Auth\Biscuit;
+use Biscuit\BiscuitBundle\Event\BiscuitTokenAttenuatedEvent;
 use Symfony\Bundle\FrameworkBundle\DataCollector\AbstractDataCollector;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
-final class BiscuitDataCollector extends AbstractDataCollector
+final class BiscuitDataCollector extends AbstractDataCollector implements EventSubscriberInterface
 {
     private ?Biscuit $currentBiscuit = null;
 
@@ -23,6 +25,9 @@ final class BiscuitDataCollector extends AbstractDataCollector
 
     /** @var array<string, string> */
     private array $policies = [];
+
+    /** @var list<array{parentRevocationIds: list<string>, childRevocationIds: list<string>, blockSource: string, sizeDelta: int}> */
+    private array $attenuations = [];
 
     public function collect(Request $request, Response $response, ?Throwable $exception = null): void
     {
@@ -38,6 +43,25 @@ final class BiscuitDataCollector extends AbstractDataCollector
             'policy_check_count' => \count($this->policyChecks),
             'passed_checks' => $this->countPassedChecks(),
             'failed_checks' => $this->countFailedChecks(),
+            'attenuations' => $this->attenuations,
+            'attenuation_count' => \count($this->attenuations),
+        ];
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            BiscuitTokenAttenuatedEvent::class => 'onAttenuated',
+        ];
+    }
+
+    public function onAttenuated(BiscuitTokenAttenuatedEvent $event): void
+    {
+        $this->attenuations[] = [
+            'parentRevocationIds' => $event->parent->revocationIds(),
+            'childRevocationIds' => $event->child->revocationIds(),
+            'blockSource' => $event->blockSource,
+            'sizeDelta' => \strlen($event->child->toBase64()) - \strlen($event->parent->toBase64()),
         ];
     }
 
@@ -161,6 +185,20 @@ final class BiscuitDataCollector extends AbstractDataCollector
         $this->publicKey = null;
         $this->policyChecks = [];
         $this->policies = [];
+        $this->attenuations = [];
+    }
+
+    /**
+     * @return list<array{parentRevocationIds: list<string>, childRevocationIds: list<string>, blockSource: string, sizeDelta: int}>
+     */
+    public function getAttenuations(): array
+    {
+        return $this->data['attenuations'] ?? [];
+    }
+
+    public function getAttenuationCount(): int
+    {
+        return $this->data['attenuation_count'] ?? 0;
     }
 
     /**

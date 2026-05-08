@@ -8,14 +8,17 @@ use Biscuit\Auth\Biscuit;
 use Biscuit\Auth\BiscuitBuilder;
 use Biscuit\Auth\BlockBuilder;
 use Biscuit\Auth\PrivateKey;
+use Biscuit\BiscuitBundle\Event\BiscuitTokenAttenuatedEvent;
 use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 #[CoversClass(BiscuitTokenManager::class)]
+#[CoversClass(BiscuitTokenAttenuatedEvent::class)]
 final class BiscuitTokenManagerTest extends TestCase
 {
     #[Test]
@@ -144,6 +147,35 @@ final class BiscuitTokenManagerTest extends TestCase
 
     #[Test]
     #[RequiresPhpExtension('biscuit_php')]
+    public function itDispatchesAttenuatedEventWithFullPayload(): void
+    {
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $manager = $this->createTokenManager($dispatcher);
+
+        $builder = $manager->createBuilder('user("alice")');
+        $parent = $manager->build($builder);
+        $block = $manager->createBlockBuilder('check if operation("read")');
+
+        $captured = null;
+        $dispatcher->expects(self::once())
+            ->method('dispatch')
+            ->with(self::isInstanceOf(BiscuitTokenAttenuatedEvent::class))
+            ->willReturnCallback(static function (object $event) use (&$captured): object {
+                $captured = $event;
+
+                return $event;
+            });
+
+        $child = $manager->attenuate($parent, $block);
+
+        self::assertInstanceOf(BiscuitTokenAttenuatedEvent::class, $captured);
+        self::assertSame($parent, $captured->parent);
+        self::assertSame($child, $captured->child);
+        self::assertStringContainsString('operation("read")', $captured->blockSource);
+    }
+
+    #[Test]
+    #[RequiresPhpExtension('biscuit_php')]
     public function itRoundTripsToken(): void
     {
         $manager = $this->createTokenManager();
@@ -158,7 +190,7 @@ final class BiscuitTokenManagerTest extends TestCase
         self::assertSame($serialized, $reSerialized);
     }
 
-    private function createTokenManager(): BiscuitTokenManager
+    private function createTokenManager(?EventDispatcherInterface $dispatcher = null): BiscuitTokenManager
     {
         $privateKey = PrivateKey::generate();
 
@@ -170,6 +202,6 @@ final class BiscuitTokenManagerTest extends TestCase
             'ed25519',
         );
 
-        return new BiscuitTokenManager($keyManager);
+        return new BiscuitTokenManager($keyManager, $dispatcher);
     }
 }

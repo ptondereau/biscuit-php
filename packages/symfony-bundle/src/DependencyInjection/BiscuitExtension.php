@@ -117,5 +117,11 @@ final class BiscuitExtension extends Extension
             'biscuit.token_templates',
             $config['token_templates'],
         );
+
+        // Block templates (attenuation)
+        $container->setParameter(
+            'biscuit.block_templates',
+            $config['block_templates'],
+        );
     }
 }

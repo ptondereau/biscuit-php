@@ -6,11 +6,13 @@ namespace Biscuit\BiscuitBundle\Tests\Unit\DataCollector;
 
 use Biscuit\Auth\Biscuit;
 use Biscuit\BiscuitBundle\DataCollector\BiscuitDataCollector;
+use Biscuit\BiscuitBundle\Event\BiscuitTokenAttenuatedEvent;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\DataCollector\AbstractDataCollector;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -204,6 +206,66 @@ final class BiscuitDataCollectorTest extends TestCase
 
         self::assertSame(3, $collector->getPassedChecks());
         self::assertSame(0, $collector->getFailedChecks());
+    }
+
+    #[Test]
+    public function itRecordsAttenuationFromEvent(): void
+    {
+        $collector = new BiscuitDataCollector();
+
+        $parent = $this->createMock(Biscuit::class);
+        $parent->method('revocationIds')->willReturn(['parent-rev']);
+        $parent->method('toBase64')->willReturn('PARENT');
+
+        $child = $this->createMock(Biscuit::class);
+        $child->method('revocationIds')->willReturn(['parent-rev', 'child-rev']);
+        $child->method('toBase64')->willReturn('PARENT_PLUS_BLOCK');
+
+        $event = new BiscuitTokenAttenuatedEvent($parent, 'check if operation("read")', $child);
+        $collector->onAttenuated($event);
+
+        $collector->collect(new Request(), new Response());
+
+        self::assertSame(1, $collector->getAttenuationCount());
+
+        $records = $collector->getAttenuations();
+        self::assertCount(1, $records);
+        self::assertSame(['parent-rev'], $records[0]['parentRevocationIds']);
+        self::assertSame(['parent-rev', 'child-rev'], $records[0]['childRevocationIds']);
+        self::assertSame('check if operation("read")', $records[0]['blockSource']);
+        self::assertSame(\strlen('PARENT_PLUS_BLOCK') - \strlen('PARENT'), $records[0]['sizeDelta']);
+    }
+
+    #[Test]
+    public function itSubscribesToAttenuatedEvent(): void
+    {
+        self::assertInstanceOf(EventSubscriberInterface::class, new BiscuitDataCollector());
+
+        $events = BiscuitDataCollector::getSubscribedEvents();
+        self::assertArrayHasKey(BiscuitTokenAttenuatedEvent::class, $events);
+    }
+
+    #[Test]
+    public function resetClearsRecordedAttenuations(): void
+    {
+        $collector = new BiscuitDataCollector();
+
+        $parent = $this->createMock(Biscuit::class);
+        $parent->method('revocationIds')->willReturn([]);
+        $parent->method('toBase64')->willReturn('PARENT');
+        $child = $this->createMock(Biscuit::class);
+        $child->method('revocationIds')->willReturn([]);
+        $child->method('toBase64')->willReturn('PARENT_PLUS');
+
+        $collector->onAttenuated(new BiscuitTokenAttenuatedEvent($parent, 'check if true', $child));
+        $collector->collect(new Request(), new Response());
+        self::assertSame(1, $collector->getAttenuationCount());
+
+        $collector->reset();
+        $collector->collect(new Request(), new Response());
+
+        self::assertSame(0, $collector->getAttenuationCount());
+        self::assertSame([], $collector->getAttenuations());
     }
 
     #[Test]
