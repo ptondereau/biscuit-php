@@ -48,7 +48,8 @@
   "autoload-dev": {
     "psr-4": {
       "Biscuit\\BiscuitBundle\\Tests\\": "tests/"
-    }
+    },
+    "classmap": ["stubs/"]
   },
   "config": {
     "sort-packages": true
