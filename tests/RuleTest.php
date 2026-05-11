@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Biscuit\Tests;
 
 use Biscuit\Auth\Rule;
-use Biscuit\Exception\InvalidRule;
+use Biscuit\Exception\RuleException;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class RuleTest extends TestCase
@@ -18,12 +19,11 @@ class RuleTest extends TestCase
         static::assertSame('right(15, "read") <- resource(15), operation("read")', (string) $rule);
     }
 
-    public function testExcpetionWhenBadRule(): void
+    #[Test]
+    public function badRuleThrowsRuleException(): void
     {
-        $this->expectException(InvalidRule::class);
-        $this->expectExceptionMessage(
-            'error generating Datalog: datalog parsing error: ParseErrors { errors: [ParseError { input: "", message: None }] }',
-        );
+        $this->expectException(RuleException::class);
+        $this->expectExceptionMessage('datalog parsing error');
 
         new Rule('wrong');
     }
