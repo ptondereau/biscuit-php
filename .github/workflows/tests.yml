@@ -6,6 +6,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -61,6 +64,46 @@ jobs:
         run: |
           mago format --dry-run
           mago lint --reporting-format=github
+
+      - name: "Run PHPUnit"
+        run: php -dextension=./target/release/libbiscuit_php.so vendor/bin/phpunit
+
+  tests-debug:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    name: Build extension and run tests (PHP debug)
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-debug-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-debug-
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: "Install PHP (debug build)"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "8.5"
+          coverage: "none"
+          ini-values: "memory_limit=-1"
+          extensions: mbstring
+          tools: composer:v2.9.7
+        env:
+          debug: true
+
+      - name: Build
+        run: cargo build --release --all-features
+
+      - name: "Install dependencies (Composer)"
+        uses: "ramsey/composer-install@v3"
 
       - name: "Run PHPUnit"
         run: php -dextension=./target/release/libbiscuit_php.so vendor/bin/phpunit
