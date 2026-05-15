@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Biscuit\Tests;
 
 use Biscuit\Auth\Check;
-use Biscuit\Exception\InvalidCheck;
+use Biscuit\Exception\CheckException;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class CheckTest extends TestCase
@@ -18,12 +19,11 @@ class CheckTest extends TestCase
         static::assertSame('check if resource("uuid"), operation("read") or admin("authority")', (string) $check);
     }
 
-    public function testExcpetionWhenBadCheck(): void
+    #[Test]
+    public function badCheckThrowsCheckException(): void
     {
-        $this->expectException(InvalidCheck::class);
-        $this->expectExceptionMessage(
-            'error generating Datalog: datalog parsing error: ParseErrors { errors: [ParseError { input: "wrong", message: None }] }',
-        );
+        $this->expectException(CheckException::class);
+        $this->expectExceptionMessage('datalog parsing error');
 
         new Check('wrong');
     }

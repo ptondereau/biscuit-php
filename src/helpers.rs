@@ -1,6 +1,6 @@
 use ext_php_rs::prelude::*;
 
-use crate::errors::{BuilderConsumed, InvalidTerm};
+use crate::errors::{BiscuitError, DatalogKind, ResultExt, StaticError};
 
 #[derive(Debug, ZvalConvert)]
 pub enum MixedValue {
@@ -23,20 +23,18 @@ pub fn mixed_value_to_term(value: &MixedValue) -> PhpResult<biscuit_auth::builde
             let term_set: std::collections::BTreeSet<_> = terms?.into_iter().collect();
             Ok(biscuit_auth::builder::Term::Set(term_set))
         }
-        MixedValue::None => Err(PhpException::from_class::<InvalidTerm>(
-            "unexpected value".to_string(),
-        )),
+        MixedValue::None => {
+            Err::<_, StaticError>(StaticError("unexpected value")).datalog(DatalogKind::Term)?
+        }
     }
 }
 
 pub fn take_builder<T>(opt: &mut Option<T>) -> PhpResult<T> {
-    opt.take().ok_or_else(|| {
-        PhpException::from_class::<BuilderConsumed>("Builder has already been consumed".to_string())
-    })
+    opt.take()
+        .ok_or_else(|| BiscuitError::BuilderConsumed("builder has already been consumed").into())
 }
 
 pub fn get_builder<T>(opt: &Option<T>) -> PhpResult<&T> {
-    opt.as_ref().ok_or_else(|| {
-        PhpException::from_class::<BuilderConsumed>("Builder has already been consumed".to_string())
-    })
+    opt.as_ref()
+        .ok_or_else(|| BiscuitError::BuilderConsumed("builder has already been consumed").into())
 }

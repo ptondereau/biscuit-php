@@ -1,6 +1,6 @@
 <?php
 
-// Stubs for biscuit-php
+// Stubs for biscuit_php
 
 namespace Biscuit\Auth {
     enum Algorithm: int {
@@ -17,9 +17,9 @@ namespace Biscuit\Auth {
         public function __toString(): string {}
 
         /**
-         * @return int
+         * @return \Biscuit\Auth\MatchedPolicy
          */
-        public function authorize(): int {}
+        public function authorize(): \Biscuit\Auth\MatchedPolicy {}
 
         /**
          * @return string
@@ -385,6 +385,30 @@ namespace Biscuit\Auth {
         public function set(string $name, mixed $value): void {}
     }
 
+    class FailedCheck {
+        public function __construct() {}
+
+        /**
+         * @return int|null
+         */
+        public function getBlockId(): ?int {}
+
+        /**
+         * @return int
+         */
+        public function getCheckId(): int {}
+
+        /**
+         * @return string
+         */
+        public function getOrigin(): string {}
+
+        /**
+         * @return string
+         */
+        public function getRule(): string {}
+    }
+
     class KeyPair {
         /**
          * @param \Biscuit\Auth\Algorithm|null $alg
@@ -406,6 +430,39 @@ namespace Biscuit\Auth {
          * @return \Biscuit\Auth\PublicKey
          */
         public function getPublicKey(): \Biscuit\Auth\PublicKey {}
+    }
+
+    class MatchedPolicy {
+        public function __construct() {}
+
+        /**
+         * @return string|null
+         */
+        public function getCode(): ?string {}
+
+        /**
+         * @return string
+         */
+        public function getKind(): string {}
+
+        /**
+         * @return int
+         */
+        public function getPolicyId(): int {}
+    }
+
+    class ParseError {
+        public function __construct() {}
+
+        /**
+         * @return string
+         */
+        public function getInput(): string {}
+
+        /**
+         * @return string|null
+         */
+        public function getMessage(): ?string {}
     }
 
     class Policy {
@@ -621,43 +678,228 @@ namespace Biscuit\Auth {
 }
 
 namespace Biscuit\Exception {
-    class AuthorizerError extends \Exception {
+    class AuthorizationException extends Biscuit\Exception\BiscuitException {
+        protected string $message;
+
+        public function __construct() {}
+
+        /**
+         * @return array
+         */
+        public function getFailedChecks(): array {}
+
+        /**
+         * @return \Biscuit\Auth\MatchedPolicy|null
+         */
+        public function getMatchedPolicy(): ?\Biscuit\Auth\MatchedPolicy {}
+    }
+
+    class AuthorizerBuildException extends Biscuit\Exception\BuildException {
         public function __construct() {}
     }
 
-    class BuilderConsumed extends \Exception {
+    class Base64Exception extends Biscuit\Exception\FormatException {
         public function __construct() {}
     }
 
-    class InvalidCheck extends \Exception {
+    class BiscuitBuildException extends Biscuit\Exception\BuildException {
         public function __construct() {}
     }
 
-    class InvalidFact extends \Exception {
+    class BiscuitException extends \Exception {
         public function __construct() {}
     }
 
-    class InvalidPolicy extends \Exception {
+    class BlockAppendException extends Biscuit\Exception\BuildException {
         public function __construct() {}
     }
 
-    class InvalidPrivateKey extends \Exception {
+    class BuildException extends Biscuit\Exception\BiscuitException {
         public function __construct() {}
     }
 
-    class InvalidPublicKey extends \Exception {
+    class BuilderStateException extends Biscuit\Exception\BiscuitException {
         public function __construct() {}
     }
 
-    class InvalidRule extends \Exception {
+    class BytesException extends Biscuit\Exception\FormatException {
         public function __construct() {}
     }
 
-    class InvalidTerm extends \Exception {
+    class CheckException extends Biscuit\Exception\DatalogException {
+        protected string $message;
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class DatalogException extends Biscuit\Exception\BiscuitException {
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class FactException extends Biscuit\Exception\DatalogException {
+        protected string $message;
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class FormatException extends Biscuit\Exception\BiscuitException {
         public function __construct() {}
     }
 
-    class ThirdPartyRequestError extends \Exception {
+    class KeyException extends Biscuit\Exception\BiscuitException {
+        public function __construct() {}
+    }
+
+    class PolicyException extends Biscuit\Exception\DatalogException {
+        protected string $message;
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class PrivateKeyException extends Biscuit\Exception\KeyException {
+        public function __construct() {}
+    }
+
+    class PublicKeyException extends Biscuit\Exception\KeyException {
+        public function __construct() {}
+    }
+
+    class RuleException extends Biscuit\Exception\DatalogException {
+        protected string $message;
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class ScopeException extends Biscuit\Exception\DatalogException {
+        protected string $message;
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class SignatureException extends Biscuit\Exception\FormatException {
+        public function __construct() {}
+    }
+
+    class SnapshotException extends Biscuit\Exception\FormatException {
+        public function __construct() {}
+    }
+
+    class TermException extends Biscuit\Exception\DatalogException {
+        protected string $message;
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class ThirdPartyBlockAppendException extends Biscuit\Exception\BuildException {
+        public function __construct() {}
+    }
+
+    class ThirdPartyException extends Biscuit\Exception\BiscuitException {
         public function __construct() {}
     }
 }
