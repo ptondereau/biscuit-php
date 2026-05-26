@@ -7,7 +7,7 @@ description = "PHP wrapper for Biscuit authorization tokens"
 authors = ["Pierre Tondereau <pierre.tondereau@protonmail.com>"]
 
 [dependencies]
-ext-php-rs = "0.15.13"
+ext-php-rs = "0.15.14"
 biscuit-auth = { version = "6.0.0", features = ["pem"] }
 biscuit-parser = "0.2.0"
 hex = "0.4"
