@@ -16,6 +16,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - Stubs refreshed to the v0.5.0 exception hierarchy and value objects.
 - `composer.json` now requires `ext-biscuit_php: >=0.5`.
 
+## [0.1.1] - 2026-05-08
+
+### Added
+
+- `biscuit.block_templates` configuration and `BiscuitBlockFactory` for deriving scoped tokens from reusable, parameterised block templates.
+- `BiscuitTokenAttenuatedEvent` dispatched on every `attenuate()` call; the data collector subscribes to surface the derivation chain in the profiler.
+- `biscuit:token:attenuate` console command, accepting either a registered template name or inline Datalog via `--code`, with optional `--unverified` for cross-key inspection.
+- Shared `Token\Template\Applier` module reused by `BiscuitTokenFactory` and `BiscuitBlockFactory` so populate-from-template and parameter binding live in one place.
+
+### Changed
+
+- **BREAKING**: `BiscuitTokenFactory` constructor now takes a `Token\Template\Applier` as its second argument; the templates array moves to third position. Bundle DI users are unaffected (the container wires both factories automatically); only direct constructor callers need to add the new argument.
+
 ## [0.1.0] - 2026-05-06
 
 ### Added
@@ -34,5 +47,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Test helpers: `BiscuitTestTrait`, `TestBiscuitAuthenticator`, `BiscuitFixtures`, `BiscuitFixtureLoader`.
 
 [Unreleased]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.1.0...v0.2.0
+[0.2.0]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ptondereau/biscuit-sf-bundle/releases/tag/v0.1.0
