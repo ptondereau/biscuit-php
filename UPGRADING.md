@@ -1,5 +1,313 @@
 # Upgrading Guide
 
+## Upgrading from v0.4.x to v0.5.0
+
+v0.5.0 replaces the flat list of `Invalid*` exception classes with a deep typed hierarchy under a shared `BiscuitException` base, and attaches structured payloads to `AuthorizationException` (matched policy and failed checks) and to all `DatalogException` subclasses (parse errors and parameter binding info). Every failure shape now has its own concrete exception class so callers can use idiomatic multi-catch instead of branching on a message string.
+
+See [issue #14](https://github.com/ptondereau/biscuit-php/issues/14).
+
+### What changed
+
+#### Exception hierarchy
+
+Every extension-thrown exception now extends `Biscuit\Exception\BiscuitException`, which extends `\Exception`. `catch (BiscuitException $e)` is the new catch-all idiom. Each failure category has a base class (`KeyException`, `DatalogException`, `FormatException`, `BuildException`) with concrete per-kind subclasses you can catch directly.
+
+| Before (v0.4.x) | After (v0.5.0) |
+|---|---|
+| `InvalidPublicKey` | `PublicKeyException` extends `KeyException` |
+| `InvalidPrivateKey` | `PrivateKeyException` extends `KeyException` |
+| `InvalidFact` | `FactException` extends `DatalogException` |
+| `InvalidRule` | `RuleException` extends `DatalogException` |
+| `InvalidCheck` | `CheckException` extends `DatalogException` |
+| `InvalidPolicy` | `PolicyException` extends `DatalogException` |
+| `InvalidTerm` | `TermException` extends `DatalogException` |
+| (Datalog scope failures, previously bundled into `InvalidTerm`) | `ScopeException` extends `DatalogException` |
+| (Token base64 errors, previously raw `\Exception`) | `Base64Exception` extends `FormatException` |
+| (Token byte errors, previously raw `\Exception`) | `BytesException` extends `FormatException` |
+| (Token signature errors, previously raw `\Exception`) | `SignatureException` extends `FormatException` |
+| (Snapshot / block-source errors, previously raw `\Exception`) | `SnapshotException` extends `FormatException` |
+| (`BiscuitBuilder::build()` failures, previously raw `\Exception`) | `BiscuitBuildException` extends `BuildException` |
+| (`Biscuit::append()` failures, previously raw `\Exception`) | `BlockAppendException` extends `BuildException` |
+| (`AuthorizerBuilder::build()` / `query()` failures, previously raw `\Exception`) | `AuthorizerBuildException` extends `BuildException` |
+| (`Biscuit::appendThirdParty()` failures, previously raw `\Exception`) | `ThirdPartyBlockAppendException` extends `BuildException` |
+| `AuthorizerError` | `AuthorizationException` extends `BiscuitException` |
+| `ThirdPartyRequestError` | `ThirdPartyException` extends `BiscuitException` |
+| `BuilderConsumed` | `BuilderStateException` extends `BiscuitException` |
+
+The class identity replaces the `getCode()` kind discriminant from earlier proposals: `catch (FactException $e)` is the v0.5.0 idiom rather than `catch (DatalogException $e) { if ($e->getCode() === 1) ... }`. `getCode()` returns the standard PHP `Throwable` default (0) on these exceptions; rely on the class hierarchy instead.
+
+You can still catch a category at the base level (for example `catch (DatalogException $e)`) and let inheritance route any of its subclasses to that handler.
+
+#### Structured payloads
+
+| Class | New accessors |
+|---|---|
+| `AuthorizationException` | `getMatchedPolicy(): ?MatchedPolicy`, `getFailedChecks(): array<FailedCheck>` |
+| Every `DatalogException` subclass (`FactException`, `RuleException`, `CheckException`, `PolicyException`, `TermException`, `ScopeException`) | `getParseErrors(): ?array<ParseError>`, `getMissingParameters(): ?array<string>`, `getUnusedParameters(): ?array<string>` |
+
+New value objects:
+
+| Class | Accessors |
+|---|---|
+| `Biscuit\Auth\MatchedPolicy` | `getKind(): string` (`"allow"` or `"deny"`), `getPolicyId(): int`, `getCode(): ?string` |
+| `Biscuit\Auth\FailedCheck` | `getOrigin(): string` (`"block"` or `"authorizer"`), `getBlockId(): ?int`, `getCheckId(): int`, `getRule(): string` |
+| `Biscuit\Auth\ParseError` | `getInput(): string`, `getMessage(): ?string` |
+
+#### Other
+
+- `Authorizer::authorize()` returns `Biscuit\Auth\MatchedPolicy` instead of `int`.
+- The full upstream `Error::source()` chain is joined into `getMessage()`, so a `DatalogException` message now includes the parser error context.
+
+### Migration
+
+#### Renaming `Invalid*` Datalog catches
+
+Before:
+```php
+use Biscuit\Exception\InvalidFact;
+use Biscuit\Exception\InvalidRule;
+use Biscuit\Exception\InvalidCheck;
+use Biscuit\Exception\InvalidPolicy;
+use Biscuit\Exception\InvalidTerm;
+
+try {
+    new Fact('not valid');
+} catch (InvalidFact $e) {
+    log($e->getMessage());
+}
+```
+
+After:
+```php
+use Biscuit\Exception\FactException;
+
+try {
+    new Fact('not valid');
+} catch (FactException $e) {
+    log($e->getMessage());
+}
+```
+
+Multi-catch lets you react to different Datalog failure shapes in one block:
+```php
+use Biscuit\Exception\FactException;
+use Biscuit\Exception\RuleException;
+use Biscuit\Exception\TermException;
+
+try {
+    $fact = new Fact('user({id})');
+    $fact->set('id', $userId);
+} catch (FactException $e) {
+    // bad Fact source
+} catch (TermException $e) {
+    // bad term value passed to set()
+} catch (RuleException $e) {
+    // bad Rule source or binding
+}
+```
+
+#### Renaming key catches
+
+Before:
+```php
+use Biscuit\Exception\InvalidPublicKey;
+use Biscuit\Exception\InvalidPrivateKey;
+
+try {
+    new PublicKey($maybeBadHex);
+} catch (InvalidPublicKey $e) { /* ... */ }
+
+try {
+    new PrivateKey($maybeBadHex);
+} catch (InvalidPrivateKey $e) { /* ... */ }
+```
+
+After:
+```php
+use Biscuit\Exception\PrivateKeyException;
+use Biscuit\Exception\PublicKeyException;
+
+try {
+    new PublicKey($maybeBadHex);
+} catch (PublicKeyException $e) { /* ... */ }
+
+try {
+    new PrivateKey($maybeBadHex);
+} catch (PrivateKeyException $e) { /* ... */ }
+```
+
+#### Catching builder-state errors
+
+Before:
+```php
+use Biscuit\Exception\BuilderConsumed;
+
+try {
+    $blockBuilder->addCode('...'); // after a merge
+} catch (BuilderConsumed $e) { /* ... */ }
+```
+
+After:
+```php
+use Biscuit\Exception\BuilderStateException;
+
+try {
+    $blockBuilder->addCode('...');
+} catch (BuilderStateException $e) { /* ... */ }
+```
+
+#### Catching third-party flow errors
+
+Before:
+```php
+use Biscuit\Exception\ThirdPartyRequestError;
+
+try {
+    $request->createBlock($key, $block);
+} catch (ThirdPartyRequestError $e) { /* ... */ }
+```
+
+After:
+```php
+use Biscuit\Exception\ThirdPartyException;
+
+try {
+    $request->createBlock($key, $block);
+} catch (ThirdPartyException $e) { /* ... */ }
+```
+
+#### Authorization
+
+`Authorizer::authorize()` now returns a `Biscuit\Auth\MatchedPolicy` carrying the policy kind, id, and source code. Failures throw `AuthorizationException` with structured matched-policy and failed-checks accessors.
+
+Before:
+```php
+use Biscuit\Exception\AuthorizerError;
+
+$idx = $authorizer->authorize();
+if ($idx === 0) {
+    // first allow policy matched
+}
+```
+
+After:
+```php
+use Biscuit\Exception\AuthorizationException;
+
+try {
+    $policy = $authorizer->authorize();
+    log(sprintf('matched %s policy #%d', $policy->getKind(), $policy->getPolicyId()));
+} catch (AuthorizationException $e) {
+    $matched = $e->getMatchedPolicy();
+    if ($matched !== null) {
+        log(sprintf(
+            'rejected by %s policy #%d: %s',
+            $matched->getKind(),
+            $matched->getPolicyId(),
+            $matched->getCode(),
+        ));
+    }
+
+    foreach ($e->getFailedChecks() as $check) {
+        log(sprintf(
+            '%s check #%d failed: %s',
+            $check->getOrigin(),
+            $check->getCheckId(),
+            $check->getRule(),
+        ));
+    }
+}
+```
+
+A `null` matched policy means no policy matched at all (the `Logic::NoMatchingPolicy` upstream case); the failed-checks list still tells you which conditions blocked authorization.
+
+#### Inspecting Datalog failures
+
+Every `DatalogException` subclass carries the upstream `LanguageError` payload when there is one. Use it to surface parse errors and parameter-binding issues without parsing the message.
+
+Parse failure:
+```php
+use Biscuit\Auth\Fact;
+use Biscuit\Auth\ParseError;
+use Biscuit\Exception\FactException;
+
+try {
+    new Fact('not valid datalog');
+} catch (FactException $e) {
+    $parseErrors = $e->getParseErrors();
+    if ($parseErrors !== null) {
+        foreach ($parseErrors as $parseError) {
+            log(sprintf(
+                'parse error at %s: %s',
+                $parseError->getInput(),
+                $parseError->getMessage() ?? '(no message)',
+            ));
+        }
+    }
+}
+```
+
+Unused parameter (the parameter map's extra keys surface at term-binding time):
+```php
+use Biscuit\Auth\Rule;
+use Biscuit\Exception\TermException;
+
+try {
+    new Rule('foo({x}) <- bar({y})', ['z' => 1]);
+} catch (TermException $e) {
+    $unused = $e->getUnusedParameters();
+    if ($unused !== null) {
+        log('unused params: ' . implode(', ', $unused));
+    }
+}
+```
+
+Missing parameter at builder time:
+```php
+use Biscuit\Auth\BiscuitBuilder;
+use Biscuit\Auth\Rule;
+use Biscuit\Exception\RuleException;
+
+$rule = new Rule('foo({x}) <- bar({y})');
+
+try {
+    $builder = new BiscuitBuilder();
+    $builder->addRule($rule);
+} catch (RuleException $e) {
+    $missing = $e->getMissingParameters();
+    if ($missing !== null) {
+        log('missing params: ' . implode(', ', $missing));
+    }
+}
+```
+
+If you do not care about which Datalog kind failed, catch the `DatalogException` base instead and the three accessors are still available. When the failure is not a Datalog parse or parameter issue (for example, a `null` value passed to `Fact::set()`), all three accessors return `null` and you can fall back to `getMessage()`.
+
+#### Catching everything at once
+
+If you do not need to distinguish failure shapes, the new base class is enough:
+
+```php
+use Biscuit\Exception\BiscuitException;
+
+try {
+    // anything from this extension
+} catch (BiscuitException $e) {
+    log($e->getMessage());
+}
+```
+
+### Quick Migration Checklist
+
+- [ ] Replace every `Invalid{Fact,Rule,Check,Policy,Term}` catch with the matching `{Fact,Rule,Check,Policy,Term}Exception` from `Biscuit\Exception`.
+- [ ] Replace every `Invalid{Public,Private}Key` catch with `{Public,Private}KeyException` from `Biscuit\Exception`.
+- [ ] Replace every `AuthorizerError` catch with `AuthorizationException`.
+- [ ] Replace every `BuilderConsumed` catch with `BuilderStateException`.
+- [ ] Replace every `ThirdPartyRequestError` catch with `ThirdPartyException`.
+- [ ] Replace every `$result = $authorizer->authorize(); /* use as int */` with `MatchedPolicy` access (`->getPolicyId()`).
+- [ ] If you previously wrapped token parsing or building in a bare `\Exception` catch, narrow it to the relevant `Base64Exception` / `BytesException` / `SignatureException` / `SnapshotException` / `BiscuitBuildException` / `BlockAppendException` / `AuthorizerBuildException` / `ThirdPartyBlockAppendException`.
+- [ ] Optional: enrich logging with `getMatchedPolicy()` / `getFailedChecks()` (authorization failures) and `getParseErrors()` / `getMissingParameters()` / `getUnusedParameters()` (datalog failures) for actionable diagnostics.
+
 ## Upgrading from v0.3.x to v0.4.0
 
 v0.4.0 aligns the extension name across the Rust crate, the `.so` filename, the Composer `extension-name`, and what `php -m` reports. There are no API changes; the migration is purely about how the extension is named, packaged, and loaded.

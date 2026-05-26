@@ -2,7 +2,7 @@ use biscuit_auth::ThirdPartyBlock as BiscuitThirdPartyBlock;
 use ext_php_rs::prelude::*;
 
 use crate::builders::BlockBuilder;
-use crate::errors::ThirdPartyRequestError;
+use crate::errors::{BiscuitError, ResultExt};
 use crate::helpers::get_builder;
 use crate::keys::PrivateKey;
 
@@ -18,15 +18,15 @@ impl ThirdPartyRequest {
         block: &BlockBuilder,
     ) -> PhpResult<ThirdPartyBlock> {
         let request = self.0.take().ok_or_else(|| {
-            PhpException::from_class::<ThirdPartyRequestError>(
-                "ThirdPartyRequest already consumed".to_string(),
-            )
+            PhpException::from(BiscuitError::BuilderConsumed(
+                "third-party request has already been consumed",
+            ))
         })?;
 
-        request
+        let signed = request
             .create_block(&private_key.0, get_builder(&block.0)?.clone())
-            .map(ThirdPartyBlock)
-            .map_err(|e| PhpException::from_class::<ThirdPartyRequestError>(e.to_string()))
+            .third_party()?;
+        Ok(ThirdPartyBlock(signed))
     }
 }
 

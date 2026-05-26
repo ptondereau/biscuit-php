@@ -7,8 +7,10 @@ namespace Biscuit\Tests;
 use Biscuit\Auth\AuthorizerBuilder;
 use Biscuit\Auth\Biscuit;
 use Biscuit\Auth\BiscuitBuilder;
+use Biscuit\Auth\FailedCheck;
 use Biscuit\Auth\KeyPair;
-use Biscuit\Exception\AuthorizerError;
+use Biscuit\Auth\MatchedPolicy;
+use Biscuit\Exception\AuthorizationException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -131,7 +133,7 @@ class RbacExampleTest extends TestCase
         $authorizer = $authBuilder->build($token);
 
         // Authorization should fail because writer doesn't have critical priority role
-        $this->expectException(AuthorizerError::class);
+        $this->expectException(AuthorizationException::class);
         $this->expectExceptionMessage('authorization failed');
         $authorizer->authorize();
     }
@@ -194,8 +196,56 @@ class RbacExampleTest extends TestCase
         ');
         $authBuilder2->addCode('operation("api:delete"); resource("normal");');
 
-        $this->expectException(AuthorizerError::class);
+        $this->expectException(AuthorizationException::class);
         $this->expectExceptionMessage('authorization failed');
         $authBuilder2->build($token)->authorize();
+    }
+
+    public function testAuthorizationExceptionCarriesStructuredPayload(): void
+    {
+        $rootKp = new KeyPair();
+        $builder = new BiscuitBuilder();
+        $builder->addCode('user("alice")');
+        $token = $builder->build($rootKp->getPrivateKey());
+
+        $authBuilder = new AuthorizerBuilder('check if admin($u); deny if true;');
+        $authorizer = $authBuilder->build($token);
+
+        try {
+            $authorizer->authorize();
+            static::fail('expected AuthorizationException');
+        } catch (AuthorizationException $e) {
+            static::assertStringContainsString('authorization failed', $e->getMessage());
+
+            $matched = $e->getMatchedPolicy();
+            static::assertInstanceOf(MatchedPolicy::class, $matched);
+            static::assertSame('deny', $matched->getKind());
+            static::assertSame(0, $matched->getPolicyId());
+            static::assertStringContainsString('deny if true', (string) $matched->getCode());
+
+            $checks = $e->getFailedChecks();
+            static::assertIsArray($checks);
+            static::assertCount(1, $checks);
+            static::assertInstanceOf(FailedCheck::class, $checks[0]);
+            static::assertSame('authorizer', $checks[0]->getOrigin());
+            static::assertNull($checks[0]->getBlockId());
+            static::assertStringContainsString('admin($u)', $checks[0]->getRule());
+        }
+    }
+
+    public function testAuthorizeSuccessReturnsMatchedPolicy(): void
+    {
+        $rootKp = new KeyPair();
+        $builder = new BiscuitBuilder();
+        $builder->addCode('user("alice")');
+        $token = $builder->build($rootKp->getPrivateKey());
+
+        $authBuilder = new AuthorizerBuilder('allow if user("alice")');
+        $matched = $authBuilder->build($token)->authorize();
+
+        static::assertInstanceOf(MatchedPolicy::class, $matched);
+        static::assertSame('allow', $matched->getKind());
+        static::assertSame(0, $matched->getPolicyId());
+        static::assertStringContainsString('allow if user("alice")', (string) $matched->getCode());
     }
 }

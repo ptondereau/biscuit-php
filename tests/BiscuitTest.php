@@ -12,6 +12,7 @@ use Biscuit\Auth\BlockBuilder;
 use Biscuit\Auth\Check;
 use Biscuit\Auth\Fact;
 use Biscuit\Auth\KeyPair;
+use Biscuit\Auth\MatchedPolicy;
 use Biscuit\Auth\Policy;
 use Biscuit\Auth\PrivateKey;
 use Biscuit\Auth\PublicKey;
@@ -19,7 +20,8 @@ use Biscuit\Auth\Rule;
 use Biscuit\Auth\ThirdPartyBlock;
 use Biscuit\Auth\ThirdPartyRequest;
 use Biscuit\Auth\UnverifiedBiscuit;
-use Biscuit\Exception\BuilderConsumed;
+use Biscuit\Exception\BuilderStateException;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class BiscuitTest extends TestCase
@@ -156,7 +158,9 @@ class BiscuitTest extends TestCase
         $authBuilder = new AuthorizerBuilder('allow if true');
         $authorizer = $authBuilder->buildUnauthenticated();
         $policy = $authorizer->authorize();
-        static::assertSame(0, $policy);
+        static::assertInstanceOf(MatchedPolicy::class, $policy);
+        static::assertSame(0, $policy->getPolicyId());
+        static::assertSame('allow', $policy->getKind());
     }
 
     public function testBiscuitSerialization(): void
@@ -259,7 +263,7 @@ class BiscuitTest extends TestCase
         static::assertInstanceOf(Authorizer::class, $authorizer);
 
         $policy = $authorizer->authorize();
-        static::assertSame(0, $policy);
+        static::assertSame(0, $policy->getPolicyId());
     }
 
     public function testCompleteLifecycle(): void
@@ -289,7 +293,8 @@ class BiscuitTest extends TestCase
         $authorizer = $authBuilder->build($parsedToken);
 
         $policy = $authorizer->authorize();
-        static::assertSame(0, $policy);
+        static::assertSame(0, $policy->getPolicyId());
+        static::assertStringContainsString('allow if user("1234")', (string) $policy->getCode());
     }
 
     public function testAuthorizerQuery(): void
@@ -333,7 +338,7 @@ class BiscuitTest extends TestCase
         static::assertInstanceOf(Authorizer::class, $parsed);
 
         $policy = $parsed->authorize();
-        static::assertSame(0, $policy);
+        static::assertSame(0, $policy->getPolicyId());
 
         $rawSnapshot = $authorizer->rawSnapshot();
         static::assertIsArray($rawSnapshot);
@@ -342,7 +347,7 @@ class BiscuitTest extends TestCase
         static::assertInstanceOf(Authorizer::class, $parsedFromRaw);
 
         $rawPolicy = $parsedFromRaw->authorize();
-        static::assertSame(0, $rawPolicy);
+        static::assertSame(0, $rawPolicy->getPolicyId());
     }
 
     public function testAuthorizerBuilderSnapshot(): void
@@ -675,10 +680,9 @@ class BiscuitTest extends TestCase
         static::assertInstanceOf(Authorizer::class, $authorizer2);
     }
 
-    public function testBlockBuilderConsumedAfterMerge(): void
+    #[Test]
+    public function blockBuilderConsumedAfterMerge(): void
     {
-        $kp = new KeyPair();
-
         $authBuilder = new AuthorizerBuilder();
         $authBuilder->addCode('user("alice")');
 
@@ -687,7 +691,9 @@ class BiscuitTest extends TestCase
 
         $authBuilder->mergeBlock($blockBuilder);
 
-        $this->expectException(BuilderConsumed::class);
+        $this->expectException(BuilderStateException::class);
+        $this->expectExceptionMessage('builder has already been consumed');
+
         $blockBuilder->addCode('resource("file2")');
     }
 }

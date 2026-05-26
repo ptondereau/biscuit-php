@@ -8,6 +8,7 @@ use Biscuit\Auth\Algorithm;
 use Biscuit\Auth\KeyPair;
 use Biscuit\Auth\PrivateKey;
 use Biscuit\Auth\PublicKey;
+use Biscuit\Exception\PrivateKeyException;
 use PHPUnit\Framework\TestCase;
 
 class KeyPairTest extends TestCase
@@ -79,7 +80,7 @@ class KeyPairTest extends TestCase
 
     public function testInvalidPrivateKeyException(): void
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(PrivateKeyException::class);
 
         new PrivateKey('invalid-key-format');
     }

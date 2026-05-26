@@ -5,7 +5,7 @@ use biscuit_auth::builder::Algorithm as BiscuitAlgorithm;
 use ext_php_rs::binary_slice::BinarySlice;
 use ext_php_rs::prelude::*;
 
-use crate::errors::{InvalidPrivateKey, InvalidPublicKey};
+use crate::errors::{KeyKind, ResultExt};
 
 #[php_enum]
 #[php(name = "Biscuit\\Auth\\Algorithm")]
@@ -61,31 +61,32 @@ pub struct PublicKey(pub(crate) biscuit_auth::PublicKey);
 #[php_impl]
 impl PublicKey {
     pub fn __construct(data: &str) -> PhpResult<Self> {
-        biscuit_auth::PublicKey::from_str(data)
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidPublicKey>(e.to_string()))
+        Ok(Self(
+            biscuit_auth::PublicKey::from_str(data).key(KeyKind::PublicKey)?,
+        ))
     }
 
     #[php(name = "fromBytes")]
     pub fn from_bytes(data: BinarySlice<u8>, alg: Option<Algorithm>) -> PhpResult<Self> {
         let algorithm = alg.unwrap_or(Algorithm::Ed25519).into();
-        biscuit_auth::PublicKey::from_bytes(data.as_ref(), algorithm)
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidPublicKey>(e.to_string()))
+        Ok(Self(
+            biscuit_auth::PublicKey::from_bytes(data.as_ref(), algorithm)
+                .key(KeyKind::PublicKey)?,
+        ))
     }
 
     #[php(name = "fromPem")]
     pub fn from_pem(pem: &str) -> PhpResult<Self> {
-        biscuit_auth::PublicKey::from_pem(pem)
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidPublicKey>(e.to_string()))
+        Ok(Self(
+            biscuit_auth::PublicKey::from_pem(pem).key(KeyKind::PublicKey)?,
+        ))
     }
 
     #[php(name = "fromDer")]
     pub fn from_der(der: BinarySlice<u8>) -> PhpResult<Self> {
-        biscuit_auth::PublicKey::from_der(der.as_ref())
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidPublicKey>(e.to_string()))
+        Ok(Self(
+            biscuit_auth::PublicKey::from_der(der.as_ref()).key(KeyKind::PublicKey)?,
+        ))
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -109,31 +110,32 @@ pub struct PrivateKey(pub(crate) biscuit_auth::PrivateKey);
 #[php_impl]
 impl PrivateKey {
     pub fn __construct(data: &str) -> PhpResult<Self> {
-        biscuit_auth::PrivateKey::from_str(data)
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidPrivateKey>(e.to_string()))
+        Ok(Self(
+            biscuit_auth::PrivateKey::from_str(data).key(KeyKind::PrivateKey)?,
+        ))
     }
 
     #[php(name = "fromBytes")]
     pub fn from_bytes(data: BinarySlice<u8>, alg: Option<Algorithm>) -> PhpResult<Self> {
         let algorithm = alg.unwrap_or(Algorithm::Ed25519).into();
-        biscuit_auth::PrivateKey::from_bytes(data.as_ref(), algorithm)
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidPrivateKey>(e.to_string()))
+        Ok(Self(
+            biscuit_auth::PrivateKey::from_bytes(data.as_ref(), algorithm)
+                .key(KeyKind::PrivateKey)?,
+        ))
     }
 
     #[php(name = "fromPem")]
     pub fn from_pem(pem: &str) -> PhpResult<Self> {
-        biscuit_auth::PrivateKey::from_pem(pem)
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidPrivateKey>(e.to_string()))
+        Ok(Self(
+            biscuit_auth::PrivateKey::from_pem(pem).key(KeyKind::PrivateKey)?,
+        ))
     }
 
     #[php(name = "fromDer")]
     pub fn from_der(der: BinarySlice<u8>) -> PhpResult<Self> {
-        biscuit_auth::PrivateKey::from_der(der.as_ref())
-            .map(Self)
-            .map_err(|e| PhpException::from_class::<InvalidPrivateKey>(e.to_string()))
+        Ok(Self(
+            biscuit_auth::PrivateKey::from_der(der.as_ref()).key(KeyKind::PrivateKey)?,
+        ))
     }
 
     pub fn generate(alg: Option<Algorithm>) -> Self {

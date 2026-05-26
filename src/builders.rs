@@ -5,7 +5,7 @@ use ext_php_rs::prelude::*;
 
 use crate::biscuit::Biscuit;
 use crate::datalog::{Check, Fact, Rule};
-use crate::errors::{InvalidCheck, InvalidFact, InvalidRule, InvalidTerm};
+use crate::errors::{BuildKind, DatalogKind, ResultExt};
 use crate::helpers::{MixedValue, get_builder, mixed_value_to_term, take_builder};
 use crate::keys::{PrivateKey, PublicKey};
 
@@ -42,11 +42,11 @@ impl BiscuitBuilder {
 
     pub fn build(&self, root: &PrivateKey) -> PhpResult<Biscuit> {
         let keypair = BiscuitKeyPair::from(&root.0);
-        get_builder(&self.0)?
+        let token = get_builder(&self.0)?
             .clone()
             .build(&keypair)
-            .map(Biscuit::wrap)
-            .map_err(|e| PhpException::default(format!("Build error: {}", e)))
+            .build(BuildKind::Token)?;
+        Ok(Biscuit::wrap(token))
     }
 
     pub fn add_code(
@@ -55,24 +55,13 @@ impl BiscuitBuilder {
         params: Option<HashMap<String, MixedValue>>,
         scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<()> {
-        let term_params: HashMap<String, biscuit_auth::builder::Term> = match params {
-            Some(p) => p
-                .iter()
-                .map(|(k, v)| mixed_value_to_term(v).map(|term| (k.clone(), term)))
-                .collect::<Result<HashMap<String, biscuit_auth::builder::Term>, PhpException>>()?,
-            None => HashMap::new(),
-        };
+        let term_params = collect_term_params(params)?;
+        let scope = collect_scope_params(scope_params);
 
-        let scope: HashMap<String, biscuit_auth::PublicKey> = match scope_params {
-            Some(sp) => sp.iter().map(|(k, v)| (k.clone(), v.0)).collect(),
-            None => HashMap::new(),
-        };
-
-        self.0 = Some(
-            take_builder(&mut self.0)?
-                .code_with_params(source, term_params, scope)
-                .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?,
-        );
+        let next = take_builder(&mut self.0)?
+            .code_with_params(source, term_params, scope)
+            .datalog(DatalogKind::Term)?;
+        self.0 = Some(next);
         Ok(())
     }
 
@@ -82,29 +71,26 @@ impl BiscuitBuilder {
     }
 
     pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
-        self.0 = Some(
-            take_builder(&mut self.0)?
-                .fact(fact.0.clone())
-                .map_err(|e| PhpException::from_class::<InvalidFact>(e.to_string()))?,
-        );
+        let next = take_builder(&mut self.0)?
+            .fact(fact.0.clone())
+            .datalog(DatalogKind::Fact)?;
+        self.0 = Some(next);
         Ok(())
     }
 
     pub fn add_rule(&mut self, rule: &Rule) -> PhpResult<()> {
-        self.0 = Some(
-            take_builder(&mut self.0)?
-                .rule(rule.0.clone())
-                .map_err(|e| PhpException::from_class::<InvalidRule>(e.to_string()))?,
-        );
+        let next = take_builder(&mut self.0)?
+            .rule(rule.0.clone())
+            .datalog(DatalogKind::Rule)?;
+        self.0 = Some(next);
         Ok(())
     }
 
     pub fn add_check(&mut self, check: &Check) -> PhpResult<()> {
-        self.0 = Some(
-            take_builder(&mut self.0)?
-                .check(check.0.clone())
-                .map_err(|e| PhpException::from_class::<InvalidCheck>(e.to_string()))?,
-        );
+        let next = take_builder(&mut self.0)?
+            .check(check.0.clone())
+            .datalog(DatalogKind::Check)?;
+        self.0 = Some(next);
         Ok(())
     }
 
@@ -138,29 +124,26 @@ impl BlockBuilder {
     }
 
     pub fn add_fact(&mut self, fact: &Fact) -> PhpResult<()> {
-        self.0 = Some(
-            take_builder(&mut self.0)?
-                .fact(fact.0.clone())
-                .map_err(|e| PhpException::from_class::<InvalidFact>(e.to_string()))?,
-        );
+        let next = take_builder(&mut self.0)?
+            .fact(fact.0.clone())
+            .datalog(DatalogKind::Fact)?;
+        self.0 = Some(next);
         Ok(())
     }
 
     pub fn add_rule(&mut self, rule: &Rule) -> PhpResult<()> {
-        self.0 = Some(
-            take_builder(&mut self.0)?
-                .rule(rule.0.clone())
-                .map_err(|e| PhpException::from_class::<InvalidRule>(e.to_string()))?,
-        );
+        let next = take_builder(&mut self.0)?
+            .rule(rule.0.clone())
+            .datalog(DatalogKind::Rule)?;
+        self.0 = Some(next);
         Ok(())
     }
 
     pub fn add_check(&mut self, check: &Check) -> PhpResult<()> {
-        self.0 = Some(
-            take_builder(&mut self.0)?
-                .check(check.0.clone())
-                .map_err(|e| PhpException::from_class::<InvalidCheck>(e.to_string()))?,
-        );
+        let next = take_builder(&mut self.0)?
+            .check(check.0.clone())
+            .datalog(DatalogKind::Check)?;
+        self.0 = Some(next);
         Ok(())
     }
 
@@ -170,24 +153,13 @@ impl BlockBuilder {
         params: Option<HashMap<String, MixedValue>>,
         scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<()> {
-        let term_params: HashMap<String, biscuit_auth::builder::Term> = match params {
-            Some(p) => p
-                .iter()
-                .map(|(k, v)| mixed_value_to_term(v).map(|term| (k.clone(), term)))
-                .collect::<Result<HashMap<String, biscuit_auth::builder::Term>, PhpException>>()?,
-            None => HashMap::new(),
-        };
+        let term_params = collect_term_params(params)?;
+        let scope = collect_scope_params(scope_params);
 
-        let scope: HashMap<String, biscuit_auth::PublicKey> = match scope_params {
-            Some(sp) => sp.iter().map(|(k, v)| (k.clone(), v.0)).collect(),
-            None => HashMap::new(),
-        };
-
-        self.0 = Some(
-            take_builder(&mut self.0)?
-                .code_with_params(source, term_params, scope)
-                .map_err(|e| PhpException::from_class::<InvalidTerm>(e.to_string()))?,
-        );
+        let next = take_builder(&mut self.0)?
+            .code_with_params(source, term_params, scope)
+            .datalog(DatalogKind::Term)?;
+        self.0 = Some(next);
         Ok(())
     }
 
@@ -198,5 +170,26 @@ impl BlockBuilder {
 
     pub fn __to_string(&self) -> PhpResult<String> {
         Ok(format!("{}", get_builder(&self.0)?))
+    }
+}
+
+fn collect_term_params(
+    params: Option<HashMap<String, MixedValue>>,
+) -> PhpResult<HashMap<String, biscuit_auth::builder::Term>> {
+    match params {
+        Some(p) => p
+            .iter()
+            .map(|(k, v)| mixed_value_to_term(v).map(|term| (k.clone(), term)))
+            .collect(),
+        None => Ok(HashMap::new()),
+    }
+}
+
+fn collect_scope_params(
+    scope_params: Option<HashMap<String, &PublicKey>>,
+) -> HashMap<String, biscuit_auth::PublicKey> {
+    match scope_params {
+        Some(sp) => sp.iter().map(|(k, v)| (k.clone(), v.0)).collect(),
+        None => HashMap::new(),
     }
 }

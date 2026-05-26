@@ -1,5 +1,6 @@
 #![cfg_attr(windows, feature(abi_vectorcall))]
 
+mod authorization;
 mod authorizer;
 mod biscuit;
 mod builders;
@@ -9,6 +10,7 @@ mod helpers;
 mod keys;
 mod third_party;
 
+pub use authorization::*;
 pub use authorizer::*;
 pub use biscuit::*;
 pub use builders::*;
@@ -51,17 +53,34 @@ pub fn get_module(module: ModuleBuilder) -> ModuleBuilder {
         .class::<Fact>()
         .class::<Check>()
         .class::<Policy>()
+        .class::<ParseError>()
         .class::<KeyPair>()
         .class::<PublicKey>()
         .class::<PrivateKey>()
-        .class::<InvalidPrivateKey>()
-        .class::<InvalidPublicKey>()
-        .class::<InvalidCheck>()
-        .class::<InvalidPolicy>()
-        .class::<InvalidFact>()
-        .class::<InvalidRule>()
-        .class::<InvalidTerm>()
-        .class::<ThirdPartyRequestError>()
-        .class::<AuthorizerError>()
-        .class::<BuilderConsumed>()
+        .class::<BiscuitException>()
+        .class::<KeyException>()
+        .class::<PublicKeyException>()
+        .class::<PrivateKeyException>()
+        .class::<DatalogException>()
+        .class::<FactException>()
+        .class::<RuleException>()
+        .class::<CheckException>()
+        .class::<PolicyException>()
+        .class::<TermException>()
+        .class::<ScopeException>()
+        .class::<FormatException>()
+        .class::<Base64Exception>()
+        .class::<BytesException>()
+        .class::<SignatureException>()
+        .class::<SnapshotException>()
+        .class::<BuildException>()
+        .class::<BiscuitBuildException>()
+        .class::<BlockAppendException>()
+        .class::<AuthorizerBuildException>()
+        .class::<ThirdPartyBlockAppendException>()
+        .class::<BuilderStateException>()
+        .class::<ThirdPartyException>()
+        .class::<MatchedPolicy>()
+        .class::<FailedCheck>()
+        .class::<AuthorizationException>()
 }

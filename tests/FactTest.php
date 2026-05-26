@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Biscuit\Tests;
 
 use Biscuit\Auth\Fact;
-use Biscuit\Exception\InvalidFact;
+use Biscuit\Exception\FactException;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class FactTest extends TestCase
@@ -30,12 +31,11 @@ class FactTest extends TestCase
         static::assertSame('user("bob")', (string) $fact);
     }
 
-    public function testExcpetionWhenBadFact(): void
+    #[Test]
+    public function badFactThrowsFactException(): void
     {
-        $this->expectException(InvalidFact::class);
-        $this->expectExceptionMessage(
-            'error generating Datalog: datalog parsing error: ParseErrors { errors: [ParseError { input: "", message: None }] }',
-        );
+        $this->expectException(FactException::class);
+        $this->expectExceptionMessage('datalog parsing error');
 
         new Fact('wrong');
     }
