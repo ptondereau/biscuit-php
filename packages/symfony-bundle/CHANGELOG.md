@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-26
+
 ### Changed
 
 - Compatibility with `ptondereau/biscuit-php` 0.5.0:
@@ -31,5 +33,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `make:biscuit-policy` maker for scaffolding policy classes.
 - Test helpers: `BiscuitTestTrait`, `TestBiscuitAuthenticator`, `BiscuitFixtures`, `BiscuitFixtureLoader`.
 
-[Unreleased]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ptondereau/biscuit-sf-bundle/releases/tag/v0.1.0
