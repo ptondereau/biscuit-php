@@ -1,554 +1,898 @@
 <?php
 
-// Stubs for biscuit-php
+// Stubs for biscuit_php
 
 namespace Biscuit\Auth {
-    class Biscuit {
-        public static function builder(): \Biscuit\Auth\BiscuitBuilder {}
-
-        public static function fromBytes(string $data, \Biscuit\Auth\PublicKey $root): \Biscuit\Auth\Biscuit {}
-
-        public static function fromBase64(string $data, \Biscuit\Auth\PublicKey $root): \Biscuit\Auth\Biscuit {}
-
-        /**
-         * @return list<int>
-         */
-        public function toBytes(): array {}
-
-        public function toBase64(): string {}
-
-        public function blockCount(): int {}
-
-        public function blockSource(int $index): string {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the block builder has already been consumed
-         */
-        public function append(\Biscuit\Auth\BlockBuilder $block): \Biscuit\Auth\Biscuit {}
-
-        public function appendThirdParty(\Biscuit\Auth\PublicKey $external_key, \Biscuit\Auth\ThirdPartyBlock $block): \Biscuit\Auth\Biscuit {}
-
-        public function thirdPartyRequest(): \Biscuit\Auth\ThirdPartyRequest {}
-
-        /**
-         * @return list<string>
-         */
-        public function revocationIds(): array {}
-
-        public function blockExternalKey(int $index): ?\Biscuit\Auth\PublicKey {}
-
-        public function __toString(): string {}
-
-        public function __construct() {}
-    }
-
-    class UnverifiedBiscuit {
-        public static function fromBase64(string $data): \Biscuit\Auth\UnverifiedBiscuit {}
-
-        public function rootKeyId(): ?int {}
-
-        public function blockCount(): int {}
-
-        public function blockSource(int $index): string {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the block builder has already been consumed
-         */
-        public function append(\Biscuit\Auth\BlockBuilder $block): \Biscuit\Auth\UnverifiedBiscuit {}
-
-        /**
-         * @return list<string>
-         */
-        public function revocationIds(): array {}
-
-        public function verify(\Biscuit\Auth\PublicKey $root): \Biscuit\Auth\Biscuit {}
-
-        public function __construct() {}
+    enum Algorithm: int {
+      case Ed25519 = 0;
+      case Secp256r1 = 1;
     }
 
     class Authorizer {
-        /**
-         * @throws \Biscuit\Exception\AuthorizerError If authorization fails
-         */
-        public function authorize(): int {}
+        public function __construct() {}
 
         /**
-         * @return list<\Biscuit\Auth\Fact>
-         * @throws \Biscuit\Exception\AuthorizerError If the query fails
+         * @return string
          */
-        public function query(\Biscuit\Auth\Rule $rule): array {}
+        public function __toString(): string {}
 
+        /**
+         * @return \Biscuit\Auth\MatchedPolicy
+         */
+        public function authorize(): \Biscuit\Auth\MatchedPolicy {}
+
+        /**
+         * @return string
+         */
         public function base64Snapshot(): string {}
 
         /**
-         * @return list<int>
+         * @param string $input
+         * @return \Biscuit\Auth\Authorizer
          */
-        public function rawSnapshot(): array {}
-
         public static function fromBase64Snapshot(string $input): \Biscuit\Auth\Authorizer {}
 
+        /**
+         * @param string $input
+         * @return \Biscuit\Auth\Authorizer
+         */
         public static function fromRawSnapshot(string $input): \Biscuit\Auth\Authorizer {}
 
-        public function __toString(): string {}
+        /**
+         * @param \Biscuit\Auth\Rule $rule
+         * @return array
+         */
+        public function query(\Biscuit\Auth\Rule $rule): array {}
 
-        public function __construct() {}
+        /**
+         * @return array
+         */
+        public function rawSnapshot(): array {}
     }
 
     class AuthorizerBuilder {
         /**
-         * @param array<string, int|string|bool|null>|null $params
-         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\AuthorizerError If the code is invalid
+         * @param string|null $source
+         * @param array|null $params
+         * @param array|null $scope_params
          */
-        public function addCode(string $source, ?array $params = null, ?array $scope_params = null): void {}
+        public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
 
         /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\AuthorizerError If the fact is invalid
+         * @return string
          */
-        public function addFact(\Biscuit\Auth\Fact $fact): void {}
+        public function __toString(): string {}
 
         /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\AuthorizerError If the rule is invalid
-         */
-        public function addRule(\Biscuit\Auth\Rule $rule): void {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\AuthorizerError If the check is invalid
+         * @param \Biscuit\Auth\Check $check
+         * @return void
          */
         public function addCheck(\Biscuit\Auth\Check $check): void {}
 
         /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\AuthorizerError If the policy is invalid
+         * @param string $source
+         * @param array|null $params
+         * @param array|null $scope_params
+         * @return void
+         */
+        public function addCode(string $source, ?array $params = null, ?array $scope_params = null): void {}
+
+        /**
+         * @param \Biscuit\Auth\Fact $fact
+         * @return void
+         */
+        public function addFact(\Biscuit\Auth\Fact $fact): void {}
+
+        /**
+         * @param \Biscuit\Auth\Policy $policy
+         * @return void
          */
         public function addPolicy(\Biscuit\Auth\Policy $policy): void {}
 
         /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
+         * @param \Biscuit\Auth\Rule $rule
+         * @return void
          */
-        public function setTime(): void {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If either builder has already been consumed
-         */
-        public function merge(\Biscuit\Auth\AuthorizerBuilder $other): void {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If either builder has already been consumed
-         */
-        public function mergeBlock(\Biscuit\Auth\BlockBuilder $block): void {}
+        public function addRule(\Biscuit\Auth\Rule $rule): void {}
 
         /**
          * @return string
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
          */
         public function base64Snapshot(): string {}
 
         /**
-         * @return list<int>
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         */
-        public function rawSnapshot(): array {}
-
-        public static function fromBase64Snapshot(string $input): \Biscuit\Auth\AuthorizerBuilder {}
-
-        public static function fromRawSnapshot(string $input): \Biscuit\Auth\AuthorizerBuilder {}
-
-        /**
-         * Creates an Authorizer from the builder. The builder can be reused after this call.
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed by a merge operation
+         * @param \Biscuit\Auth\Biscuit $token
+         * @return \Biscuit\Auth\Authorizer
          */
         public function build(\Biscuit\Auth\Biscuit $token): \Biscuit\Auth\Authorizer {}
 
         /**
-         * Creates an Authorizer without a token. The builder can be reused after this call.
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed by a merge operation
+         * @return \Biscuit\Auth\Authorizer
          */
         public function buildUnauthenticated(): \Biscuit\Auth\Authorizer {}
 
         /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
+         * @param string $input
+         * @return \Biscuit\Auth\AuthorizerBuilder
+         */
+        public static function fromBase64Snapshot(string $input): \Biscuit\Auth\AuthorizerBuilder {}
+
+        /**
+         * @param string $input
+         * @return \Biscuit\Auth\AuthorizerBuilder
+         */
+        public static function fromRawSnapshot(string $input): \Biscuit\Auth\AuthorizerBuilder {}
+
+        /**
+         * @param \Biscuit\Auth\AuthorizerBuilder $other
+         * @return void
+         */
+        public function merge(\Biscuit\Auth\AuthorizerBuilder $other): void {}
+
+        /**
+         * @param \Biscuit\Auth\BlockBuilder $block
+         * @return void
+         */
+        public function mergeBlock(\Biscuit\Auth\BlockBuilder $block): void {}
+
+        /**
+         * @return array
+         */
+        public function rawSnapshot(): array {}
+
+        /**
+         * @return void
+         */
+        public function setTime(): void {}
+    }
+
+    class Biscuit {
+        public function __construct() {}
+
+        /**
+         * @return string
          */
         public function __toString(): string {}
 
         /**
-         * @param array<string, int|string|bool|null>|null $params
-         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
-         * @throws \Biscuit\Exception\AuthorizerError If the source code is invalid
+         * @param \Biscuit\Auth\BlockBuilder $block
+         * @return \Biscuit\Auth\Biscuit
          */
-        public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
+        public function append(\Biscuit\Auth\BlockBuilder $block): \Biscuit\Auth\Biscuit {}
+
+        /**
+         * @param \Biscuit\Auth\PublicKey $external_key
+         * @param \Biscuit\Auth\ThirdPartyBlock $block
+         * @return \Biscuit\Auth\Biscuit
+         */
+        public function appendThirdParty(\Biscuit\Auth\PublicKey $external_key, \Biscuit\Auth\ThirdPartyBlock $block): \Biscuit\Auth\Biscuit {}
+
+        /**
+         * @return int
+         */
+        public function blockCount(): int {}
+
+        /**
+         * @param int $index
+         * @return \Biscuit\Auth\PublicKey|null
+         */
+        public function blockExternalKey(int $index): ?\Biscuit\Auth\PublicKey {}
+
+        /**
+         * @param int $index
+         * @return string
+         */
+        public function blockSource(int $index): string {}
+
+        /**
+         * @return \Biscuit\Auth\BiscuitBuilder
+         */
+        public static function builder(): \Biscuit\Auth\BiscuitBuilder {}
+
+        /**
+         * @param string $data
+         * @param \Biscuit\Auth\PublicKey $root
+         * @return \Biscuit\Auth\Biscuit
+         */
+        public static function fromBase64(string $data, \Biscuit\Auth\PublicKey $root): \Biscuit\Auth\Biscuit {}
+
+        /**
+         * @param string $data
+         * @param \Biscuit\Auth\PublicKey $root
+         * @return \Biscuit\Auth\Biscuit
+         */
+        public static function fromBytes(string $data, \Biscuit\Auth\PublicKey $root): \Biscuit\Auth\Biscuit {}
+
+        /**
+         * @return list<string>
+         */
+        public function revocationIds(): array {}
+
+        /**
+         * @return \Biscuit\Auth\ThirdPartyRequest
+         */
+        public function thirdPartyRequest(): \Biscuit\Auth\ThirdPartyRequest {}
+
+        /**
+         * @return string
+         */
+        public function toBase64(): string {}
+
+        /**
+         * @return array
+         */
+        public function toBytes(): array {}
     }
 
     class BiscuitBuilder {
         /**
-         * Creates a Biscuit token from the builder. The builder can be reused after this call.
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed by a merge operation
+         * @param string|null $source
+         * @param array|null $params
+         * @param array|null $scope_params
+         */
+        public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
+
+        /**
+         * @return string
+         */
+        public function __toString(): string {}
+
+        /**
+         * @param \Biscuit\Auth\Check $check
+         * @return void
+         */
+        public function addCheck(\Biscuit\Auth\Check $check): void {}
+
+        /**
+         * @param string $source
+         * @param array|null $params
+         * @param array|null $scope_params
+         * @return void
+         */
+        public function addCode(string $source, ?array $params = null, ?array $scope_params = null): void {}
+
+        /**
+         * @param \Biscuit\Auth\Fact $fact
+         * @return void
+         */
+        public function addFact(\Biscuit\Auth\Fact $fact): void {}
+
+        /**
+         * @param \Biscuit\Auth\Rule $rule
+         * @return void
+         */
+        public function addRule(\Biscuit\Auth\Rule $rule): void {}
+
+        /**
+         * @param \Biscuit\Auth\PrivateKey $root
+         * @return \Biscuit\Auth\Biscuit
          */
         public function build(\Biscuit\Auth\PrivateKey $root): \Biscuit\Auth\Biscuit {}
 
         /**
-         * @param array<string, int|string|bool|null>|null $params
-         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
-         */
-        public function addCode(string $source, ?array $params = null, ?array $scope_params = null): void {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If either builder has already been consumed
+         * @param \Biscuit\Auth\BlockBuilder $other
+         * @return void
          */
         public function merge(\Biscuit\Auth\BlockBuilder $other): void {}
 
         /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\InvalidFact If the fact is invalid
-         */
-        public function addFact(\Biscuit\Auth\Fact $fact): void {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\InvalidRule If the rule is invalid
-         */
-        public function addRule(\Biscuit\Auth\Rule $rule): void {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\InvalidCheck If the check is invalid
-         */
-        public function addCheck(\Biscuit\Auth\Check $check): void {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
+         * @param int $root_key_id
+         * @return void
          */
         public function setRootKeyId(int $root_key_id): void {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         */
-        public function __toString(): string {}
-
-        /**
-         * @param array<string, int|string|bool|null>|null $params
-         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
-         * @throws \Biscuit\Exception\InvalidTerm If the source code contains invalid terms
-         */
-        public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
     }
 
     class BlockBuilder {
         /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\InvalidFact If the fact is invalid
+         * @param string|null $source
+         * @param array|null $params
+         * @param array|null $scope_params
          */
-        public function addFact(\Biscuit\Auth\Fact $fact): void {}
+        public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
 
         /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\InvalidRule If the rule is invalid
-         */
-        public function addRule(\Biscuit\Auth\Rule $rule): void {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\InvalidCheck If the check is invalid
-         */
-        public function addCheck(\Biscuit\Auth\Check $check): void {}
-
-        /**
-         * @param array<string, int|string|bool|null>|null $params
-         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
-         * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
-         */
-        public function addCode(string $source, ?array $params = null, ?array $scope_params = null): void {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If either builder has already been consumed
-         */
-        public function merge(\Biscuit\Auth\BlockBuilder $other): void {}
-
-        /**
-         * @throws \Biscuit\Exception\BuilderConsumed If the builder has already been consumed
+         * @return string
          */
         public function __toString(): string {}
 
         /**
-         * @param array<string, int|string|bool|null>|null $params
-         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
-         * @throws \Biscuit\Exception\InvalidTerm If the source code contains invalid terms
+         * @param \Biscuit\Auth\Check $check
+         * @return void
          */
-        public function __construct(?string $source = null, ?array $params = null, ?array $scope_params = null) {}
+        public function addCheck(\Biscuit\Auth\Check $check): void {}
+
+        /**
+         * @param string $source
+         * @param array|null $params
+         * @param array|null $scope_params
+         * @return void
+         */
+        public function addCode(string $source, ?array $params = null, ?array $scope_params = null): void {}
+
+        /**
+         * @param \Biscuit\Auth\Fact $fact
+         * @return void
+         */
+        public function addFact(\Biscuit\Auth\Fact $fact): void {}
+
+        /**
+         * @param \Biscuit\Auth\Rule $rule
+         * @return void
+         */
+        public function addRule(\Biscuit\Auth\Rule $rule): void {}
+
+        /**
+         * @param \Biscuit\Auth\BlockBuilder $other
+         * @return void
+         */
+        public function merge(\Biscuit\Auth\BlockBuilder $other): void {}
     }
 
-    class ThirdPartyRequest {
+    class Check {
         /**
-         * @throws \Biscuit\Exception\ThirdPartyRequestError If the request has already been consumed
-         * @throws \Biscuit\Exception\BuilderConsumed If the block builder has already been consumed
+         * @param string $source
+         * @param array|null $params
+         * @param array|null $scope_params
          */
-        public function createBlock(\Biscuit\Auth\PrivateKey $private_key, \Biscuit\Auth\BlockBuilder $block): \Biscuit\Auth\ThirdPartyBlock {}
+        public function __construct(string $source, ?array $params = null, ?array $scope_params = null) {}
 
+        /**
+         * @return string
+         */
+        public function __toString(): string {}
+
+        /**
+         * @param int|string|bool|null $value
+         *
+         * @param string $name
+         * @param mixed $value
+         * @return void
+         */
+        public function set(string $name, mixed $value): void {}
+
+        /**
+         * @param string $name
+         * @param \Biscuit\Auth\PublicKey $key
+         * @return void
+         */
+        public function setScope(string $name, \Biscuit\Auth\PublicKey $key): void {}
+    }
+
+    class Fact {
+        /**
+         * @param string $source
+         * @param array|null $params
+         */
+        public function __construct(string $source, ?array $params = null) {}
+
+        /**
+         * @return string
+         */
+        public function __toString(): string {}
+
+        /**
+         * @return string
+         */
+        public function name(): string {}
+
+        /**
+         * @param int|string|bool|null $value
+         *
+         * @param string $name
+         * @param mixed $value
+         * @return void
+         */
+        public function set(string $name, mixed $value): void {}
+    }
+
+    class FailedCheck {
         public function __construct() {}
+
+        /**
+         * @return int|null
+         */
+        public function getBlockId(): ?int {}
+
+        /**
+         * @return int
+         */
+        public function getCheckId(): int {}
+
+        /**
+         * @return string
+         */
+        public function getOrigin(): string {}
+
+        /**
+         * @return string
+         */
+        public function getRule(): string {}
+    }
+
+    class KeyPair {
+        /**
+         * @param \Biscuit\Auth\Algorithm|null $alg
+         */
+        public function __construct(?\Biscuit\Auth\Algorithm $alg = null) {}
+
+        /**
+         * @param \Biscuit\Auth\PrivateKey $private_key
+         * @return \Biscuit\Auth\KeyPair
+         */
+        public static function fromPrivateKey(\Biscuit\Auth\PrivateKey $private_key): \Biscuit\Auth\KeyPair {}
+
+        /**
+         * @return \Biscuit\Auth\PrivateKey
+         */
+        public function getPrivateKey(): \Biscuit\Auth\PrivateKey {}
+
+        /**
+         * @return \Biscuit\Auth\PublicKey
+         */
+        public function getPublicKey(): \Biscuit\Auth\PublicKey {}
+    }
+
+    class MatchedPolicy {
+        public function __construct() {}
+
+        /**
+         * @return string|null
+         */
+        public function getCode(): ?string {}
+
+        /**
+         * @return string
+         */
+        public function getKind(): string {}
+
+        /**
+         * @return int
+         */
+        public function getPolicyId(): int {}
+    }
+
+    class ParseError {
+        public function __construct() {}
+
+        /**
+         * @return string
+         */
+        public function getInput(): string {}
+
+        /**
+         * @return string|null
+         */
+        public function getMessage(): ?string {}
+    }
+
+    class Policy {
+        /**
+         * @param string $source
+         * @param array|null $params
+         * @param array|null $scope_params
+         */
+        public function __construct(string $source, ?array $params = null, ?array $scope_params = null) {}
+
+        /**
+         * @return string
+         */
+        public function __toString(): string {}
+
+        /**
+         * @param int|string|bool|null $value
+         *
+         * @param string $name
+         * @param mixed $value
+         * @return void
+         */
+        public function set(string $name, mixed $value): void {}
+
+        /**
+         * @param string $name
+         * @param \Biscuit\Auth\PublicKey $key
+         * @return void
+         */
+        public function setScope(string $name, \Biscuit\Auth\PublicKey $key): void {}
+    }
+
+    class PrivateKey {
+        /**
+         * @param string $data
+         */
+        public function __construct(string $data) {}
+
+        /**
+         * @return string
+         */
+        public function __toString(): string {}
+
+        /**
+         * @param string $data
+         * @param \Biscuit\Auth\Algorithm|null $alg
+         * @return \Biscuit\Auth\PrivateKey
+         */
+        public static function fromBytes(string $data, ?\Biscuit\Auth\Algorithm $alg = null): \Biscuit\Auth\PrivateKey {}
+
+        /**
+         * @param string $der
+         * @return \Biscuit\Auth\PrivateKey
+         */
+        public static function fromDer(string $der): \Biscuit\Auth\PrivateKey {}
+
+        /**
+         * @param string $pem
+         * @return \Biscuit\Auth\PrivateKey
+         */
+        public static function fromPem(string $pem): \Biscuit\Auth\PrivateKey {}
+
+        /**
+         * @param \Biscuit\Auth\Algorithm|null $alg
+         * @return \Biscuit\Auth\PrivateKey
+         */
+        public static function generate(?\Biscuit\Auth\Algorithm $alg = null): \Biscuit\Auth\PrivateKey {}
+
+        /**
+         * @return \Biscuit\Auth\PublicKey
+         */
+        public function getPublicKey(): \Biscuit\Auth\PublicKey {}
+
+        /**
+         * @return array
+         */
+        public function toBytes(): array {}
+
+        /**
+         * @return string
+         */
+        public function toHex(): string {}
+    }
+
+    class PublicKey {
+        /**
+         * @param string $data
+         */
+        public function __construct(string $data) {}
+
+        /**
+         * @return string
+         */
+        public function __toString(): string {}
+
+        /**
+         * @param string $data
+         * @param \Biscuit\Auth\Algorithm|null $alg
+         * @return \Biscuit\Auth\PublicKey
+         */
+        public static function fromBytes(string $data, ?\Biscuit\Auth\Algorithm $alg = null): \Biscuit\Auth\PublicKey {}
+
+        /**
+         * @param string $der
+         * @return \Biscuit\Auth\PublicKey
+         */
+        public static function fromDer(string $der): \Biscuit\Auth\PublicKey {}
+
+        /**
+         * @param string $pem
+         * @return \Biscuit\Auth\PublicKey
+         */
+        public static function fromPem(string $pem): \Biscuit\Auth\PublicKey {}
+
+        /**
+         * @return array
+         */
+        public function toBytes(): array {}
+
+        /**
+         * @return string
+         */
+        public function toHex(): string {}
+    }
+
+    class Rule {
+        /**
+         * @param string $source
+         * @param array|null $params
+         * @param array|null $scope_params
+         */
+        public function __construct(string $source, ?array $params = null, ?array $scope_params = null) {}
+
+        /**
+         * @return string
+         */
+        public function __toString(): string {}
+
+        /**
+         * @param int|string|bool|null $value
+         *
+         * @param string $name
+         * @param mixed $value
+         * @return void
+         */
+        public function set(string $name, mixed $value): void {}
+
+        /**
+         * @param string $name
+         * @param \Biscuit\Auth\PublicKey $key
+         * @return void
+         */
+        public function setScope(string $name, \Biscuit\Auth\PublicKey $key): void {}
     }
 
     class ThirdPartyBlock {
         public function __construct() {}
     }
 
-    class Rule {
-        /**
-         * @param int|string|bool|null $value
-         * @throws \Biscuit\Exception\InvalidTerm If the value is invalid
-         */
-        public function set(string $name, mixed $value): void {}
+    class ThirdPartyRequest {
+        public function __construct() {}
 
         /**
-         * @throws \Biscuit\Exception\InvalidTerm If the scope parameter is invalid
+         * @param \Biscuit\Auth\PrivateKey $private_key
+         * @param \Biscuit\Auth\BlockBuilder $block
+         * @return \Biscuit\Auth\ThirdPartyBlock
          */
-        public function setScope(string $name, \Biscuit\Auth\PublicKey $key): void {}
-
-        public function __toString(): string {}
-
-        /**
-         * @param array<string, int|string|bool|null>|null $params
-         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
-         * @throws \Biscuit\Exception\InvalidRule If the rule syntax is invalid
-         * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
-         */
-        public function __construct(string $source, ?array $params = null, ?array $scope_params = null) {}
+        public function createBlock(\Biscuit\Auth\PrivateKey $private_key, \Biscuit\Auth\BlockBuilder $block): \Biscuit\Auth\ThirdPartyBlock {}
     }
 
-    class Fact {
-        /**
-         * @param int|string|bool|null $value
-         * @throws \Biscuit\Exception\InvalidTerm If the value is invalid
-         */
-        public function set(string $name, mixed $value): void {}
-
-        public function name(): string {}
-
-        public function __toString(): string {}
+    class UnverifiedBiscuit {
+        public function __construct() {}
 
         /**
-         * @param array<string, int|string|bool|null>|null $params
-         * @throws \Biscuit\Exception\InvalidFact If the fact syntax is invalid
-         * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
+         * @param \Biscuit\Auth\BlockBuilder $block
+         * @return \Biscuit\Auth\UnverifiedBiscuit
          */
-        public function __construct(string $source, ?array $params = null) {}
-    }
-
-    class Check {
-        /**
-         * @param int|string|bool|null $value
-         * @throws \Biscuit\Exception\InvalidTerm If the value is invalid
-         */
-        public function set(string $name, mixed $value): void {}
+        public function append(\Biscuit\Auth\BlockBuilder $block): \Biscuit\Auth\UnverifiedBiscuit {}
 
         /**
-         * @throws \Biscuit\Exception\InvalidTerm If the scope parameter is invalid
+         * @return int
          */
-        public function setScope(string $name, \Biscuit\Auth\PublicKey $key): void {}
-
-        public function __toString(): string {}
+        public function blockCount(): int {}
 
         /**
-         * @param array<string, int|string|bool|null>|null $params
-         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
-         * @throws \Biscuit\Exception\InvalidCheck If the check syntax is invalid
-         * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
+         * @param int $index
+         * @return string
          */
-        public function __construct(string $source, ?array $params = null, ?array $scope_params = null) {}
-    }
-
-    class Policy {
-        /**
-         * @param int|string|bool|null $value
-         * @throws \Biscuit\Exception\InvalidTerm If the value is invalid
-         */
-        public function set(string $name, mixed $value): void {}
+        public function blockSource(int $index): string {}
 
         /**
-         * @throws \Biscuit\Exception\InvalidTerm If the scope parameter is invalid
+         * @param string $data
+         * @return \Biscuit\Auth\UnverifiedBiscuit
          */
-        public function setScope(string $name, \Biscuit\Auth\PublicKey $key): void {}
-
-        public function __toString(): string {}
+        public static function fromBase64(string $data): \Biscuit\Auth\UnverifiedBiscuit {}
 
         /**
-         * @param array<string, int|string|bool|null>|null $params
-         * @param array<string, \Biscuit\Auth\PublicKey>|null $scope_params
-         * @throws \Biscuit\Exception\InvalidPolicy If the policy syntax is invalid
-         * @throws \Biscuit\Exception\InvalidTerm If a parameter value is invalid
+         * @return list<string>
          */
-        public function __construct(string $source, ?array $params = null, ?array $scope_params = null) {}
-    }
-
-    class KeyPair {
-        public static function fromPrivateKey(\Biscuit\Auth\PrivateKey $private_key): \Biscuit\Auth\KeyPair {}
-
-        public function getPublicKey(): \Biscuit\Auth\PublicKey {}
-
-        public function getPrivateKey(): \Biscuit\Auth\PrivateKey {}
-
-        public function __construct(?\Biscuit\Auth\Algorithm $alg = null) {}
-    }
-
-    class PublicKey {
-        /**
-         * @throws \Biscuit\Exception\InvalidPublicKey If the data is invalid
-         */
-        public static function fromBytes(string $data, ?\Biscuit\Auth\Algorithm $alg = null): \Biscuit\Auth\PublicKey {}
+        public function revocationIds(): array {}
 
         /**
-         * @throws \Biscuit\Exception\InvalidPublicKey If the PEM is invalid
+         * @return int|null
          */
-        public static function fromPem(string $pem): \Biscuit\Auth\PublicKey {}
+        public function rootKeyId(): ?int {}
 
         /**
-         * @throws \Biscuit\Exception\InvalidPublicKey If the DER is invalid
+         * @param \Biscuit\Auth\PublicKey $root
+         * @return \Biscuit\Auth\Biscuit
          */
-        public static function fromDer(string $der): \Biscuit\Auth\PublicKey {}
-
-        /**
-         * @return list<int>
-         */
-        public function toBytes(): array {}
-
-        public function toHex(): string {}
-
-        public function __toString(): string {}
-
-        /**
-         * @throws \Biscuit\Exception\InvalidPublicKey If the hex data is invalid
-         */
-        public function __construct(string $data) {}
-    }
-
-    class PrivateKey {
-        /**
-         * Generates a new random private key with the specified algorithm.
-         * Defaults to Ed25519 if no algorithm is specified.
-         */
-        public static function generate(?\Biscuit\Auth\Algorithm $alg = null): \Biscuit\Auth\PrivateKey {}
-
-        /**
-         * @throws \Biscuit\Exception\InvalidPrivateKey If the data is invalid
-         */
-        public static function fromBytes(string $data, ?\Biscuit\Auth\Algorithm $alg = null): \Biscuit\Auth\PrivateKey {}
-
-        /**
-         * @throws \Biscuit\Exception\InvalidPrivateKey If the PEM is invalid
-         */
-        public static function fromPem(string $pem): \Biscuit\Auth\PrivateKey {}
-
-        /**
-         * @throws \Biscuit\Exception\InvalidPrivateKey If the DER is invalid
-         */
-        public static function fromDer(string $der): \Biscuit\Auth\PrivateKey {}
-
-        /**
-         * Returns the public key corresponding to this private key.
-         */
-        public function getPublicKey(): \Biscuit\Auth\PublicKey {}
-
-        /**
-         * @return list<int>
-         */
-        public function toBytes(): array {}
-
-        public function toHex(): string {}
-
-        public function __toString(): string {}
-
-        /**
-         * @throws \Biscuit\Exception\InvalidPrivateKey If the hex data is invalid
-         */
-        public function __construct(string $data) {}
-    }
-
-    /**
-     * Algorithm enum for cryptographic key operations
-     */
-    enum Algorithm: int {
-      case Ed25519 = 0;
-      case Secp256r1 = 1;
+        public function verify(\Biscuit\Auth\PublicKey $root): \Biscuit\Auth\Biscuit {}
     }
 }
 
 namespace Biscuit\Exception {
-    /**
-     * Exception thrown when a private key is invalid or malformed.
-     */
-    class InvalidPrivateKey extends \Exception {
+    class AuthorizationException extends \Biscuit\Exception\BiscuitException {
+
+        public function __construct() {}
+
+        /**
+         * @return array
+         */
+        public function getFailedChecks(): array {}
+
+        /**
+         * @return \Biscuit\Auth\MatchedPolicy|null
+         */
+        public function getMatchedPolicy(): ?\Biscuit\Auth\MatchedPolicy {}
+    }
+
+    class AuthorizerBuildException extends \Biscuit\Exception\BuildException {
         public function __construct() {}
     }
 
-    /**
-     * Exception thrown when a public key is invalid or malformed.
-     */
-    class InvalidPublicKey extends \Exception {
+    class Base64Exception extends \Biscuit\Exception\FormatException {
         public function __construct() {}
     }
 
-    /**
-     * Exception thrown when a check is invalid or malformed.
-     */
-    class InvalidCheck extends \Exception {
+    class BiscuitBuildException extends \Biscuit\Exception\BuildException {
         public function __construct() {}
     }
 
-    /**
-     * Exception thrown when a policy is invalid or malformed.
-     */
-    class InvalidPolicy extends \Exception {
+    class BiscuitException extends \Exception {
         public function __construct() {}
     }
 
-    /**
-     * Exception thrown when a fact is invalid or malformed.
-     */
-    class InvalidFact extends \Exception {
+    class BlockAppendException extends \Biscuit\Exception\BuildException {
         public function __construct() {}
     }
 
-    /**
-     * Exception thrown when a rule is invalid or malformed.
-     */
-    class InvalidRule extends \Exception {
+    class BuildException extends \Biscuit\Exception\BiscuitException {
         public function __construct() {}
     }
 
-    /**
-     * Exception thrown when a term value is invalid or unsupported.
-     */
-    class InvalidTerm extends \Exception {
+    class BuilderStateException extends \Biscuit\Exception\BiscuitException {
         public function __construct() {}
     }
 
-    /**
-     * Exception thrown when a third-party request operation fails.
-     */
-    class ThirdPartyRequestError extends \Exception {
+    class BytesException extends \Biscuit\Exception\FormatException {
         public function __construct() {}
     }
 
-    /**
-     * Exception thrown when authorization fails or encounters an error.
-     */
-    class AuthorizerError extends \Exception {
+    class CheckException extends \Biscuit\Exception\DatalogException {
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class DatalogException extends \Biscuit\Exception\BiscuitException {
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class FactException extends \Biscuit\Exception\DatalogException {
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class FormatException extends \Biscuit\Exception\BiscuitException {
         public function __construct() {}
     }
 
-    /**
-     * Exception thrown when attempting to use a builder that has already been consumed.
-     *
-     * Builders are consumed after calling merge() methods.
-     * The build() methods clone internally and do not consume the builder.
-     */
-    class BuilderConsumed extends \Exception {
+    class KeyException extends \Biscuit\Exception\BiscuitException {
+        public function __construct() {}
+    }
+
+    class PolicyException extends \Biscuit\Exception\DatalogException {
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class PrivateKeyException extends \Biscuit\Exception\KeyException {
+        public function __construct() {}
+    }
+
+    class PublicKeyException extends \Biscuit\Exception\KeyException {
+        public function __construct() {}
+    }
+
+    class RuleException extends \Biscuit\Exception\DatalogException {
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class ScopeException extends \Biscuit\Exception\DatalogException {
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class SignatureException extends \Biscuit\Exception\FormatException {
+        public function __construct() {}
+    }
+
+    class SnapshotException extends \Biscuit\Exception\FormatException {
+        public function __construct() {}
+    }
+
+    class TermException extends \Biscuit\Exception\DatalogException {
+
+        public function __construct() {}
+
+        /**
+         * @return array|null
+         */
+        public function getMissingParameters(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getParseErrors(): ?array {}
+
+        /**
+         * @return array|null
+         */
+        public function getUnusedParameters(): ?array {}
+    }
+
+    class ThirdPartyBlockAppendException extends \Biscuit\Exception\BuildException {
+        public function __construct() {}
+    }
+
+    class ThirdPartyException extends \Biscuit\Exception\BiscuitException {
         public function __construct() {}
     }
 }

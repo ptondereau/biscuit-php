@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Compatibility with `ptondereau/biscuit-php` 0.5.0:
+  - `BiscuitVoter` adapted to the new `Authorizer::authorize()` shape (returns `MatchedPolicy`, throws `AuthorizationException` on deny).
+  - `biscuit:policy:test` now reports the matched policy and failed-check details produced by `AuthorizationException`.
+  - Stubs refreshed to the v0.5.0 exception hierarchy and value objects.
+- `composer.json` now requires `ext-biscuit_php: >=0.5`.
+
 ## [0.1.0] - 2026-05-06
 
 ### Added

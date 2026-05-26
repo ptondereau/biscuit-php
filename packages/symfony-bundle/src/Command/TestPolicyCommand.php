@@ -8,7 +8,7 @@ use Biscuit\Auth\AuthorizerBuilder;
 use Biscuit\Auth\Fact;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
-use Biscuit\Exception\AuthorizerError;
+use Biscuit\Exception\AuthorizationException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -133,13 +133,44 @@ final class TestPolicyCommand extends Command
             $io->section('Authorizer State');
             $io->writeln((string) $authorizer);
 
-            $authorizer->authorize();
+            $matched = $authorizer->authorize();
+
+            $io->section('Matched Policy');
+            $io->definitionList(
+                ['Kind' => $matched->getKind()],
+                ['Id' => (string) $matched->getPolicyId()],
+            );
 
             $io->success('Authorization PASSED.');
 
             return Command::SUCCESS;
-        } catch (AuthorizerError $e) {
+        } catch (AuthorizationException $e) {
             $io->error('Authorization FAILED: ' . $e->getMessage());
+
+            $matched = $e->getMatchedPolicy();
+            if (null !== $matched) {
+                $io->section('Matched Policy');
+                $io->definitionList(
+                    ['Kind' => $matched->getKind()],
+                    ['Id' => (string) $matched->getPolicyId()],
+                    ['Code' => $matched->getCode() ?? '(none)'],
+                );
+            }
+
+            $failedChecks = $e->getFailedChecks();
+            if ([] !== $failedChecks) {
+                $io->section('Failed Checks');
+                $rows = [];
+                foreach ($failedChecks as $check) {
+                    $rows[] = [
+                        $check->getOrigin(),
+                        null !== $check->getBlockId() ? (string) $check->getBlockId() : '(authorizer)',
+                        (string) $check->getCheckId(),
+                        $check->getRule(),
+                    ];
+                }
+                $io->table(['Origin', 'Block ID', 'Check ID', 'Rule'], $rows);
+            }
 
             return Command::FAILURE;
         } catch (Throwable $e) {

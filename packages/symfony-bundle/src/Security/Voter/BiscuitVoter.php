@@ -50,11 +50,11 @@ final class BiscuitVoter extends Voter
 
         try {
             $authorizer = $authBuilder->build($biscuit);
-            $result = 0 === $authorizer->authorize();
+            $authorizer->authorize();
 
-            $this->dataCollector?->recordPolicyCheck($attribute, $result, $params);
+            $this->dataCollector?->recordPolicyCheck($attribute, true, $params);
 
-            return $result;
+            return true;
         } catch (Throwable) {
             $this->dataCollector?->recordPolicyCheck($attribute, false, $params);
 

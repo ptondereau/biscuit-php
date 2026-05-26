@@ -49,7 +49,7 @@ jobs:
           set -euo pipefail
           for attempt in 1 2 3; do
             echo "::group::pie install attempt $attempt"
-            output=$(sudo pie install ptondereau/biscuit-php:0.4.0 --no-interaction --no-cache 2>&1 || true)
+            output=$(sudo pie install ptondereau/biscuit-php:0.5.0 --no-interaction --no-cache 2>&1 || true)
             echo "$output"
             echo "::endgroup::"
             if echo "$output" | grep -q "Pre-packaged binary found"; then
@@ -104,7 +104,7 @@ jobs:
           set -euo pipefail
           for attempt in 1 2 3; do
             echo "::group::pie install attempt $attempt"
-            output=$(sudo pie install ptondereau/biscuit-php:0.4.0 --no-interaction --no-cache 2>&1 || true)
+            output=$(sudo pie install ptondereau/biscuit-php:0.5.0 --no-interaction --no-cache 2>&1 || true)
             echo "$output"
             echo "::endgroup::"
             if echo "$output" | grep -q "Pre-packaged binary found"; then

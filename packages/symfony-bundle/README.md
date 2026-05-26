@@ -30,14 +30,14 @@ Read the Datalog reference at [biscuitsec.org/docs/reference/datalog](https://ww
 
 - PHP 8.1 or higher
 - Symfony 6.4, 7.4, or 8.0
-- The `biscuit-php` PHP extension (version 0.4.0)
+- The `biscuit-php` PHP extension (version 0.5.0)
 
 ## Installation
 
 Install the PHP extension via [pie](https://github.com/php/pie):
 
 ```bash
-pie install ptondereau/biscuit-php:0.4.0
+pie install ptondereau/biscuit-php:0.5.0
 ```
 
 Install the bundle via Composer:
