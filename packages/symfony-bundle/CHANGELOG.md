@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-05-27
+
 ### Fixed
 
 - `biscuit.revocation.enabled` / `biscuit.revocation.service` now actually wire the configured `RevocationCheckerInterface` into the authenticator. Previously both keys were read into container parameters but never applied, so enabling revocation had no effect and presented tokens were never checked against the revocation list. Enabling revocation without a `service` now fails fast with a clear configuration error.
@@ -60,7 +62,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `make:biscuit-policy` maker for scaffolding policy classes.
 - Test helpers: `BiscuitTestTrait`, `TestBiscuitAuthenticator`, `BiscuitFixtures`, `BiscuitFixtureLoader`.
 
-[Unreleased]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.1.0...v0.1.1
