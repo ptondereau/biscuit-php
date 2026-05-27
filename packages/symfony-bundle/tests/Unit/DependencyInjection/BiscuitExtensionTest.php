@@ -8,7 +8,9 @@ use Biscuit\BiscuitBundle\DependencyInjection\BiscuitExtension;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Reference;
 
 #[CoversClass(BiscuitExtension::class)]
 final class BiscuitExtensionTest extends TestCase
@@ -179,6 +181,49 @@ final class BiscuitExtensionTest extends TestCase
 
         self::assertTrue($this->container->getParameter('biscuit.revocation.enabled'));
         self::assertSame('App\\Security\\RevocationChecker', $this->container->getParameter('biscuit.revocation.service'));
+    }
+
+    #[Test]
+    public function itWiresRevocationCheckerIntoAuthenticatorWhenEnabled(): void
+    {
+        $this->extension->load([
+            'biscuit' => [
+                'revocation' => [
+                    'enabled' => true,
+                    'service' => 'app.revocation_checker',
+                ],
+            ],
+        ], $this->container);
+
+        $authenticator = $this->container->getDefinition('biscuit.authenticator');
+        $checker = $authenticator->getArgument(2);
+
+        self::assertInstanceOf(Reference::class, $checker);
+        self::assertSame('app.revocation_checker', (string) $checker);
+    }
+
+    #[Test]
+    public function itLeavesAuthenticatorRevocationCheckerNullByDefault(): void
+    {
+        $this->extension->load([], $this->container);
+
+        $authenticator = $this->container->getDefinition('biscuit.authenticator');
+
+        self::assertNull($authenticator->getArgument(2));
+    }
+
+    #[Test]
+    public function itThrowsWhenRevocationEnabledWithoutService(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $this->extension->load([
+            'biscuit' => [
+                'revocation' => [
+                    'enabled' => true,
+                ],
+            ],
+        ], $this->container);
     }
 
     #[Test]

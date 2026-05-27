@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- `biscuit.revocation.enabled` / `biscuit.revocation.service` now actually wire the configured `RevocationCheckerInterface` into the authenticator. Previously both keys were read into container parameters but never applied, so enabling revocation had no effect and presented tokens were never checked against the revocation list. Enabling revocation without a `service` now fails fast with a clear configuration error.
+
 ## [0.2.1] - 2026-05-27
 
 ### Added

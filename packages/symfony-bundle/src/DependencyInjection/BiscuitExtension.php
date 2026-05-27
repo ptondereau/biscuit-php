@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\DependencyInjection;
 
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -25,6 +26,28 @@ final class BiscuitExtension extends Extension
 
         $this->setParameters($container, $config);
         $this->configureTokenExtractor($container, $config);
+        $this->configureRevocation($container, $config);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function configureRevocation(
+        ContainerBuilder $container,
+        array $config,
+    ): void {
+        if (false === $config['revocation']['enabled']) {
+            return;
+        }
+
+        $serviceId = $config['revocation']['service'];
+
+        if (null === $serviceId) {
+            throw new InvalidConfigurationException('biscuit.revocation.enabled is true but biscuit.revocation.service is null. Set it to the service id of your RevocationCheckerInterface implementation.');
+        }
+
+        $container->getDefinition('biscuit.authenticator')
+            ->replaceArgument(2, new Reference($serviceId));
     }
 
     /**

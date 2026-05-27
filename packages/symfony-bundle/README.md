@@ -397,7 +397,7 @@ biscuit:
         service: App\Security\MyRevocationChecker
 ```
 
-A reference implementation backed by a Symfony cache pool is provided as `Biscuit\BiscuitBundle\Cache\Revocation\CacheRevocationChecker`.
+`service` must point to a service that implements `RevocationCheckerInterface`. Enabling revocation without setting `service` raises a configuration error at container build time. A reference implementation backed by a Symfony cache pool is provided as `Biscuit\BiscuitBundle\Cache\Revocation\CacheRevocationChecker`.
 
 When revocation is enabled, the authenticator throws `RevokedTokenException` for any token whose revocation IDs intersect the revoked set. Revocation checks happen after signature verification but before policy evaluation.
 
