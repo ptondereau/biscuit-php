@@ -150,6 +150,12 @@ biscuit:
         expires:
             checks:
                 - 'check if now($t), $t <= {exp}'
+
+    authorizer_fact_templates:   # Facts injected into the authorizer, keyed by #[IsGranted] policy name
+        credit_authorized:
+            facts:
+                - 'operation("credit_wallet")'
+                - 'amount({amount})'
 ```
 
 ## Key Management
@@ -231,6 +237,35 @@ You can also pass a Datalog string directly to `#[IsGranted]` for ad-hoc policie
 ```
 
 If the configured policies do not match, the voter abstains and falls back to other voters.
+
+## Authorizer Fact Templates
+
+Policies and token checks can only reason about facts that are present in the authorizer. Token-side facts come from the token itself; **request-context** facts (the amount being moved, the current time, the target resource's tier, ...) must be supplied by the verifier at authorization time. `authorizer_fact_templates` lets you declare those facts in configuration and have `BiscuitVoter` inject them automatically, keyed by policy name:
+
+```yaml
+biscuit:
+    policies:
+        credit_authorized: 'allow if role("agent"), operation("credit_wallet"), amount($a), $a <= 100000, geo({req_zone})'
+
+    authorizer_fact_templates:
+        credit_authorized:                 # same name as the policy
+            facts:
+                - 'operation("credit_wallet")'
+                - 'amount({amount})'
+                - 'geo({req_zone})'
+                - 'time({now})'
+```
+
+```php
+#[IsGranted('credit_authorized', subject: [
+    'req_zone' => $wilaya,
+    'amount'   => $amountInDinars,
+    'now'      => time(),
+])]
+public function credit(): Response { /* ... */ }
+```
+
+When `credit_authorized` is evaluated, the voter applies the same-named fact template against the `subject:` parameters and adds the resulting facts to the authorizer before `authorize()` runs; the token's own checks are evaluated against those facts too. The `subject:` array may carry more keys than the policy references: extra keys feed the fact template and are ignored by the policy.
 
 ## Token Templates
 

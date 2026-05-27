@@ -263,6 +263,45 @@ final class BiscuitExtensionTest extends TestCase
     }
 
     #[Test]
+    public function itSetsDefaultAuthorizerFactTemplatesParameter(): void
+    {
+        $this->extension->load([], $this->container);
+
+        self::assertSame([], $this->container->getParameter('biscuit.authorizer_fact_templates'));
+    }
+
+    #[Test]
+    public function itSetsCustomAuthorizerFactTemplatesParameter(): void
+    {
+        $templates = [
+            'credit_authorized' => [
+                'facts' => ['operation("credit_wallet")', 'amount({amount})'],
+                'checks' => [],
+                'rules' => [],
+            ],
+        ];
+
+        $this->extension->load([
+            'biscuit' => [
+                'authorizer_fact_templates' => $templates,
+            ],
+        ], $this->container);
+
+        self::assertSame($templates, $this->container->getParameter('biscuit.authorizer_fact_templates'));
+    }
+
+    #[Test]
+    public function itWiresApplierAndAuthorizerFactTemplatesIntoVoter(): void
+    {
+        $this->extension->load([], $this->container);
+
+        $voter = $this->container->getDefinition('biscuit.voter');
+
+        self::assertCount(4, $voter->getArguments());
+        self::assertSame('%biscuit.authorizer_fact_templates%', $voter->getArgument(3));
+    }
+
+    #[Test]
     public function itRegistersClassAliases(): void
     {
         $this->extension->load([], $this->container);

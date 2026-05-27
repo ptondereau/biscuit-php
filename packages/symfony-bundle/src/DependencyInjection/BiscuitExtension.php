@@ -123,5 +123,11 @@ final class BiscuitExtension extends Extension
             'biscuit.block_templates',
             $config['block_templates'],
         );
+
+        // Authorizer fact templates (injected by the voter at authorization time)
+        $container->setParameter(
+            'biscuit.authorizer_fact_templates',
+            $config['authorizer_fact_templates'],
+        );
     }
 }

@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Tests\Unit\Security\Voter;
 
 use Biscuit\Auth\Biscuit;
+use Biscuit\Auth\BiscuitBuilder;
+use Biscuit\Auth\Fact;
+use Biscuit\Auth\KeyPair;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
 use Biscuit\BiscuitBundle\Security\User\BiscuitUser;
 use Biscuit\BiscuitBundle\Security\Voter\BiscuitVoter;
+use Biscuit\BiscuitBundle\Token\Template\Applier;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -297,6 +301,35 @@ final class BiscuitVoterTest extends TestCase
 
         // Authorization fails because we don't have real biscuit, so ACCESS_DENIED
         self::assertSame(Voter::ACCESS_DENIED, $result);
+    }
+
+    #[Test]
+    public function itInjectsAuthorizerFactsFromTemplateBeforeAuthorizing(): void
+    {
+        $keyPair = new KeyPair();
+        $builder = new BiscuitBuilder();
+        $builder->addFact(new Fact('role("agent")'));
+        $biscuit = $builder->build($keyPair->getPrivateKey());
+
+        $registry = new PolicyRegistry([
+            'credit' => 'allow if role("agent"), amount($a), $a <= 100',
+        ]);
+        $voter = new BiscuitVoter(
+            $registry,
+            null,
+            new Applier(),
+            ['credit' => ['facts' => ['amount({amount})']]],
+        );
+
+        $user = new BiscuitUser($biscuit, 'agent-1');
+        $token = $this->createMock(TokenInterface::class);
+        $token->method('getUser')->willReturn($user);
+
+        // The fact template injects amount(50) into the authorizer: 50 <= 100, granted.
+        self::assertSame(Voter::ACCESS_GRANTED, $voter->vote($token, ['amount' => 50], ['credit']));
+
+        // amount(150) injected: 150 <= 100 fails, denied.
+        self::assertSame(Voter::ACCESS_DENIED, $voter->vote($token, ['amount' => 150], ['credit']));
     }
 
     /**

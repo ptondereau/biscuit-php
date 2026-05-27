@@ -31,7 +31,29 @@ final class PolicyRegistry
     {
         $policyString = $this->policies[$name] ?? $name;
 
-        return new Policy($policyString, $params);
+        return new Policy($policyString, $this->usedParams($policyString, $params));
+    }
+
+    /**
+     * Biscuit rejects a policy built with parameters it does not reference. Keep
+     * only the placeholders the policy string actually uses so a caller may pass
+     * a wider context (e.g. one shared with an authorizer fact template) without
+     * every value needing to appear in the policy.
+     *
+     * @param array<string, mixed> $params
+     *
+     * @return array<string, mixed>
+     */
+    private function usedParams(string $policyString, array $params): array
+    {
+        $used = [];
+        foreach ($params as $name => $value) {
+            if (str_contains($policyString, '{' . $name . '}')) {
+                $used[$name] = $value;
+            }
+        }
+
+        return $used;
     }
 
     public function add(string $name, string $policy): void

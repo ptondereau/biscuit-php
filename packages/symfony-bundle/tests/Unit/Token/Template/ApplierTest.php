@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\Tests\Unit\Token\Template;
 
+use Biscuit\Auth\AuthorizerBuilder;
 use Biscuit\Auth\BiscuitBuilder;
 use Biscuit\Auth\BlockBuilder;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
+use Biscuit\BiscuitBundle\Token\Template\AuthorizerBuilderAdapter;
 use Biscuit\BiscuitBundle\Token\Template\BiscuitBuilderAdapter;
 use Biscuit\BiscuitBundle\Token\Template\BlockBuilderAdapter;
 use Biscuit\BiscuitBundle\Token\Template\Template;
@@ -15,6 +17,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Applier::class)]
+#[CoversClass(AuthorizerBuilderAdapter::class)]
 #[CoversClass(BiscuitBuilderAdapter::class)]
 #[CoversClass(BlockBuilderAdapter::class)]
 final class ApplierTest extends TestCase
@@ -84,6 +87,26 @@ final class ApplierTest extends TestCase
         self::assertStringContainsString('user("alice")', $source);
         self::assertStringContainsString('operation("read")', $source);
         self::assertStringContainsString('allowed_for($r)', $source);
+    }
+
+    #[Test]
+    public function populatesAuthorizerBuilderWithAllTermTypes(): void
+    {
+        $authorizerBuilder = new AuthorizerBuilder();
+        $adapter = new AuthorizerBuilderAdapter($authorizerBuilder);
+        $template = new Template(
+            facts: ['operation("credit_wallet")', 'amount({amount})'],
+            checks: ['check if time($t), $t <= {now}'],
+            rules: ['allowed($r) <- resource($r)'],
+        );
+
+        (new Applier())->populate($adapter, $template, ['amount' => 50000, 'now' => 1000]);
+
+        $source = (string) $authorizerBuilder;
+        self::assertStringContainsString('operation("credit_wallet")', $source);
+        self::assertStringContainsString('50000', $source);
+        self::assertStringContainsString('time($t)', $source);
+        self::assertStringContainsString('allowed($r)', $source);
     }
 
     #[Test]

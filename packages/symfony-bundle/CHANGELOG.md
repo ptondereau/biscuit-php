@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `biscuit.authorizer_fact_templates` configuration: named fact templates that `BiscuitVoter` injects into the authorizer (keyed by policy name) before `authorize()`. This lets `#[IsGranted]` policies and token checks reason about request-context facts (amount, geo, wallet tier, time, ...) that the verifier supplies server-side, with the Datalog kept in configuration rather than inline in PHP. Backed by a new `Token\Template\AuthorizerBuilderAdapter` reusing the existing `Applier`.
+
+### Fixed
+
+- `PolicyRegistry::get()` now binds only the parameters the policy string actually references, so a caller may pass a wider parameter set (for example one shared with an authorizer fact template) without Biscuit rejecting the policy for unused parameters.
+
 ## [0.2.0] - 2026-05-26
 
 ### Changed

@@ -8,6 +8,9 @@ use Biscuit\Auth\AuthorizerBuilder;
 use Biscuit\BiscuitBundle\DataCollector\BiscuitDataCollector;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
 use Biscuit\BiscuitBundle\Security\User\BiscuitUser;
+use Biscuit\BiscuitBundle\Token\Template\Applier;
+use Biscuit\BiscuitBundle\Token\Template\AuthorizerBuilderAdapter;
+use Biscuit\BiscuitBundle\Token\Template\Template;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
@@ -18,9 +21,14 @@ use Throwable;
  */
 final class BiscuitVoter extends Voter
 {
+    /**
+     * @param array<string, array{facts?: list<string>, checks?: list<string>, rules?: list<string>}> $authorizerFactTemplates
+     */
     public function __construct(
         private readonly PolicyRegistry $policyRegistry,
         private readonly ?BiscuitDataCollector $dataCollector = null,
+        private readonly ?Applier $applier = null,
+        private readonly array $authorizerFactTemplates = [],
     ) {
     }
 
@@ -48,6 +56,8 @@ final class BiscuitVoter extends Voter
         $authBuilder = new AuthorizerBuilder();
         $authBuilder->addPolicy($policy);
 
+        $this->applyAuthorizerFactTemplate($attribute, $params, $authBuilder);
+
         try {
             $authorizer = $authBuilder->build($biscuit);
             $authorizer->authorize();
@@ -60,6 +70,27 @@ final class BiscuitVoter extends Voter
 
             return false;
         }
+    }
+
+    /**
+     * Inject request-context facts into the authorizer from the fact template
+     * named after the policy. Token checks (caps, zone, expiry) and the policy
+     * itself can only reason about request attributes that live in the
+     * authorizer, so this is where amount/geo/wallet_tier/time/etc. enter.
+     *
+     * @param array<string, mixed> $params
+     */
+    private function applyAuthorizerFactTemplate(string $attribute, array $params, AuthorizerBuilder $authBuilder): void
+    {
+        if (null === $this->applier || !isset($this->authorizerFactTemplates[$attribute])) {
+            return;
+        }
+
+        $this->applier->populate(
+            new AuthorizerBuilderAdapter($authBuilder),
+            Template::fromArray($this->authorizerFactTemplates[$attribute]),
+            $params,
+        );
     }
 
     /**

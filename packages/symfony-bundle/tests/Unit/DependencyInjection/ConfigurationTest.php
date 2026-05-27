@@ -303,6 +303,40 @@ final class ConfigurationTest extends TestCase
     }
 
     #[Test]
+    public function itHasEmptyAuthorizerFactTemplatesByDefault(): void
+    {
+        $config = $this->processConfiguration([]);
+
+        self::assertSame([], $config['authorizer_fact_templates']);
+    }
+
+    #[Test]
+    public function itAcceptsAuthorizerFactTemplatesConfiguration(): void
+    {
+        $config = $this->processConfiguration([
+            'biscuit' => [
+                'authorizer_fact_templates' => [
+                    'credit_authorized' => [
+                        'facts' => [
+                            'operation("credit_wallet")',
+                            'amount({amount})',
+                            'wallet_tier({tier})',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        self::assertArrayHasKey('credit_authorized', $config['authorizer_fact_templates']);
+        self::assertSame(
+            ['operation("credit_wallet")', 'amount({amount})', 'wallet_tier({tier})'],
+            $config['authorizer_fact_templates']['credit_authorized']['facts'],
+        );
+        self::assertSame([], $config['authorizer_fact_templates']['credit_authorized']['checks']);
+        self::assertSame([], $config['authorizer_fact_templates']['credit_authorized']['rules']);
+    }
+
+    #[Test]
     public function itAcceptsTokenTemplatesWithEmptyArrays(): void
     {
         $config = $this->processConfiguration([

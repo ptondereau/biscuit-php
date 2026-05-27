@@ -84,6 +84,24 @@ final class PolicyRegistryTest extends TestCase
     }
 
     #[Test]
+    public function itBindsOnlyParamsReferencedByThePolicy(): void
+    {
+        $registry = new PolicyRegistry([
+            'credit' => 'allow if geo({req_zone})',
+        ]);
+
+        // A wider context (e.g. shared with an authorizer fact template) must not
+        // make the policy build fail on parameters the policy does not reference.
+        $policy = $registry->get('credit', [
+            'req_zone' => 16,
+            'amount' => 30_000,
+            'tier' => 1,
+        ]);
+
+        self::assertInstanceOf(Policy::class, $policy);
+    }
+
+    #[Test]
     public function itAddsNewPolicy(): void
     {
         $registry = new PolicyRegistry();

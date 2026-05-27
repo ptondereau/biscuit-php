@@ -108,6 +108,8 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('biscuit.policy_registry'),
             service('biscuit.data_collector')->nullOnInvalid(),
+            service('biscuit.template_applier'),
+            '%biscuit.authorizer_fact_templates%',
         ])
         ->tag('security.voter');
 
