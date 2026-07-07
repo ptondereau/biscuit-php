@@ -1,0 +1,52 @@
+name: Sync stubs
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+concurrency:
+  group: sync-stubs
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: ptondereau/biscuit-php-stubs
+          ssh-key: ${{ secrets.STUBS_DEPLOY_KEY }}
+          path: mirror
+
+      - name: Mirror stubs
+        run: |
+          rsync -a --delete stubs/ mirror/stubs/
+          cp dist/stubs-package/composer.json mirror/composer.json
+          cp dist/stubs-package/README.md mirror/README.md
+          cp LICENSE mirror/LICENSE
+
+      - name: Commit and push
+        working-directory: mirror
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Mirror stubs from ptondereau/biscuit-php@${{ github.sha }}"
+            git push origin HEAD:main
+          fi
+
+      - name: Push release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: mirror
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          git tag -f "$TAG"
+          git push -f origin "refs/tags/$TAG"

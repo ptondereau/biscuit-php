@@ -79,13 +79,15 @@ cargo build --release
 php -dextension=target/release/libbiscuit_php.so -m | grep biscuit_php
 ```
 
-### Using stubs for autocompletion
+### IDE stubs and static analysis
 
-We're exposing PHP stubs for IDE integration
+PHP stubs for the whole extension API are published as a dedicated Composer package, [`ptondereau/biscuit-php-stubs`](https://github.com/ptondereau/biscuit-php-stubs):
 
 ```bash
-composer require --dev ptondereau/biscuit-php
+composer require --dev ptondereau/biscuit-php-stubs
 ```
+
+The stubs ship with full docblocks (usage examples, precise types, and `@throws` annotations), so IDEs, PHPStan, and Psalm can understand the API without loading the extension. Every stub method throws an `Error` when called, so a missing extension fails loudly at runtime instead of silently.
 
 ## Quick Start
 
@@ -111,9 +113,10 @@ $parsed = Biscuit::fromBase64($token, $root->getPublicKey());
 $authBuilder = new AuthorizerBuilder('allow if user("alice"), resource("file1")');
 $authorizer = $authBuilder->build($parsed);
 
-// Check authorization
+// Check authorization: returns the matched allow policy,
+// or throws Biscuit\Exception\AuthorizationException on failure
 $policy = $authorizer->authorize();
-echo $policy === 0 ? "Authorized!" : "Denied!";
+echo "Authorized by policy #{$policy->getPolicyId()} ({$policy->getKind()})";
 ```
 
 ## Advanced Examples
@@ -130,10 +133,10 @@ $request = $biscuit->thirdPartyRequest();
 
 $externalBlock = new BlockBuilder();
 $externalBlock->addCode('external_fact("verified");');
-$signedBlock = $request->createBlock($thirdPartyKey->private(), $externalBlock);
+$signedBlock = $request->createBlock($thirdPartyKey->getPrivateKey(), $externalBlock);
 
 $biscuitWithAttestation = $biscuit->appendThirdParty(
-    $thirdPartyKey->public(),
+    $thirdPartyKey->getPublicKey(),
     $signedBlock
 );
 ```
@@ -245,22 +248,19 @@ php \
     vendor/bin/mago lint // and format
 ```
 
-## Generating PHP Stubs
+## PHP Stubs
 
-```bash
-cargo build
-php \
-    -dextension=target/debug/libbiscuit_php.so \
-    php-extension-stub-generator.phar dump-files ext-biscuit_php stubs
-```
+The stubs live in [`stubs/`](./stubs) and are maintained by hand, one file per class. On every push to `main` and on release tags, the [`sync-stubs`](./.github/workflows/sync-stubs.yml) workflow mirrors them (together with `dist/stubs-package/`) to [`ptondereau/biscuit-php-stubs`](https://github.com/ptondereau/biscuit-php-stubs), which is what Packagist tracks. Release tags are replicated on the mirror so stub versions follow extension releases.
+
+When changing the PHP API exposed from Rust, update the matching stub in `stubs/` in the same pull request.
 
 ## Contributing
 
 Contributions are welcome! Please:
 
 1. Add tests for new features
-3. Update documentation
-4. Ensure all tests pass
+2. Update documentation and the PHP stubs in `stubs/` when the API changes
+3. Ensure all tests pass
 
 ## License
 

@@ -29,7 +29,7 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Cache Cargo registry
         uses: actions/cache@v5
@@ -90,7 +90,7 @@ jobs:
       RUSTFLAGS: "-C target-feature=-crt-static -C linker=gcc"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install build dependencies
         run: |
@@ -149,7 +149,7 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Cache Cargo registry
         uses: actions/cache@v5
@@ -206,7 +206,7 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Build in Alpine container
         run: |
@@ -251,7 +251,7 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Cache Cargo registry
         uses: actions/cache@v5
@@ -314,7 +314,7 @@ jobs:
           - { php-version: "8.5", compiler: "vs17" }
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Cache Cargo registry
         uses: actions/cache@v5
@@ -372,7 +372,7 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Cache Cargo registry
         uses: actions/cache@v5
@@ -648,7 +648,7 @@ jobs:
       - verify-windows
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
