@@ -7,9 +7,9 @@ namespace Biscuit\BiscuitBundle\Token\Template;
 final class Template
 {
     /**
-     * @param list<string> $facts
-     * @param list<string> $checks
-     * @param list<string> $rules
+     * @param list<non-empty-string> $facts
+     * @param list<non-empty-string> $checks
+     * @param list<non-empty-string> $rules
      */
     public function __construct(
         public readonly array $facts = [],
@@ -19,7 +19,7 @@ final class Template
     }
 
     /**
-     * @param array{facts?: list<string>, checks?: list<string>, rules?: list<string>} $config
+     * @param array{facts?: list<non-empty-string>, checks?: list<non-empty-string>, rules?: list<non-empty-string>} $config
      */
     public static function fromArray(array $config): self
     {

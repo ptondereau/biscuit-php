@@ -24,13 +24,14 @@
     "phpstan/phpstan-phpunit": "^2.0",
     "phpstan/phpstan-symfony": "^2.0",
     "phpunit/phpunit": "^10.0 || ^11.0",
+    "ptondereau/biscuit-php-stubs": "^0.5.1",
     "symfony/cache": "^6.4 || ^7.0 || ^8.0",
     "symfony/maker-bundle": "^1.50",
     "symfony/web-profiler-bundle": "^6.4 || ^7.0 || ^8.0",
     "symfony/yaml": "^6.4 || ^7.0 || ^8.0"
   },
   "scripts": {
-    "phpstan": "phpstan analyse",
+    "phpstan": "phpstan analyse --memory-limit=512M",
     "cs-fix": "php-cs-fixer fix",
     "cs-check": "php-cs-fixer fix --dry-run --diff",
     "test": "phpunit",
@@ -48,8 +49,7 @@
   "autoload-dev": {
     "psr-4": {
       "Biscuit\\BiscuitBundle\\Tests\\": "tests/"
-    },
-    "classmap": ["stubs/"]
+    }
   },
   "config": {
     "sort-packages": true
@@ -57,11 +57,6 @@
   "extra": {
     "branch-alias": {
       "dev-main": "0.2.x-dev"
-    },
-    "phpstan": {
-      "stubs": [
-        "stubs/biscuit-php.stubs.php"
-      ]
     }
   }
 }

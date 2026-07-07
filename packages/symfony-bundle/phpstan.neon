@@ -8,13 +8,12 @@ parameters:
     excludePaths:
         - vendor
         - src/Resources/skeleton
-        - stubs
 
     bootstrapFiles:
         - vendor/autoload.php
 
-    scanFiles:
-        - stubs/biscuit-php.stubs.php
+    scanDirectories:
+        - vendor/ptondereau/biscuit-php-stubs/stubs
 
     symfony:
         containerXmlPath: null

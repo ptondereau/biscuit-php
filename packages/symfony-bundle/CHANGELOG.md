@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- The vendored `stubs/biscuit-php.stubs.php` file is gone; the bundle now uses the [`ptondereau/biscuit-php-stubs`](https://github.com/ptondereau/biscuit-php-stubs) package (dev dependency) for IDE autocompletion and static analysis.
+- Datalog template sources (`facts`, `checks`, `rules`) and policy strings are typed `non-empty-string`; an empty policy string now throws an `InvalidArgumentException` instead of a parse error from the extension, and an empty configured key is treated as unset.
+- CI installs the `biscuit_php` extension 0.5.1.
+
 ## [0.2.2] - 2026-05-27
 
 ### Fixed

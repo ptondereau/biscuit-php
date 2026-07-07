@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Policy;
 
 use Biscuit\Auth\Policy;
+use InvalidArgumentException;
 
 final class PolicyRegistry
 {
@@ -30,6 +31,10 @@ final class PolicyRegistry
     public function get(string $name, array $params = []): Policy
     {
         $policyString = $this->policies[$name] ?? $name;
+
+        if ('' === $policyString) {
+            throw new InvalidArgumentException(sprintf('Policy "%s" resolves to an empty policy string.', $name));
+        }
 
         return new Policy($policyString, $this->usedParams($policyString, $params));
     }

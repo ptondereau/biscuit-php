@@ -204,7 +204,7 @@ final class CreateTokenCommandTest extends TestCase
     }
 
     /**
-     * @param array<string, array{facts?: list<string>, checks?: list<string>, rules?: list<string>}> $templates
+     * @param array<string, array{facts?: list<non-empty-string>, checks?: list<non-empty-string>, rules?: list<non-empty-string>}> $templates
      */
     private function createCommandTester(array $templates): CommandTester
     {
@@ -220,7 +220,7 @@ final class CreateTokenCommandTest extends TestCase
     }
 
     /**
-     * @param array<string, array{facts?: list<string>, checks?: list<string>, rules?: list<string>}> $templates
+     * @param array<string, array{facts?: list<non-empty-string>, checks?: list<non-empty-string>, rules?: list<non-empty-string>}> $templates
      */
     private function createCommandTesterWithMocks(array $templates): CommandTester
     {

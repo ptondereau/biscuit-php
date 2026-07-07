@@ -14,7 +14,7 @@ use InvalidArgumentException;
 final class BiscuitBlockFactory
 {
     /**
-     * @param array<string, array{facts?: list<string>, checks?: list<string>, rules?: list<string>}> $templates
+     * @param array<string, array{facts?: list<non-empty-string>, checks?: list<non-empty-string>, rules?: list<non-empty-string>}> $templates
      */
     public function __construct(
         private readonly BiscuitTokenManagerInterface $tokenManager,

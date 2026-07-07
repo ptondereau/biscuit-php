@@ -85,7 +85,7 @@ final class BiscuitTokenFactoryTest extends TestCase
     }
 
     /**
-     * @param array<string, array{facts?: list<string>, checks?: list<string>, rules?: list<string>}> $templates
+     * @param array<string, array{facts?: list<non-empty-string>, checks?: list<non-empty-string>, rules?: list<non-empty-string>}> $templates
      */
     private function createFactory(array $templates): BiscuitTokenFactory
     {
@@ -105,7 +105,7 @@ final class BiscuitTokenFactoryTest extends TestCase
     }
 
     /**
-     * @param array<string, array{facts?: list<string>, checks?: list<string>, rules?: list<string>}> $templates
+     * @param array<string, array{facts?: list<non-empty-string>, checks?: list<non-empty-string>, rules?: list<non-empty-string>}> $templates
      */
     private function createFactoryWithMockedManager(array $templates): BiscuitTokenFactory
     {

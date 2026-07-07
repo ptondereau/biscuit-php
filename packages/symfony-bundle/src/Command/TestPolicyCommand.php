@@ -111,6 +111,12 @@ final class TestPolicyCommand extends Command
             $authorizerBuilder = new AuthorizerBuilder();
 
             foreach ($factStrings as $factString) {
+                if ('' === $factString) {
+                    $io->error('Fact option must not be empty.');
+
+                    return Command::FAILURE;
+                }
+
                 $authorizerBuilder->addFact(new Fact($factString));
             }
 

@@ -22,7 +22,7 @@ use Throwable;
 final class BiscuitVoter extends Voter
 {
     /**
-     * @param array<string, array{facts?: list<string>, checks?: list<string>, rules?: list<string>}> $authorizerFactTemplates
+     * @param array<string, array{facts?: list<non-empty-string>, checks?: list<non-empty-string>, rules?: list<non-empty-string>}> $authorizerFactTemplates
      */
     public function __construct(
         private readonly PolicyRegistry $policyRegistry,

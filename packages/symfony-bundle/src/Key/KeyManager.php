@@ -31,7 +31,7 @@ final class KeyManager
             return $this->cachedPublicKey;
         }
 
-        if (null !== $this->publicKey) {
+        if (null !== $this->publicKey && '' !== $this->publicKey) {
             $this->cachedPublicKey = new PublicKey($this->publicKey);
 
             return $this->cachedPublicKey;
@@ -54,7 +54,7 @@ final class KeyManager
             return $this->cachedPrivateKey;
         }
 
-        if (null !== $this->privateKey) {
+        if (null !== $this->privateKey && '' !== $this->privateKey) {
             $this->cachedPrivateKey = new PrivateKey($this->privateKey);
 
             return $this->cachedPrivateKey;
