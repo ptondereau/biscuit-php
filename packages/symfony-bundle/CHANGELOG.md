@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-07
+
 ### Changed
 
 - The vendored `stubs/biscuit-php.stubs.php` file is gone; the bundle now uses the [`ptondereau/biscuit-php-stubs`](https://github.com/ptondereau/biscuit-php-stubs) package (dev dependency) for IDE autocompletion and static analysis.
@@ -68,7 +70,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `make:biscuit-policy` maker for scaffolding policy classes.
 - Test helpers: `BiscuitTestTrait`, `TestBiscuitAuthenticator`, `BiscuitFixtures`, `BiscuitFixtureLoader`.
 
-[Unreleased]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ptondereau/biscuit-sf-bundle/compare/v0.1.1...v0.2.0
