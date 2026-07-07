@@ -21,7 +21,7 @@ jobs:
 
     name: Build extension and run tests
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Cache Cargo registry
         uses: actions/cache@v5
@@ -53,11 +53,16 @@ jobs:
       - name: "Install dependencies (Composer)"
         uses: "ramsey/composer-install@v3"
 
+      - name: Validate stubs
+        run: |
+          find stubs -name '*.php' -print0 | xargs -0 -n1 php -l
+          composer validate --strict dist/stubs-package/composer.json
+
       - name: Setup Mago
         if: ${{ matrix.php-version == '8.5' }}
         uses: nhedger/setup-mago@v1
         with:
-          version: 1.25.2
+          version: 1.43.0
 
       - name: Run Mago
         if: ${{ matrix.php-version == '8.5' }}
@@ -74,7 +79,7 @@ jobs:
 
     name: Build extension and run tests (PHP debug)
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Cache Cargo registry
         uses: actions/cache@v5

@@ -1,0 +1,36 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "ptondereau/biscuit-php-stubs",
+    "description": "IDE and static-analysis stubs for the biscuit_php extension (Biscuit authorization tokens)",
+    "license": "Apache-2.0",
+    "type": "library",
+    "keywords": [
+        "biscuit",
+        "authorization",
+        "authentication",
+        "stubs",
+        "ide",
+        "phpstan",
+        "psalm",
+        "static-analysis"
+    ],
+    "homepage": "https://github.com/ptondereau/biscuit-php",
+    "authors": [
+        {
+            "name": "Pierre Tondereau",
+            "email": "pierre.tondereau@protonmail.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/ptondereau/biscuit-php/issues",
+        "source": "https://github.com/ptondereau/biscuit-php-stubs"
+    },
+    "require": {
+        "php": "^8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Biscuit\\": "stubs/Biscuit/"
+        }
+    }
+}
