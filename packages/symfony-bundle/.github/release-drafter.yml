@@ -3,23 +3,28 @@ tag-template: '$RESOLVED_VERSION'
 
 categories:
   - title: 'Added'
-    labels:
-      - 'enhancement'
-      - 'feature'
+    when:
+      labels:
+        - 'enhancement'
+        - 'feature'
   - title: 'Changed'
-    labels:
-      - 'refactor'
-      - 'chore'
+    when:
+      labels:
+        - 'refactor'
+        - 'chore'
   - title: 'Fixed'
-    labels:
-      - 'bug'
-      - 'fix'
+    when:
+      labels:
+        - 'bug'
+        - 'fix'
   - title: 'Security'
-    labels:
-      - 'security'
+    when:
+      labels:
+        - 'security'
   - title: 'Documentation'
-    labels:
-      - 'documentation'
+    when:
+      labels:
+        - 'documentation'
 
 change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
 change-title-escapes: '\<*_&'

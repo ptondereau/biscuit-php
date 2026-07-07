@@ -20,6 +20,7 @@ jobs:
           tag: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           version: ${{ github.ref_name }}
+          commitish: ${{ github.event.repository.default_branch }}
           publish: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
