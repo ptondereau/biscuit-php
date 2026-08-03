@@ -12,23 +12,35 @@
   "require": {
     "php": ">=8.1",
     "ext-biscuit_php": ">=0.5",
-    "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
-    "symfony/security-bundle": "^6.4 || ^7.0 || ^8.0",
+    "psr/cache": "^2.0 || ^3.0",
+    "psr/log": "^1.1 || ^2.0 || ^3.0",
     "symfony/config": "^6.4 || ^7.0 || ^8.0",
+    "symfony/console": "^6.4 || ^7.0 || ^8.0",
     "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
-    "symfony/console": "^6.4 || ^7.0 || ^8.0"
+    "symfony/event-dispatcher-contracts": "^2.5 || ^3.0",
+    "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
+    "symfony/security-bundle": "^6.4 || ^7.0 || ^8.0"
   },
   "require-dev": {
-    "friendsofphp/php-cs-fixer": "^3.64",
+    "friendsofphp/php-cs-fixer": "^3.90",
     "phpstan/phpstan": "^2.0",
     "phpstan/phpstan-phpunit": "^2.0",
     "phpstan/phpstan-symfony": "^2.0",
     "phpunit/phpunit": "^10.0 || ^11.0",
     "ptondereau/biscuit-php-stubs": "^0.5.1",
+    "symfony/browser-kit": "^6.4 || ^7.0 || ^8.0",
     "symfony/cache": "^6.4 || ^7.0 || ^8.0",
+    "symfony/css-selector": "^6.4 || ^7.0 || ^8.0",
     "symfony/maker-bundle": "^1.50",
+    "symfony/runtime": "^6.4 || ^7.0 || ^8.0",
+    "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0",
     "symfony/web-profiler-bundle": "^6.4 || ^7.0 || ^8.0",
     "symfony/yaml": "^6.4 || ^7.0 || ^8.0"
+  },
+  "suggest": {
+    "symfony/maker-bundle": "To scaffold policy classes with make:biscuit-policy",
+    "symfony/web-profiler-bundle": "To inspect tokens, policy checks and revocation in the profiler",
+    "symfony/yaml": "To load Datalog fixtures from YAML in tests"
   },
   "scripts": {
     "phpstan": "phpstan analyse --memory-limit=512M",
@@ -52,7 +64,10 @@
     }
   },
   "config": {
-    "sort-packages": true
+    "sort-packages": true,
+    "allow-plugins": {
+      "symfony/runtime": true
+    }
   },
   "extra": {
     "branch-alias": {

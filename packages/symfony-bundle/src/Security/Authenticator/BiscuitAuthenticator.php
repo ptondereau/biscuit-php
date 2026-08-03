@@ -5,27 +5,29 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Security\Authenticator;
 
 use Biscuit\Auth\Biscuit;
-use Biscuit\BiscuitBundle\Cache\Revocation\RevocationCheckerInterface;
 use Biscuit\BiscuitBundle\DataCollector\BiscuitDataCollector;
 use Biscuit\BiscuitBundle\Key\KeyManager;
+use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
 use Biscuit\BiscuitBundle\Security\Badge\BiscuitBadge;
+use Biscuit\BiscuitBundle\Security\Exception\InvalidTokenException;
+use Biscuit\BiscuitBundle\Security\Exception\MissingTokenException;
 use Biscuit\BiscuitBundle\Security\Exception\RevokedTokenException;
+use Biscuit\BiscuitBundle\Security\Http\AuthenticationFailureResponseFactory;
 use Biscuit\BiscuitBundle\Security\User\BiscuitUser;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
 use Biscuit\BiscuitBundle\Token\Extractor\TokenExtractorInterface;
 use Exception;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
-use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
+use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
 
-final class BiscuitAuthenticator extends AbstractAuthenticator
+final class BiscuitAuthenticator extends AbstractAuthenticator implements AuthenticationEntryPointInterface
 {
     public function __construct(
         private readonly TokenExtractorInterface $tokenExtractor,
@@ -34,6 +36,7 @@ final class BiscuitAuthenticator extends AbstractAuthenticator
         private readonly string $userIdentifierFact = 'user',
         private readonly ?BiscuitDataCollector $dataCollector = null,
         private readonly ?KeyManager $keyManager = null,
+        private readonly ?AuthenticationFailureResponseFactory $failureResponseFactory = null,
     ) {
     }
 
@@ -46,17 +49,13 @@ final class BiscuitAuthenticator extends AbstractAuthenticator
     {
         $token = $this->tokenExtractor->extract($request);
         if (null === $token) {
-            throw new CustomUserMessageAuthenticationException('No biscuit token provided');
+            throw new MissingTokenException();
         }
 
         try {
             $biscuit = $this->tokenManager->parse($token);
         } catch (Exception $e) {
-            throw new CustomUserMessageAuthenticationException('Invalid biscuit token: ' . $e->getMessage());
-        }
-
-        if (null !== $this->revocationChecker && $this->revocationChecker->isRevoked($biscuit)) {
-            throw new RevokedTokenException();
+            throw new InvalidTokenException('Invalid biscuit token: ' . $e->getMessage(), 0, $e);
         }
 
         $this->dataCollector?->setBiscuit($biscuit);
@@ -64,6 +63,15 @@ final class BiscuitAuthenticator extends AbstractAuthenticator
 
         if (null !== $this->keyManager && $this->keyManager->hasPublicKey()) {
             $this->dataCollector?->setPublicKey((string) $this->keyManager->getPublicKey());
+        }
+
+        if (null !== $this->revocationChecker) {
+            $result = $this->revocationChecker->check($biscuit);
+            $this->dataCollector?->setRevocationResult($result);
+
+            if ($result->isRevoked()) {
+                throw new RevokedTokenException();
+            }
         }
 
         $identifier = $this->extractUserIdentifier($biscuit);
@@ -79,15 +87,25 @@ final class BiscuitAuthenticator extends AbstractAuthenticator
         return null;
     }
 
+    public function start(Request $request, ?AuthenticationException $authException = null): Response
+    {
+        if (null === $this->tokenExtractor->extract($request)) {
+            return $this->failureResponse(new MissingTokenException());
+        }
+
+        return $this->failureResponse($authException ?? new MissingTokenException());
+    }
+
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
     {
-        return new JsonResponse(
-            [
-                'error' => $exception->getMessageKey(),
-                'message' => $exception->getMessage(),
-            ],
-            Response::HTTP_UNAUTHORIZED,
-        );
+        return $this->failureResponse($exception);
+    }
+
+    private function failureResponse(AuthenticationException $exception): Response
+    {
+        $factory = $this->failureResponseFactory ?? new AuthenticationFailureResponseFactory();
+
+        return $factory->create($exception);
     }
 
     /**

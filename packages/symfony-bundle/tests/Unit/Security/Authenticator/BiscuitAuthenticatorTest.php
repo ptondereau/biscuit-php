@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Tests\Unit\Security\Authenticator;
 
 use Biscuit\Auth\Biscuit;
-use Biscuit\BiscuitBundle\Cache\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationResult;
 use Biscuit\BiscuitBundle\Security\Authenticator\BiscuitAuthenticator;
 use Biscuit\BiscuitBundle\Security\Badge\BiscuitBadge;
+use Biscuit\BiscuitBundle\Security\Exception\MissingTokenException;
 use Biscuit\BiscuitBundle\Security\Exception\RevokedTokenException;
 use Biscuit\BiscuitBundle\Security\User\BiscuitUser;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
@@ -21,7 +23,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 
@@ -105,8 +107,7 @@ final class BiscuitAuthenticatorTest extends TestCase
             $this->tokenManager,
         );
 
-        $this->expectException(CustomUserMessageAuthenticationException::class);
-        $this->expectExceptionMessage('No biscuit token provided');
+        $this->expectException(MissingTokenException::class);
 
         $authenticator->authenticate($request);
     }
@@ -131,7 +132,7 @@ final class BiscuitAuthenticatorTest extends TestCase
             $this->tokenManager,
         );
 
-        $this->expectException(CustomUserMessageAuthenticationException::class);
+        $this->expectException(AuthenticationException::class);
         $this->expectExceptionMessage('Invalid biscuit token: Parse error');
 
         $authenticator->authenticate($request);
@@ -154,9 +155,9 @@ final class BiscuitAuthenticatorTest extends TestCase
             ->willReturn($biscuit);
 
         $this->revocationChecker
-            ->method('isRevoked')
+            ->method('check')
             ->with($biscuit)
-            ->willReturn(true);
+            ->willReturn($this->revokedResult());
 
         $authenticator = new BiscuitAuthenticator(
             $this->tokenExtractor,
@@ -325,7 +326,7 @@ final class BiscuitAuthenticatorTest extends TestCase
     public function itReturnsJsonResponseOnAuthenticationFailure(): void
     {
         $request = Request::create('/api/resource');
-        $exception = new CustomUserMessageAuthenticationException('Authentication failed');
+        $exception = new AuthenticationException('Authentication failed');
 
         $authenticator = new BiscuitAuthenticator(
             $this->tokenExtractor,
@@ -338,8 +339,8 @@ final class BiscuitAuthenticatorTest extends TestCase
         self::assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
 
         $content = json_decode((string) $response->getContent(), true);
-        self::assertArrayHasKey('error', $content);
-        self::assertSame('Authentication failed', $content['error']);
+        self::assertSame('invalid_token', $content['error']);
+        self::assertSame('Authentication failed', $content['error_description']);
     }
 
     #[Test]
@@ -358,7 +359,44 @@ final class BiscuitAuthenticatorTest extends TestCase
         self::assertInstanceOf(JsonResponse::class, $response);
 
         $content = json_decode((string) $response->getContent(), true);
-        self::assertSame('Token has been revoked.', $content['error']);
+        self::assertSame('invalid_token', $content['error']);
+        self::assertSame('Token has been revoked.', $content['error_description']);
+    }
+
+    #[Test]
+    public function itChallengesWithoutAnErrorCodeWhenTheRequestCarriesNoToken(): void
+    {
+        $request = Request::create('/api/resource');
+
+        $this->tokenExtractor->method('extract')->with($request)->willReturn(null);
+
+        $authenticator = new BiscuitAuthenticator(
+            $this->tokenExtractor,
+            $this->tokenManager,
+        );
+
+        $response = $authenticator->start($request);
+
+        self::assertSame('Bearer realm="api"', $response->headers->get('WWW-Authenticate'));
+    }
+
+    #[Test]
+    public function itChallengesWithAnInvalidTokenErrorWhenTheRequestCarriesAToken(): void
+    {
+        $request = Request::create('/api/resource');
+
+        $this->tokenExtractor->method('extract')->with($request)->willReturn('some-token');
+
+        $authenticator = new BiscuitAuthenticator(
+            $this->tokenExtractor,
+            $this->tokenManager,
+        );
+
+        $response = $authenticator->start($request, new RevokedTokenException());
+
+        $challenge = $response->headers->get('WWW-Authenticate');
+        self::assertIsString($challenge);
+        self::assertStringContainsString('error="invalid_token"', $challenge);
     }
 
     #[Test]
@@ -477,9 +515,9 @@ final class BiscuitAuthenticatorTest extends TestCase
             ->willReturn($biscuit);
 
         $this->revocationChecker
-            ->method('isRevoked')
+            ->method('check')
             ->with($biscuit)
-            ->willReturn(false);
+            ->willReturn($this->notRevokedResult());
 
         $biscuit
             ->method('blockSource')
@@ -495,5 +533,15 @@ final class BiscuitAuthenticatorTest extends TestCase
         $passport = $authenticator->authenticate($request);
 
         self::assertInstanceOf(SelfValidatingPassport::class, $passport);
+    }
+
+    private function revokedResult(): RevocationResult
+    {
+        return new RevocationResult(['abc'], 'abc', 'cache', 0.1, true, false);
+    }
+
+    private function notRevokedResult(): RevocationResult
+    {
+        return new RevocationResult(['abc'], null, null, 0.1, true, false);
     }
 }

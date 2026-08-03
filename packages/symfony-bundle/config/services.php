@@ -6,11 +6,19 @@ use Biscuit\BiscuitBundle\Command\AttenuateTokenCommand;
 use Biscuit\BiscuitBundle\Command\CreateTokenCommand;
 use Biscuit\BiscuitBundle\Command\GenerateKeysCommand;
 use Biscuit\BiscuitBundle\Command\InspectTokenCommand;
+use Biscuit\BiscuitBundle\Command\RevocationCheckCommand;
+use Biscuit\BiscuitBundle\Command\RevocationListCommand;
+use Biscuit\BiscuitBundle\Command\RevocationPurgeCommand;
+use Biscuit\BiscuitBundle\Command\RevocationRevokeCommand;
 use Biscuit\BiscuitBundle\Command\TestPolicyCommand;
 use Biscuit\BiscuitBundle\DataCollector\BiscuitDataCollector;
 use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
+use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationEntryFactory;
+use Biscuit\BiscuitBundle\Revocation\RevocationWriterInterface;
 use Biscuit\BiscuitBundle\Security\Authenticator\BiscuitAuthenticator;
+use Biscuit\BiscuitBundle\Security\Http\AuthenticationFailureResponseFactory;
 use Biscuit\BiscuitBundle\Security\Voter\BiscuitVoter;
 use Biscuit\BiscuitBundle\Token\BiscuitBlockFactory;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenFactory;
@@ -24,6 +32,7 @@ use Biscuit\BiscuitBundle\Token\Template\Applier;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services()
@@ -31,7 +40,6 @@ return static function (ContainerConfigurator $container): void {
             ->autowire()
             ->autoconfigure();
 
-    // Key Manager
     $services->set('biscuit.key_manager', KeyManager::class)
         ->args([
             '%biscuit.keys.public_key%',
@@ -41,17 +49,14 @@ return static function (ContainerConfigurator $container): void {
             '%biscuit.keys.algorithm%',
         ]);
 
-    // Token Manager
     $services->set('biscuit.token_manager', BiscuitTokenManager::class)
         ->args([
             service('biscuit.key_manager'),
             service('event_dispatcher')->nullOnInvalid(),
         ]);
 
-    // Template Applier (shared by both factories)
     $services->set('biscuit.template_applier', Applier::class);
 
-    // Token Factory
     $services->set('biscuit.token_factory', BiscuitTokenFactory::class)
         ->args([
             service('biscuit.token_manager'),
@@ -59,7 +64,6 @@ return static function (ContainerConfigurator $container): void {
             '%biscuit.token_templates%',
         ]);
 
-    // Block Factory (attenuation)
     $services->set('biscuit.block_factory', BiscuitBlockFactory::class)
         ->args([
             service('biscuit.token_manager'),
@@ -67,13 +71,11 @@ return static function (ContainerConfigurator $container): void {
             '%biscuit.block_templates%',
         ]);
 
-    // Policy Registry
     $services->set('biscuit.policy_registry', PolicyRegistry::class)
         ->args([
             '%biscuit.policies%',
         ]);
 
-    // Token Extractors
     $services->set('biscuit.token_extractor.header', HeaderTokenExtractor::class);
 
     $services->set('biscuit.token_extractor.cookie', CookieTokenExtractor::class)
@@ -81,7 +83,6 @@ return static function (ContainerConfigurator $container): void {
             '%biscuit.security.token_extractor.cookie%',
         ]);
 
-    // Data Collector (for Web Profiler)
     $services->set('biscuit.data_collector', BiscuitDataCollector::class)
         ->tag('data_collector', [
             'template' => '@Biscuit/data_collector/biscuit.html.twig',
@@ -93,16 +94,20 @@ return static function (ContainerConfigurator $container): void {
             service('biscuit.token_extractor.header'),
         ]);
 
-    // Security
-    $services->set('biscuit.authenticator', BiscuitAuthenticator::class)
+    $services->set('biscuit.authentication_failure_response_factory', AuthenticationFailureResponseFactory::class)
         ->args([
-            service('biscuit.token_extractor'),
-            service('biscuit.token_manager'),
-            null,
-            'user',
-            service('biscuit.data_collector')->nullOnInvalid(),
-            service('biscuit.key_manager'),
+            '%biscuit.security.www_authenticate%',
+            '%biscuit.security.realm%',
         ]);
+
+    $services->set('biscuit.authenticator', BiscuitAuthenticator::class)
+        ->arg('$tokenExtractor', service('biscuit.token_extractor'))
+        ->arg('$tokenManager', service('biscuit.token_manager'))
+        ->arg('$revocationChecker', service(RevocationCheckerInterface::class)->nullOnInvalid())
+        ->arg('$userIdentifierFact', '%biscuit.security.user_identifier_fact%')
+        ->arg('$dataCollector', service('biscuit.data_collector')->nullOnInvalid())
+        ->arg('$keyManager', service('biscuit.key_manager'))
+        ->arg('$failureResponseFactory', service('biscuit.authentication_failure_response_factory'));
 
     $services->set('biscuit.voter', BiscuitVoter::class)
         ->args([
@@ -113,7 +118,6 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->tag('security.voter');
 
-    // Commands
     $services->set(GenerateKeysCommand::class)
         ->tag('console.command');
 
@@ -144,7 +148,34 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->tag('console.command');
 
-    // Aliases
+    $services->set(RevocationRevokeCommand::class)
+        ->args([
+            service(RevocationWriterInterface::class)->nullOnInvalid(),
+            service(RevocationEntryFactory::class)->nullOnInvalid(),
+            service('biscuit.token_manager'),
+        ])
+        ->tag('console.command');
+
+    $services->set(RevocationCheckCommand::class)
+        ->args([
+            service(RevocationCheckerInterface::class)->nullOnInvalid(),
+            service('biscuit.token_manager'),
+        ])
+        ->tag('console.command');
+
+    $services->set(RevocationListCommand::class)
+        ->args([
+            tagged_iterator('biscuit.revocation_enumerable_store', 'key'),
+        ])
+        ->tag('console.command');
+
+    $services->set(RevocationPurgeCommand::class)
+        ->args([
+            service(RevocationWriterInterface::class)->nullOnInvalid(),
+            tagged_iterator('biscuit.revocation_enumerable_store', 'key'),
+        ])
+        ->tag('console.command');
+
     $services->alias(KeyManager::class, 'biscuit.key_manager')
         ->public();
 

@@ -6,6 +6,7 @@ namespace Biscuit\BiscuitBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
@@ -26,7 +27,7 @@ final class BiscuitExtension extends Extension
 
         $this->setParameters($container, $config);
         $this->configureTokenExtractor($container, $config);
-        $this->configureRevocation($container, $config);
+        $this->configureRevocation($container, $config, $loader);
     }
 
     /**
@@ -35,19 +36,69 @@ final class BiscuitExtension extends Extension
     private function configureRevocation(
         ContainerBuilder $container,
         array $config,
+        PhpFileLoader $loader,
     ): void {
-        if (false === $config['revocation']['enabled']) {
+        $revocation = $config['revocation'];
+
+        if (false === $revocation['enabled']) {
             return;
         }
 
-        $serviceId = $config['revocation']['service'];
-
-        if (null === $serviceId) {
-            throw new InvalidConfigurationException('biscuit.revocation.enabled is true but biscuit.revocation.service is null. Set it to the service id of your RevocationCheckerInterface implementation.');
+        if (null === $revocation['on_unavailable']) {
+            throw new InvalidConfigurationException('biscuit.revocation.on_unavailable must be set explicitly when revocation is enabled. Use "deny" to reject requests when the revocation list cannot be read (fail closed), or "allow" to accept them and log an error (fail open). There is no default because the right answer depends on whether an unreachable list should take your API down.');
         }
 
-        $container->getDefinition('biscuit.authenticator')
-            ->replaceArgument(2, new Reference($serviceId));
+        $loader->load('revocation.php');
+
+        $this->configureStaticRevocationStore($container, $revocation['stores']['static']);
+        $this->configureCacheRevocationStore($container, $revocation['stores']['cache']);
+
+        if (false === $revocation['stores']['in_memory']['enabled']) {
+            $container->removeDefinition('biscuit.revocation.store.in_memory');
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function configureStaticRevocationStore(ContainerBuilder $container, array $config): void
+    {
+        $ids = $config['ids'];
+        $file = $config['file'];
+
+        if ([] === $ids && null === $file) {
+            $container->removeDefinition('biscuit.revocation.store.static');
+
+            return;
+        }
+
+        $container->setParameter('biscuit.revocation.stores.static.ids', $ids);
+        $container->setParameter('biscuit.revocation.stores.static.file', $file);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function configureCacheRevocationStore(ContainerBuilder $container, array $config): void
+    {
+        if (false === $config['enabled']) {
+            $container->removeDefinition('biscuit.revocation.store.cache');
+
+            return;
+        }
+
+        $poolId = $config['pool'];
+
+        if (null === $poolId) {
+            $poolId = 'cache.biscuit.revocation';
+
+            $container->setDefinition($poolId, new ChildDefinition($config['adapter']))
+                ->addTag('cache.pool', ['name' => 'biscuit.revocation']);
+        }
+
+        $container->getDefinition('biscuit.revocation.store.cache')
+            ->setArgument('$cachePool', new Reference($poolId))
+            ->setArgument('$keyPrefix', $config['key_prefix']);
     }
 
     /**
@@ -79,7 +130,6 @@ final class BiscuitExtension extends Extension
         ContainerBuilder $container,
         array $config,
     ): void {
-        // Keys parameters
         $container->setParameter(
             'biscuit.keys.public_key',
             $config['keys']['public_key'],
@@ -101,7 +151,6 @@ final class BiscuitExtension extends Extension
             $config['keys']['algorithm'],
         );
 
-        // Security parameters
         $container->setParameter(
             'biscuit.security.token_extractor.header',
             $config['security']['token_extractor']['header'],
@@ -110,44 +159,52 @@ final class BiscuitExtension extends Extension
             'biscuit.security.token_extractor.cookie',
             $config['security']['token_extractor']['cookie'],
         );
-
-        // Cache parameters
         $container->setParameter(
-            'biscuit.cache.enabled',
-            $config['cache']['enabled'],
+            'biscuit.security.user_identifier_fact',
+            $config['security']['user_identifier_fact'],
         );
         $container->setParameter(
-            'biscuit.cache.pool',
-            $config['cache']['pool'],
+            'biscuit.security.www_authenticate',
+            $config['security']['www_authenticate'],
         );
-        $container->setParameter('biscuit.cache.ttl', $config['cache']['ttl']);
+        $container->setParameter(
+            'biscuit.security.realm',
+            $config['security']['realm'],
+        );
 
-        // Revocation parameters
         $container->setParameter(
             'biscuit.revocation.enabled',
             $config['revocation']['enabled'],
         );
         $container->setParameter(
-            'biscuit.revocation.service',
-            $config['revocation']['service'],
+            'biscuit.revocation.on_unavailable',
+            $config['revocation']['on_unavailable'],
+        );
+        $container->setParameter(
+            'biscuit.revocation.dispatch_check_events',
+            $config['revocation']['dispatch_check_events'],
+        );
+        $container->setParameter(
+            'biscuit.revocation.default_expiry',
+            $config['revocation']['default_expiry'],
+        );
+        $container->setParameter(
+            'biscuit.revocation.stores.cache.key_prefix',
+            $config['revocation']['stores']['cache']['key_prefix'],
         );
 
-        // Policies
         $container->setParameter('biscuit.policies', $config['policies']);
 
-        // Token templates
         $container->setParameter(
             'biscuit.token_templates',
             $config['token_templates'],
         );
 
-        // Block templates (attenuation)
         $container->setParameter(
             'biscuit.block_templates',
             $config['block_templates'],
         );
 
-        // Authorizer fact templates (injected by the voter at authorization time)
         $container->setParameter(
             'biscuit.authorizer_fact_templates',
             $config['authorizer_fact_templates'],

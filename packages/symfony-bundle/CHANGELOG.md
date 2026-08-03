@@ -6,6 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+See [UPGRADE-0.4.md](UPGRADE-0.4.md) for migration steps.
+
+### Added
+
+- Revocation is now composable. Implement `Revocation\RevocationStoreInterface` and autoconfiguration wires it into the pipeline with no tag and no service configuration. Stores are consulted in priority order and the first match wins, so you can put a break-glass list in front of a database.
+- Three stores ship with the bundle: `static` reads a list from config, an env variable or a file with no I/O on the request path; `cache` is PSR-6 backed and converges every instance when pointed at Redis; `in_memory` holds a per-process list for tests and worker runtimes.
+- Four commands: `biscuit:revocation:revoke`, `biscuit:revocation:check`, `biscuit:revocation:list` and `biscuit:revocation:purge`. `revoke` prints the chain with its target marked before writing, `check` exits 0/1/2 so it drops into a health check, and `list --format=txt` emits the exact format the static store reads.
+- `RevocationEntryFactory` targets the deepest identifier of a token and reads the expiration and subject from the authority block, so revoking one device's token leaves every other token minted from the same root working.
+- The profiler gained a Revocation tab showing the verdict, which store answered, per-store timings and whether the check ran degraded. It is populated for rejected requests too, so a revoked token still shows its blocks.
+- `BiscuitRevocationCheckedEvent`, `BiscuitTokenRevokedEvent` and `BiscuitRevocationDegradedEvent`. The degraded event fires under either failure policy, so alerting works whether the request was rejected or let through.
+- `biscuit.security.user_identifier_fact` replaces the previously hardcoded `user` fact name.
+- `X-Test-Biscuit-Revoked` header on `TestBiscuitAuthenticator`, so a functional test can assert how an endpoint answers a revoked token.
+
+### Changed
+
+- Authentication failures return an RFC 6750 body and a `WWW-Authenticate` challenge. The body is now `{"error": "invalid_token", "error_description": "..."}`; it used to be `{"error": "<human message>", "message": ""}`. Requests that sent no credentials get `Bearer realm="api"` with no error code, as the spec requires. Turn the header off with `biscuit.security.www_authenticate: false`.
+- `BiscuitAuthenticator` implements `AuthenticationEntryPointInterface`, so anonymous requests get the same response shape as rejected tokens once you set `entry_point: biscuit.authenticator`.
+- `biscuit.revocation.on_unavailable` must be set explicitly whenever revocation is enabled. There is no default because the right answer depends on whether an unreachable revocation list should take your API down.
+- Enabling revocation with no store configured fails the container build. It used to be possible to have revocation reported as active while every token passed.
+
+### Removed
+
+- `biscuit.cache.*` and `Cache\TokenCache`. The configuration never had any effect because the class was never registered as a service, and it could not have worked: it stored a `Biscuit` instance in a cache pool, and the extension object has a private constructor and no serialization support.
+- `biscuit.revocation.service`. Tag or autoconfigure a store instead.
+- `Cache\Revocation\RevocationCheckerInterface` and `Cache\Revocation\CacheRevocationChecker`, replaced by `Revocation\RevocationStoreInterface` and `Revocation\Store\CacheRevocationStore`.
+
+### Fixed
+
+- The profiler panel no longer crashes for applications without `symfony/asset`. It called the Twig `asset()` function, which is unavailable unless that package is installed, and the panel raised a Twig `SyntaxError` instead of rendering.
+- `psr/cache`, `psr/log` and `symfony/event-dispatcher-contracts` are declared in `require`. They were used by shipped classes but only reachable through a dev dependency, so a `--no-dev` install carried classes referencing missing interfaces.
+- The cache-backed store gets its own `cache.biscuit.revocation` pool rather than sharing `cache.app`, where a routine `cache:pool:clear cache.app` would have un-revoked every token.
+- The cache store resolves every identifier in one `getItems()` call instead of one `getItem()` per identifier.
+
+### For contributors
+
+- `tests/Functional` and `tests/Integration` suites now compile and boot a real container, which is what unit tests calling `Extension::load()` cannot reach. `TestKernel` finally exists at the path `phpunit.xml.dist` has been pointing at.
+- A `no-optional-deps` CI job removes every suggested package and reruns the unit suite, so the `suggest` block is a contract rather than documentation.
+- `BiscuitExtension` no longer patches `biscuit.authenticator` with a positional `replaceArgument()`. Arguments are named throughout, and the checker is resolved with `nullOnInvalid()`.
+
 ## [0.3.0] - 2026-07-07
 
 ### Changed

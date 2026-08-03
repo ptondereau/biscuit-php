@@ -28,6 +28,8 @@ jobs:
           - { php: '8.5', symfony: '7.4.*' }
           - { php: '8.4', symfony: '8.0.*' }
           - { php: '8.5', symfony: '8.0.*' }
+          - { php: '8.4', symfony: '8.1.*' }
+          - { php: '8.5', symfony: '8.1.*' }
           - { php: '8.1', symfony: '6.4.*', deps: 'lowest' }
           - { php: '8.2', symfony: '7.4.*', deps: 'lowest' }
           - { php: '8.4', symfony: '8.0.*', deps: 'lowest' }
@@ -73,6 +75,13 @@ jobs:
           composer require --no-update --no-interaction --dev \
             "symfony/cache:${{ matrix.symfony }}" \
             "symfony/web-profiler-bundle:${{ matrix.symfony }}" \
+            "symfony/twig-bundle:${{ matrix.symfony }}" \
+            "symfony/twig-bridge:${{ matrix.symfony }}" \
+            "symfony/property-access:${{ matrix.symfony }}" \
+            "symfony/property-info:${{ matrix.symfony }}" \
+            "symfony/browser-kit:${{ matrix.symfony }}" \
+            "symfony/css-selector:${{ matrix.symfony }}" \
+            "symfony/runtime:${{ matrix.symfony }}" \
             "symfony/yaml:${{ matrix.symfony }}"
 
       - name: Install dependencies
@@ -128,6 +137,13 @@ jobs:
           composer require --no-update --no-interaction --dev \
             "symfony/cache:7.4.*" \
             "symfony/web-profiler-bundle:7.4.*" \
+            "symfony/twig-bundle:7.4.*" \
+            "symfony/twig-bridge:7.4.*" \
+            "symfony/property-access:7.4.*" \
+            "symfony/property-info:7.4.*" \
+            "symfony/browser-kit:7.4.*" \
+            "symfony/css-selector:7.4.*" \
+            "symfony/runtime:7.4.*" \
             "symfony/yaml:7.4.*"
 
       - name: Install dependencies
@@ -142,3 +158,67 @@ jobs:
           file: coverage.xml
           format: clover
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  consumer-install:
+    name: Consumer install
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+        env:
+          fail-fast: true
+
+      - name: Install the way a consumer would
+        run: composer install --no-dev --no-progress --ignore-platform-req=ext-biscuit_php
+
+      - name: Every interface a shipped class typehints must be installed
+        run: |
+          set -euo pipefail
+          for package in psr/cache psr/log symfony/event-dispatcher-contracts; do
+            if ! composer show "$package" >/dev/null 2>&1; then
+              echo "::error::$package is used by a shipped class but missing from a --no-dev install"
+              exit 1
+            fi
+            echo "✓ $package"
+          done
+
+      - name: No suggested package may be needed to load the bundle
+        run: |
+          set -euo pipefail
+          for package in symfony/maker-bundle symfony/web-profiler-bundle symfony/yaml; do
+            if composer show "$package" >/dev/null 2>&1; then
+              echo "::error::$package leaked into a --no-dev install; it should stay a suggestion"
+              exit 1
+            fi
+          done
+          php -r '
+            require "vendor/autoload.php";
+            $classes = [
+              "Biscuit\\BiscuitBundle\\BiscuitBundle",
+              "Biscuit\\BiscuitBundle\\DependencyInjection\\BiscuitExtension",
+              "Biscuit\\BiscuitBundle\\Revocation\\RevocationChecker",
+              "Biscuit\\BiscuitBundle\\Revocation\\Store\\CacheRevocationStore",
+              "Biscuit\\BiscuitBundle\\Security\\Http\\AuthenticationFailureResponseFactory",
+            ];
+            foreach ($classes as $class) {
+              if (!class_exists($class)) {
+                fwrite(STDERR, "missing: $class\n");
+                exit(1);
+              }
+              foreach ((new ReflectionClass($class))->getConstructor()?->getParameters() ?? [] as $parameter) {
+                $type = $parameter->getType();
+                if ($type instanceof ReflectionNamedType && !$type->isBuiltin() && !class_exists($type->getName()) && !interface_exists($type->getName())) {
+                  fwrite(STDERR, sprintf("%s typehints missing %s\n", $class, $type->getName()));
+                  exit(1);
+                }
+              }
+              echo "ok: $class\n";
+            }
+          '

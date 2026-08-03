@@ -6,6 +6,7 @@ namespace Biscuit\BiscuitBundle\DataCollector;
 
 use Biscuit\Auth\Biscuit;
 use Biscuit\BiscuitBundle\Event\BiscuitTokenAttenuatedEvent;
+use Biscuit\BiscuitBundle\Revocation\RevocationResult;
 use Symfony\Bundle\FrameworkBundle\DataCollector\AbstractDataCollector;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,6 +30,8 @@ final class BiscuitDataCollector extends AbstractDataCollector implements EventS
     /** @var list<array{parentRevocationIds: list<string>, childRevocationIds: list<string>, blockSource: string, sizeDelta: int}> */
     private array $attenuations = [];
 
+    private ?RevocationResult $revocationResult = null;
+
     public function collect(Request $request, Response $response, ?Throwable $exception = null): void
     {
         $this->data = [
@@ -45,6 +48,7 @@ final class BiscuitDataCollector extends AbstractDataCollector implements EventS
             'failed_checks' => $this->countFailedChecks(),
             'attenuations' => $this->attenuations,
             'attenuation_count' => \count($this->attenuations),
+            'revocation' => $this->collectRevocation(),
         ];
     }
 
@@ -68,6 +72,11 @@ final class BiscuitDataCollector extends AbstractDataCollector implements EventS
     public function setBiscuit(Biscuit $biscuit): void
     {
         $this->currentBiscuit = $biscuit;
+    }
+
+    public function setRevocationResult(RevocationResult $result): void
+    {
+        $this->revocationResult = $result;
     }
 
     public function setSerializedToken(string $token): void
@@ -186,6 +195,63 @@ final class BiscuitDataCollector extends AbstractDataCollector implements EventS
         $this->policyChecks = [];
         $this->policies = [];
         $this->attenuations = [];
+        $this->revocationResult = null;
+    }
+
+    /**
+     * @return array{checked: bool, revoked: bool, revoked_id: string|null, store: string|null, duration_ms: float, checked_ids: int, verified: bool, degraded: bool, outcomes: list<array{store: string, revoked_id: string|null, duration_ms: float, error: string|null}>}|null
+     */
+    public function getRevocation(): ?array
+    {
+        return $this->data['revocation'] ?? null;
+    }
+
+    public function isRevocationChecked(): bool
+    {
+        return null !== ($this->data['revocation'] ?? null);
+    }
+
+    public function isRevoked(): bool
+    {
+        return $this->data['revocation']['revoked'] ?? false;
+    }
+
+    public function isRevocationDegraded(): bool
+    {
+        return $this->data['revocation']['degraded'] ?? false;
+    }
+
+    /**
+     * @return array{checked: bool, revoked: bool, revoked_id: string|null, store: string|null, duration_ms: float, checked_ids: int, verified: bool, degraded: bool, outcomes: list<array{store: string, revoked_id: string|null, duration_ms: float, error: string|null}>}|null
+     */
+    private function collectRevocation(): ?array
+    {
+        if (null === $this->revocationResult) {
+            return null;
+        }
+
+        $outcomes = [];
+
+        foreach ($this->revocationResult->outcomes as $outcome) {
+            $outcomes[] = [
+                'store' => $outcome->store,
+                'revoked_id' => $outcome->revokedId,
+                'duration_ms' => $outcome->durationMs,
+                'error' => $outcome->error,
+            ];
+        }
+
+        return [
+            'checked' => true,
+            'revoked' => $this->revocationResult->isRevoked(),
+            'revoked_id' => $this->revocationResult->revokedId,
+            'store' => $this->revocationResult->store,
+            'duration_ms' => $this->revocationResult->durationMs,
+            'checked_ids' => \count($this->revocationResult->checkedIds),
+            'verified' => $this->revocationResult->verified,
+            'degraded' => $this->revocationResult->degraded,
+            'outcomes' => $outcomes,
+        ];
     }
 
     /**

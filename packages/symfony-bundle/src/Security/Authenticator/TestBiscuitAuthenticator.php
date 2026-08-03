@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Security\Authenticator;
 
 use Biscuit\BiscuitBundle\Security\Badge\BiscuitBadge;
+use Biscuit\BiscuitBundle\Security\Exception\RevokedTokenException;
 use Biscuit\BiscuitBundle\Security\User\BiscuitUser;
 use Biscuit\BiscuitBundle\Test\BiscuitTestTrait;
 use LogicException;
@@ -39,6 +40,12 @@ use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPasspor
  * $client->request('GET', '/api/resource', [], [], [
  *     'HTTP_X_TEST_BISCUIT' => '1',
  * ]);
+ *
+ * // Assert your endpoint handles a revoked token
+ * $client->request('GET', '/api/resource', [], [], [
+ *     'HTTP_X_TEST_BISCUIT' => '1',
+ *     'HTTP_X_TEST_BISCUIT_REVOKED' => '1',
+ * ]);
  * ```
  */
 final class TestBiscuitAuthenticator implements AuthenticatorInterface
@@ -62,6 +69,13 @@ final class TestBiscuitAuthenticator implements AuthenticatorInterface
 
     public function authenticate(Request $request): Passport
     {
+        // A header rather than a real revocation store: each test class mints a fresh key pair,
+        // so a token's revocation ids are unique per run and could never match a configured
+        // list. Wiring a real checker here would look like coverage while testing nothing.
+        if ($request->headers->has('X-Test-Biscuit-Revoked')) {
+            throw new RevokedTokenException();
+        }
+
         $biscuit = $this->createTestToken($this->testTokenCode);
 
         return new SelfValidatingPassport(

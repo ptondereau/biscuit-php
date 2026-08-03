@@ -3,6 +3,8 @@
 {% block page_title 'Biscuit' %}
 
 {% block toolbar %}
+    {% set status_color = collector.revoked ? 'red' : (collector.revocationDegraded ? 'yellow' : '') %}
+
     {% set icon %}
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/>
@@ -28,6 +30,15 @@
                 </div>
             {% endif %}
 
+            {% if collector.revocationChecked %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Revocation</b>
+                    <span class="sf-toolbar-status sf-toolbar-status-{{ collector.revoked ? 'red' : (collector.revocationDegraded ? 'yellow' : 'green') }}">
+                        {{ collector.revoked ? 'Revoked' : (collector.revocationDegraded ? 'Degraded' : 'Valid') }}
+                    </span>
+                </div>
+            {% endif %}
+
             <div class="sf-toolbar-info-piece">
                 <b>Policy Checks</b>
                 <span>{{ collector.policyCheckCount }}</span>
@@ -46,11 +57,11 @@
         </div>
     {% endset %}
 
-    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: profiler_url }) }}
+    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: profiler_url, status: status_color }) }}
 {% endblock %}
 
 {% block menu %}
-    <span class="label {{ not collector.hasToken ? 'disabled' }}">
+    <span class="label {{ collector.hasToken or collector.revocationChecked ? '' : 'disabled' }} {{ collector.revoked ? 'label-status-error' }}">
         <span class="icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
@@ -69,7 +80,7 @@
 
 {% block head %}
     {{ parent() }}
-    <script type="module" src="{{ asset('bundles/biscuit/index.js') }}"></script>
+    <script type="module" src="{{ app.request is defined and app.request ? app.request.basePath : '' }}/bundles/biscuit/index.js"></script>
     <style>
         /* Biscuit Sandbox - Clean minimal styling */
         .biscuit-sandbox {
@@ -146,6 +157,106 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="tab {{ not collector.revocationChecked ? 'disabled' }}">
+                <h3 class="tab-title">
+                    Revocation
+                    {% if collector.revoked %}
+                        <span class="badge status-error">Revoked</span>
+                    {% elseif collector.revocationDegraded %}
+                        <span class="badge status-warning">Degraded</span>
+                    {% endif %}
+                </h3>
+                <div class="tab-content">
+                    {% if collector.revocationChecked %}
+                        {% set revocation = collector.revocation %}
+
+                        <div class="metrics">
+                            <div class="metric">
+                                <span class="value">{{ revocation.revoked ? 'Revoked' : 'Valid' }}</span>
+                                <span class="label">Verdict</span>
+                            </div>
+                            <div class="metric">
+                                <span class="value">{{ revocation.store ?? '—' }}</span>
+                                <span class="label">Matched store</span>
+                            </div>
+                            <div class="metric">
+                                <span class="value">{{ revocation.duration_ms|number_format(3) }} ms</span>
+                                <span class="label">Lookup time</span>
+                            </div>
+                            <div class="metric">
+                                <span class="value">{{ revocation.checked_ids }}</span>
+                                <span class="label">IDs checked</span>
+                            </div>
+                        </div>
+
+                        {% if revocation.degraded %}
+                            <div class="card card-yellow">
+                                <p>
+                                    At least one store could not answer and
+                                    <code>on_unavailable: allow</code> is configured, so the token was
+                                    treated as not revoked. Revocation is not being enforced in full.
+                                </p>
+                            </div>
+                        {% endif %}
+
+                        {% if not revocation.verified %}
+                            <div class="card card-yellow">
+                                <p>
+                                    These ids came from an unverified token. Never gate a request on
+                                    them: before signature verification the ids are attacker-controlled.
+                                </p>
+                            </div>
+                        {% endif %}
+
+                        <h3>Stores consulted</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Store</th>
+                                    <th scope="col">Result</th>
+                                    <th scope="col">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for outcome in revocation.outcomes %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><code>{{ outcome.store }}</code></td>
+                                        <td>
+                                            {% if outcome.error is not null %}
+                                                <span class="label status-warning">Unavailable</span>
+                                                <code>{{ outcome.error }}</code>
+                                            {% elseif outcome.revoked_id is not null %}
+                                                <span class="label status-error">Matched</span>
+                                                <code>{{ outcome.revoked_id }}</code>
+                                            {% else %}
+                                                <span class="label status-success">No match</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ outcome.duration_ms|number_format(3) }} ms</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        {% if revocation.outcomes is empty %}
+                            <div class="empty">
+                                <p>No store was consulted: the token carried no revocation ids.</p>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty">
+                            <p>
+                                Revocation checking is disabled. Enable it with
+                                <code>biscuit.revocation.enabled</code> and set
+                                <code>biscuit.revocation.on_unavailable</code>.
+                            </p>
+                        </div>
                     {% endif %}
                 </div>
             </div>

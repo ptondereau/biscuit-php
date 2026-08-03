@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Tests\Unit\DependencyInjection;
 
 use Biscuit\BiscuitBundle\DependencyInjection\BiscuitExtension;
+use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Reference;
 
 #[CoversClass(BiscuitExtension::class)]
@@ -131,99 +133,146 @@ final class BiscuitExtensionTest extends TestCase
     }
 
     #[Test]
-    public function itSetsDefaultCacheParameters(): void
-    {
-        $this->extension->load([], $this->container);
-
-        self::assertFalse($this->container->getParameter('biscuit.cache.enabled'));
-        self::assertSame('cache.app', $this->container->getParameter('biscuit.cache.pool'));
-        self::assertSame(3600, $this->container->getParameter('biscuit.cache.ttl'));
-    }
-
-    #[Test]
-    public function itSetsCustomCacheParameters(): void
-    {
-        $this->extension->load([
-            'biscuit' => [
-                'cache' => [
-                    'enabled' => true,
-                    'pool' => 'cache.biscuit',
-                    'ttl' => 7200,
-                ],
-            ],
-        ], $this->container);
-
-        self::assertTrue($this->container->getParameter('biscuit.cache.enabled'));
-        self::assertSame('cache.biscuit', $this->container->getParameter('biscuit.cache.pool'));
-        self::assertSame(7200, $this->container->getParameter('biscuit.cache.ttl'));
-    }
-
-    #[Test]
     public function itSetsDefaultRevocationParameters(): void
     {
         $this->extension->load([], $this->container);
 
         self::assertFalse($this->container->getParameter('biscuit.revocation.enabled'));
-        self::assertNull($this->container->getParameter('biscuit.revocation.service'));
+        self::assertNull($this->container->getParameter('biscuit.revocation.on_unavailable'));
+        self::assertSame('on_revoke', $this->container->getParameter('biscuit.revocation.dispatch_check_events'));
+        self::assertNull($this->container->getParameter('biscuit.revocation.default_expiry'));
     }
 
     #[Test]
     public function itSetsCustomRevocationParameters(): void
     {
-        $this->extension->load([
-            'biscuit' => [
-                'revocation' => [
-                    'enabled' => true,
-                    'service' => 'App\\Security\\RevocationChecker',
-                ],
-            ],
-        ], $this->container);
+        $this->loadWithRevocation([
+            'on_unavailable' => 'allow',
+            'dispatch_check_events' => 'always',
+            'default_expiry' => 86400,
+        ]);
 
         self::assertTrue($this->container->getParameter('biscuit.revocation.enabled'));
-        self::assertSame('App\\Security\\RevocationChecker', $this->container->getParameter('biscuit.revocation.service'));
+        self::assertSame('allow', $this->container->getParameter('biscuit.revocation.on_unavailable'));
+        self::assertSame('always', $this->container->getParameter('biscuit.revocation.dispatch_check_events'));
+        self::assertSame(86400, $this->container->getParameter('biscuit.revocation.default_expiry'));
     }
 
     #[Test]
-    public function itWiresRevocationCheckerIntoAuthenticatorWhenEnabled(): void
-    {
-        $this->extension->load([
-            'biscuit' => [
-                'revocation' => [
-                    'enabled' => true,
-                    'service' => 'app.revocation_checker',
-                ],
-            ],
-        ], $this->container);
-
-        $authenticator = $this->container->getDefinition('biscuit.authenticator');
-        $checker = $authenticator->getArgument(2);
-
-        self::assertInstanceOf(Reference::class, $checker);
-        self::assertSame('app.revocation_checker', (string) $checker);
-    }
-
-    #[Test]
-    public function itLeavesAuthenticatorRevocationCheckerNullByDefault(): void
+    public function itAlwaysResolvesTheAuthenticatorCheckerByNameAndNeverByPosition(): void
     {
         $this->extension->load([], $this->container);
 
-        $authenticator = $this->container->getDefinition('biscuit.authenticator');
+        $checker = $this->container->getDefinition('biscuit.authenticator')->getArgument('$revocationChecker');
 
-        self::assertNull($authenticator->getArgument(2));
+        self::assertInstanceOf(Reference::class, $checker);
+        self::assertSame(RevocationCheckerInterface::class, (string) $checker);
+        self::assertSame(
+            ContainerInterface::NULL_ON_INVALID_REFERENCE,
+            $checker->getInvalidBehavior(),
+            'A disabled revocation setup must inject null, not drop the argument.',
+        );
     }
 
     #[Test]
-    public function itThrowsWhenRevocationEnabledWithoutService(): void
+    public function itDefinesNoRevocationServicesWhenDisabled(): void
+    {
+        $this->extension->load([], $this->container);
+
+        self::assertFalse($this->container->hasDefinition('biscuit.revocation.checker'));
+        self::assertFalse($this->container->hasDefinition('biscuit.revocation.writer'));
+        self::assertFalse($this->container->hasAlias(RevocationCheckerInterface::class));
+    }
+
+    #[Test]
+    public function itDefinesTheCheckerWhenEnabled(): void
+    {
+        $this->loadWithRevocation();
+
+        self::assertTrue($this->container->hasDefinition('biscuit.revocation.checker'));
+        self::assertTrue($this->container->hasAlias(RevocationCheckerInterface::class));
+    }
+
+    #[Test]
+    public function itThrowsWhenRevocationIsEnabledWithoutAnUnavailablePolicy(): void
     {
         $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/on_unavailable must be set explicitly/');
 
         $this->extension->load([
             'biscuit' => [
-                'revocation' => [
-                    'enabled' => true,
-                ],
+                'revocation' => ['enabled' => true],
             ],
         ], $this->container);
+    }
+
+    #[Test]
+    public function itRegistersTheStaticStoreOnlyWhenItHasSomethingToCheck(): void
+    {
+        $this->loadWithRevocation();
+
+        self::assertFalse($this->container->hasDefinition('biscuit.revocation.store.static'));
+    }
+
+    #[Test]
+    public function itRegistersTheStaticStoreWhenIdsAreConfigured(): void
+    {
+        $this->loadWithRevocation(['stores' => ['static' => ['ids' => ['abc']]]]);
+
+        self::assertTrue($this->container->hasDefinition('biscuit.revocation.store.static'));
+        self::assertSame(['abc'], $this->container->getParameter('biscuit.revocation.stores.static.ids'));
+    }
+
+    #[Test]
+    public function itRegistersTheStaticStoreWhenOnlyAFileIsConfigured(): void
+    {
+        $this->loadWithRevocation(['stores' => ['static' => ['file' => '/tmp/revoked.txt']]]);
+
+        self::assertTrue($this->container->hasDefinition('biscuit.revocation.store.static'));
+    }
+
+    #[Test]
+    public function itDoesNotRegisterTheCacheStoreByDefault(): void
+    {
+        $this->loadWithRevocation();
+
+        self::assertFalse($this->container->hasDefinition('biscuit.revocation.store.cache'));
+    }
+
+    #[Test]
+    public function itCreatesADedicatedCachePoolRatherThanUsingCacheApp(): void
+    {
+        $this->loadWithRevocation(['stores' => ['cache' => ['enabled' => true]]]);
+
+        self::assertTrue($this->container->hasDefinition('cache.biscuit.revocation'));
+        self::assertTrue($this->container->getDefinition('cache.biscuit.revocation')->hasTag('cache.pool'));
+
+        $pool = $this->container->getDefinition('biscuit.revocation.store.cache')->getArgument('$cachePool');
+        self::assertInstanceOf(Reference::class, $pool);
+        self::assertSame('cache.biscuit.revocation', (string) $pool);
+    }
+
+    #[Test]
+    public function itUsesAnExistingPoolWhenOneIsConfigured(): void
+    {
+        $this->loadWithRevocation(['stores' => ['cache' => ['enabled' => true, 'pool' => 'cache.redis']]]);
+
+        self::assertFalse($this->container->hasDefinition('cache.biscuit.revocation'));
+
+        $pool = $this->container->getDefinition('biscuit.revocation.store.cache')->getArgument('$cachePool');
+        self::assertInstanceOf(Reference::class, $pool);
+        self::assertSame('cache.redis', (string) $pool);
+    }
+
+    #[Test]
+    public function itRegistersTheInMemoryStoreOnlyWhenEnabled(): void
+    {
+        $this->loadWithRevocation();
+        self::assertFalse($this->container->hasDefinition('biscuit.revocation.store.in_memory'));
+
+        $this->setUp();
+        $this->loadWithRevocation(['stores' => ['in_memory' => ['enabled' => true]]]);
+        self::assertTrue($this->container->hasDefinition('biscuit.revocation.store.in_memory'));
     }
 
     #[Test]
@@ -354,5 +403,17 @@ final class BiscuitExtensionTest extends TestCase
         self::assertTrue($this->container->hasAlias('Biscuit\BiscuitBundle\Key\KeyManager'));
         self::assertTrue($this->container->hasAlias('Biscuit\BiscuitBundle\Token\BiscuitTokenManager'));
         self::assertTrue($this->container->hasAlias('Biscuit\BiscuitBundle\Token\BiscuitTokenFactory'));
+    }
+
+    /**
+     * @param array<string, mixed> $revocation
+     */
+    private function loadWithRevocation(array $revocation = []): void
+    {
+        $this->extension->load([
+            'biscuit' => [
+                'revocation' => $revocation + ['enabled' => true, 'on_unavailable' => 'deny'],
+            ],
+        ], $this->container);
     }
 }

@@ -8,6 +8,7 @@ use Biscuit\BiscuitBundle\DependencyInjection\Configuration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
 
 #[CoversClass(Configuration::class)]
@@ -30,7 +31,6 @@ final class ConfigurationTest extends TestCase
 
         self::assertArrayHasKey('keys', $config);
         self::assertArrayHasKey('security', $config);
-        self::assertArrayHasKey('cache', $config);
         self::assertArrayHasKey('revocation', $config);
         self::assertArrayHasKey('policies', $config);
         self::assertArrayHasKey('token_templates', $config);
@@ -133,40 +133,25 @@ final class ConfigurationTest extends TestCase
     }
 
     #[Test]
-    public function itHasDefaultCacheConfiguration(): void
-    {
-        $config = $this->processConfiguration([]);
-
-        self::assertFalse($config['cache']['enabled']);
-        self::assertSame('cache.app', $config['cache']['pool']);
-        self::assertSame(3600, $config['cache']['ttl']);
-    }
-
-    #[Test]
-    public function itAcceptsCacheConfiguration(): void
-    {
-        $config = $this->processConfiguration([
-            'biscuit' => [
-                'cache' => [
-                    'enabled' => true,
-                    'pool' => 'cache.biscuit',
-                    'ttl' => 7200,
-                ],
-            ],
-        ]);
-
-        self::assertTrue($config['cache']['enabled']);
-        self::assertSame('cache.biscuit', $config['cache']['pool']);
-        self::assertSame(7200, $config['cache']['ttl']);
-    }
-
-    #[Test]
     public function itHasDefaultRevocationConfiguration(): void
     {
         $config = $this->processConfiguration([]);
 
         self::assertFalse($config['revocation']['enabled']);
-        self::assertNull($config['revocation']['service']);
+        self::assertNull($config['revocation']['on_unavailable']);
+        self::assertSame('on_revoke', $config['revocation']['dispatch_check_events']);
+        self::assertNull($config['revocation']['default_expiry']);
+    }
+
+    #[Test]
+    public function itLeavesTheStoresEmptyByDefault(): void
+    {
+        $config = $this->processConfiguration([]);
+
+        self::assertSame([], $config['revocation']['stores']['static']['ids']);
+        self::assertNull($config['revocation']['stores']['static']['file']);
+        self::assertFalse($config['revocation']['stores']['cache']['enabled']);
+        self::assertFalse($config['revocation']['stores']['in_memory']['enabled']);
     }
 
     #[Test]
@@ -176,13 +161,69 @@ final class ConfigurationTest extends TestCase
             'biscuit' => [
                 'revocation' => [
                     'enabled' => true,
-                    'service' => 'App\\Security\\BiscuitRevocationChecker',
+                    'on_unavailable' => 'deny',
+                    'dispatch_check_events' => 'always',
+                    'default_expiry' => 86400,
                 ],
             ],
         ]);
 
         self::assertTrue($config['revocation']['enabled']);
-        self::assertSame('App\\Security\\BiscuitRevocationChecker', $config['revocation']['service']);
+        self::assertSame('deny', $config['revocation']['on_unavailable']);
+        self::assertSame('always', $config['revocation']['dispatch_check_events']);
+        self::assertSame(86400, $config['revocation']['default_expiry']);
+    }
+
+    #[Test]
+    public function itRejectsAnUnknownUnavailablePolicy(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $this->processConfiguration([
+            'biscuit' => [
+                'revocation' => ['enabled' => true, 'on_unavailable' => 'maybe'],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function itAcceptsAnEnvPlaceholderForTheStaticIdList(): void
+    {
+        $config = $this->processConfiguration([
+            'biscuit' => [
+                'revocation' => [
+                    'enabled' => true,
+                    'on_unavailable' => 'deny',
+                    'stores' => ['static' => ['ids' => '%env(csv:BISCUIT_REVOKED_IDS)%']],
+                ],
+            ],
+        ]);
+
+        self::assertSame('%env(csv:BISCUIT_REVOKED_IDS)%', $config['revocation']['stores']['static']['ids']);
+    }
+
+    #[Test]
+    public function itAcceptsAListOfStaticIds(): void
+    {
+        $config = $this->processConfiguration([
+            'biscuit' => [
+                'revocation' => [
+                    'enabled' => true,
+                    'on_unavailable' => 'deny',
+                    'stores' => ['static' => ['ids' => ['abc', 'def']]],
+                ],
+            ],
+        ]);
+
+        self::assertSame(['abc', 'def'], $config['revocation']['stores']['static']['ids']);
+    }
+
+    #[Test]
+    public function itDefaultsTheUserIdentifierFactToUser(): void
+    {
+        $config = $this->processConfiguration([]);
+
+        self::assertSame('user', $config['security']['user_identifier_fact']);
     }
 
     #[Test]

@@ -9,8 +9,14 @@
     cacheDirectory=".phpunit.cache"
 >
   <testsuites>
-    <testsuite name="BiscuitBundle Test Suite">
-      <directory>tests</directory>
+    <testsuite name="unit">
+      <directory>tests/Unit</directory>
+    </testsuite>
+    <testsuite name="integration">
+      <directory>tests/Integration</directory>
+    </testsuite>
+    <testsuite name="functional">
+      <directory>tests/Functional</directory>
     </testsuite>
   </testsuites>
   <php>
@@ -20,6 +26,7 @@
             value="Biscuit\BiscuitBundle\Tests\TestKernel"
         />
     <server name="APP_ENV" value="test" />
+    <server name="APP_DEBUG" value="0" />
     <server name="SHELL_VERBOSITY" value="-1" />
   </php>
   <source>

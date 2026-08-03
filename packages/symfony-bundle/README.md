@@ -117,18 +117,29 @@ biscuit:
         algorithm:         ed25519 # ed25519 or secp256r1
 
     security:
+        user_identifier_fact: user  # Authority block fact holding the user identifier
+        www_authenticate:     true  # Send an RFC 6750 challenge on failure
+        realm:                api   # Realm advertised in that challenge
         token_extractor:
             header: true     # Extract token from Authorization header
             cookie: false    # Cookie name to read from, or false to disable
 
-    cache:
-        enabled: false       # Enable token verification caching
-        pool:    cache.app   # Cache pool service ID
-        ttl:     3600        # Cache TTL in seconds
-
     revocation:
-        enabled: false       # Enable token revocation checking
-        service: ~           # Revocation checker service ID
+        enabled:               false     # Enable revocation checking
+        on_unavailable:        ~         # allow or deny; REQUIRED when enabled
+        dispatch_check_events: on_revoke # never, on_revoke or always
+        default_expiry:        ~         # Seconds to keep an entry of unknown expiry
+        stores:
+            static:
+                ids:  []     # Revoked ids, or '%env(csv:BISCUIT_REVOKED_IDS)%'
+                file: ~      # Newline-delimited or JSON list of revoked ids
+            cache:
+                enabled:    false
+                pool:       ~                 # Null creates cache.biscuit.revocation
+                adapter:    cache.app         # Parent adapter for that pool
+                key_prefix: biscuit_revoked_
+            in_memory:
+                enabled: false
 
     policies:                # Named policies referenced by #[IsGranted]
         admin_only:    'allow if role("admin")'
@@ -197,9 +208,44 @@ The chain stops at the first extractor that returns a non-null value. To add a c
 
 The bundle ships a single authenticator: `BiscuitAuthenticator`. Add it as a `custom_authenticators` entry on any stateless firewall that should accept Biscuit tokens.
 
-A successful authentication produces a `BiscuitUser` whose `getBiscuit()` method returns the verified token, which is then available throughout the request. Failed authentication throws `RevokedTokenException` (when revocation is enabled and the token is on the revocation list) or returns a generic 401 for invalid signatures, malformed tokens, and missing extractors.
+A successful authentication produces a `BiscuitUser` whose `getBiscuit()` method returns the verified token, which is then available throughout the request.
 
 The `BiscuitBadge` is attached to the security passport so downstream voters and listeners can detect Biscuit-authenticated requests.
+
+**The authenticator does not deny anonymous requests.** `supports()` returns false when no token
+is present, so a request without one never reaches the authenticator. Deny it yourself with
+`access_control` or `#[IsGranted]`, or the endpoint you believe is protected is public:
+
+```yaml
+security:
+    firewalls:
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: your_provider
+            custom_authenticators:
+                - biscuit.authenticator
+            entry_point: biscuit.authenticator
+
+    access_control:
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+```
+
+Setting `entry_point` lets the bundle answer anonymous requests too, so they get the same JSON
+body and `WWW-Authenticate` challenge as a rejected token.
+
+### Failure Responses
+
+Failures return 401 with an RFC 6750 body and challenge, so clients can tell "get a new token"
+apart from "you sent nothing":
+
+| Cause | `WWW-Authenticate` | Body `error` |
+| --- | --- | --- |
+| No token sent | `Bearer realm="api"` | `invalid_request` |
+| Malformed, forged or revoked token | `Bearer realm="api", error="invalid_token", ...` | `invalid_token` |
+
+Turn the header off with `biscuit.security.www_authenticate: false`, and change the realm with
+`biscuit.security.realm`.
 
 ## Authorization
 
@@ -359,6 +405,10 @@ Every successful attenuation dispatches `Biscuit\BiscuitBundle\Event\BiscuitToke
 | `biscuit:token:attenuate` | Append a block to an existing token, from a template or inline Datalog |
 | `biscuit:token:inspect`   | Decode and pretty-print a Biscuit token |
 | `biscuit:policy:test`     | Run a configured policy against a token |
+| `biscuit:revocation:revoke` | Revoke a token or a raw revocation identifier |
+| `biscuit:revocation:check`  | Check a token, exiting 0 valid, 1 revoked, 2 error |
+| `biscuit:revocation:list`   | List entries of every enumerable store |
+| `biscuit:revocation:purge`  | Drop entries whose expiration has passed |
 
 Each command exposes `--help` for the full option list.
 
@@ -372,34 +422,160 @@ bin/console make:biscuit-policy ArticleViewerPolicy
 
 This generates `src/Security/Policy/ArticleViewerPolicy.php` with a documented skeleton including a `NAME` constant, a `POLICY` Datalog string, and a usage example with `#[IsGranted]`.
 
-## Token Caching
-
-For high-throughput APIs you can cache successful token verifications to avoid re-running signature checks on every request:
-
-```yaml
-biscuit:
-    cache:
-        enabled: true
-        pool: cache.app
-        ttl: 600
-```
-
-Cache keys are derived from the serialized token. Failed verifications are never cached.
-
 ## Token Revocation
 
-To enforce a revocation list, implement `Biscuit\BiscuitBundle\Cache\Revocation\RevocationCheckerInterface` and wire it in:
+A token is revoked when **any** identifier in its revocation chain is listed. Revoking a parent
+identifier therefore kills every token attenuated from it, which is what keeps offline
+attenuation from defeating revocation. Revoking the deepest identifier does the opposite: that
+token stops working and its ancestors keep working, so you can log one device out without
+invalidating every share link the user ever minted.
+
+Identifiers come from the token structure, so you never add a `jti` yourself, and the list holds
+no secrets. You can hand it to every service that verifies tokens.
+
+### Turning It On
+
+Two settings are required. There is no default for `on_unavailable` because the right answer
+depends on whether an unreachable revocation list should take your API down:
 
 ```yaml
 biscuit:
     revocation:
         enabled: true
-        service: App\Security\MyRevocationChecker
+        on_unavailable: deny
+        stores:
+            cache:
+                enabled: true
 ```
 
-`service` must point to a service that implements `RevocationCheckerInterface`. Enabling revocation without setting `service` raises a configuration error at container build time. A reference implementation backed by a Symfony cache pool is provided as `Biscuit\BiscuitBundle\Cache\Revocation\CacheRevocationChecker`.
+- `deny` rejects the request with a 500 when a store cannot answer. The control never silently
+  stops working, at the cost of turning a Redis blip into an outage.
+- `allow` accepts the request, logs an error, dispatches `BiscuitRevocationDegradedEvent` and
+  marks the check degraded in the profiler. Revocation stops being enforced in full while the
+  store is down.
 
-When revocation is enabled, the authenticator throws `RevokedTokenException` for any token whose revocation IDs intersect the revoked set. Revocation checks happen after signature verification but before policy evaluation.
+Enabling revocation with no store fails the container build. "Revocation is on" while every
+token passes would be worse than a hard failure.
+
+### Stores
+
+Stores are consulted in priority order and the first match wins.
+
+| Store | Priority | Writable | Notes |
+| --- | --- | --- | --- |
+| `static` | 256 | no | In-memory list from config, an env var or a file. No I/O on the request path. |
+| `in_memory` | 192 | yes | Per-process list. For tests and worker runtimes. |
+| `cache` | 128 | yes | PSR-6 pool. Point it at Redis and every instance converges. |
+| yours | 0 | optional | Any service implementing `RevocationStoreInterface`. |
+
+The static store is the break-glass option. It needs nothing provisioned:
+
+```yaml
+biscuit:
+    revocation:
+        enabled: true
+        on_unavailable: deny
+        stores:
+            static:
+                ids: '%env(csv:BISCUIT_REVOKED_IDS)%'
+                file: '%kernel.project_dir%/config/revoked_ids.txt'
+```
+
+The cache store gets its own pool, `cache.biscuit.revocation`, rather than sharing `cache.app`.
+A routine `cache:pool:clear cache.app` would otherwise un-revoke every token. Set
+`stores.cache.pool` to reuse a pool you already run.
+
+### Writing Your Own Store
+
+Implement one method. Autoconfiguration wires it up, so the class needs no tag and no service
+config:
+
+```php
+use Biscuit\BiscuitBundle\Revocation\RevocationStoreInterface;
+
+final class DoctrineRevocationStore implements RevocationStoreInterface
+{
+    public function __construct(private readonly Connection $connection)
+    {
+    }
+
+    public function findRevoked(array $revocationIds): ?string
+    {
+        $found = $this->connection->fetchOne(
+            'SELECT revocation_id FROM revoked_tokens WHERE revocation_id IN (?)',
+            [$revocationIds],
+            [ArrayParameterType::STRING],
+        );
+
+        return false === $found ? null : $found;
+    }
+}
+```
+
+Resolve the whole batch in one round trip, and return the identifier as you received it so
+callers can correlate it with the token. Throw `RevocationStoreUnavailableException` when the
+backend cannot answer; that is what `on_unavailable` reacts to. Add
+`RevocationWriterInterface` if the store can be written to, and
+`EnumerableRevocationStoreInterface` if it can list its entries.
+
+### Revoking a Token
+
+Inject `RevocationWriterInterface` and hand it an entry:
+
+```php
+use Biscuit\BiscuitBundle\Revocation\RevocationEntryFactory;
+use Biscuit\BiscuitBundle\Revocation\RevocationWriterInterface;
+
+public function logout(RevocationEntryFactory $factory, RevocationWriterInterface $writer): void
+{
+    $writer->revoke($factory->fromToken($this->currentToken, reason: 'logout'));
+}
+```
+
+`fromToken()` targets the deepest identifier and reads the expiration and subject from the
+authority block. Use `allFromToken()` only when you mean to invalidate sibling tokens too.
+
+Give every token an expiration date. Entries with no expiration can never be purged, so the
+list grows forever, and `biscuit:revocation:list` will nag you about them.
+
+### Revocation Commands
+
+```bash
+bin/console biscuit:revocation:revoke <token> [--all-ids] [--ttl=86400] [--dry-run]
+bin/console biscuit:revocation:revoke --id=<hex> --id=<hex>
+bin/console biscuit:revocation:check <token> [--explain]
+bin/console biscuit:revocation:list [--format=table|json|txt] [--subject=alice] [--expired]
+bin/console biscuit:revocation:purge [--before=2026-01-01T00:00:00Z] [--force]
+```
+
+`revoke` prints the whole chain with the target marked before it writes anything, and reads the
+token without its signature unless you pass `--verify`.
+
+`check` exits `0` when the token is valid, `1` when it is revoked and `2` on error, so it drops
+straight into a health check.
+
+`list --format=txt` emits bare newline-delimited identifiers, which is the format the static
+store reads. Promoting a dynamic list to a static one is one pipe:
+
+```bash
+bin/console biscuit:revocation:list --format=txt > config/revoked_ids.txt
+```
+
+### Events
+
+- `BiscuitRevocationCheckedEvent` carries the full `RevocationResult`. Checks run on every
+  authenticated request, so it only fires for revoked tokens by default. Set
+  `dispatch_check_events` to `always` or `never` to change that.
+- `BiscuitTokenRevokedEvent` fires when an entry is written.
+- `BiscuitRevocationDegradedEvent` fires when a store fails, under either failure policy, so
+  alerting works whether the request was rejected or let through.
+
+### Where the Check Sits
+
+The authenticator checks revocation after signature verification, never before. Revocation
+identifiers are derived from the block signatures, so until `parse()` succeeds an attacker
+controls them. Checking earlier would let anonymous requests drive lookups with arbitrary keys
+into Redis or SQL, and would report a forged token as revoked rather than invalid.
 
 ## Web Profiler Integration
 
@@ -409,8 +585,11 @@ When `symfony/web-profiler-bundle` is installed in the dev environment, the bund
 - All blocks in the token (Datalog source)
 - Every policy check performed during the request, with parameters and pass/fail outcome
 - Every attenuation performed during the request, with parent and child revocation IDs and the appended block source
+- The revocation verdict: which store answered, how long each store took, and whether the check ran degraded
 
-The toolbar shows a green/red indicator and the count of policy checks.
+The panel is populated for rejected requests too, so a revoked token still shows its blocks and
+the store that matched. The toolbar turns red when a token is revoked and yellow when a store
+could not answer.
 
 ## Testing Helpers
 
