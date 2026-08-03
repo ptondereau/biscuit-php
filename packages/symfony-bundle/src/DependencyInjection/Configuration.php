@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\DependencyInjection;
 
+use Biscuit\BiscuitBundle\Revocation\Store\DoctrineRevocationStore;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -136,6 +137,27 @@ final class Configuration implements ConfigurationInterface
                                 ->arrayNode('in_memory')
                                     ->canBeEnabled()
                                     ->info('In-process list. Useful in tests and in worker runtimes fed over a transport.')
+                                ->end()
+                                ->arrayNode('doctrine')
+                                    ->canBeEnabled()
+                                    ->info('Durable list in a database table, read last because it is the slowest. Survives restarts, which the cache and in-process stores do not.')
+                                    ->children()
+                                        ->scalarNode('connection')
+                                            ->defaultValue('doctrine.dbal.default_connection')
+                                            ->cannotBeEmpty()
+                                            ->info('DBAL connection service id')
+                                        ->end()
+                                        ->scalarNode('table')
+                                            ->defaultValue(DoctrineRevocationStore::DEFAULT_TABLE)
+                                            ->cannotBeEmpty()
+                                            ->info('Table holding the entries. Declared through configureSchema(), so doctrine:migrations:diff picks it up.')
+                                            ->validate()
+                                                ->ifTrue(static fn (mixed $value): bool => !\is_string($value)
+                                                    || 1 !== preg_match('/^[A-Za-z_][A-Za-z0-9_]{0,62}$/', $value))
+                                                ->thenInvalid('biscuit.revocation.stores.doctrine.table must match /^[A-Za-z_][A-Za-z0-9_]{0,62}$/. It is interpolated into SQL, so it is validated rather than quoted. Got %s.')
+                                            ->end()
+                                        ->end()
+                                    ->end()
                                 ->end()
                             ->end()
                         ->end()

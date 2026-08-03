@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\DependencyInjection;
 
+use Doctrine\DBAL\Connection as DoctrineConnection;
+use Doctrine\ORM\Tools\Event\GenerateSchemaEventArgs;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Resource\ClassExistenceResource;
@@ -54,6 +56,7 @@ final class BiscuitExtension extends Extension
 
         $this->configureStaticRevocationStore($container, $revocation['stores']['static']);
         $this->configureCacheRevocationStore($container, $revocation['stores']['cache']);
+        $this->configureDoctrineRevocationStore($container, $revocation['stores']['doctrine'], $loader);
 
         if (false === $revocation['stores']['in_memory']['enabled']) {
             $container->removeDefinition('biscuit.revocation.store.in_memory');
@@ -97,6 +100,45 @@ final class BiscuitExtension extends Extension
 
         foreach ($tags as $tag) {
             $handler->addTag('messenger.message_handler', ['bus' => $bus] + $tag);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function configureDoctrineRevocationStore(
+        ContainerBuilder $container,
+        array $config,
+        PhpFileLoader $loader,
+    ): void {
+        if (false === $config['enabled']) {
+            return;
+        }
+
+        $container->addResource(new ClassExistenceResource(DoctrineConnection::class));
+
+        if (!class_exists(DoctrineConnection::class)) {
+            throw new InvalidConfigurationException('biscuit.revocation.stores.doctrine is enabled but doctrine/dbal is not installed. Run "composer require doctrine/dbal", or use another store.');
+        }
+
+        $loader->load('revocation_doctrine.php');
+
+        /** @var string $connectionId */
+        $connectionId = $config['connection'];
+        /** @var string $table */
+        $table = $config['table'];
+
+        $container->setParameter('biscuit.revocation.stores.doctrine.connection', $connectionId);
+        $container->setParameter('biscuit.revocation.stores.doctrine.table', $table);
+
+        $container->getDefinition('biscuit.revocation.store.doctrine')
+            ->setArgument('$connection', new Reference($connectionId));
+
+        $container->getDefinition('biscuit.revocation.doctrine.setup_command')
+            ->setArgument('$connection', new Reference($connectionId));
+
+        if (!class_exists(GenerateSchemaEventArgs::class)) {
+            $container->removeDefinition('biscuit.revocation.doctrine.schema_listener');
         }
     }
 

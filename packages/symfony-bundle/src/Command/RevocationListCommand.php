@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Command;
 
 use Biscuit\BiscuitBundle\Revocation\EnumerableRevocationStoreInterface;
+use Biscuit\BiscuitBundle\Revocation\Exception\RevocationStoreUnavailableException;
 use Biscuit\BiscuitBundle\Revocation\RevocationEntry;
 use DateTimeImmutable;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -58,7 +59,13 @@ final class RevocationListCommand extends Command
             return Command::FAILURE;
         }
 
-        $entries = $this->collect($input);
+        try {
+            $entries = $this->collect($input);
+        } catch (RevocationStoreUnavailableException $e) {
+            $io->error('A revocation store could not be read: ' . $e->getMessage());
+
+            return Command::FAILURE;
+        }
 
         if ([] === $entries) {
             if ('table' === $format) {
@@ -88,6 +95,10 @@ final class RevocationListCommand extends Command
         $onlyExpired = (bool) $input->getOption('expired');
         $onlyActive = (bool) $input->getOption('active');
 
+        $offset = max(0, (int) $input->getOption('offset'));
+        $limit = max(1, (int) $input->getOption('limit'));
+        $wanted = $offset + $limit;
+
         $entries = [];
 
         foreach ($this->stores as $store) {
@@ -107,11 +118,12 @@ final class RevocationListCommand extends Command
                 }
 
                 $entries[] = $entry;
+
+                if (\count($entries) >= $wanted) {
+                    return \array_slice($entries, $offset, $limit);
+                }
             }
         }
-
-        $offset = max(0, (int) $input->getOption('offset'));
-        $limit = max(1, (int) $input->getOption('limit'));
 
         return \array_slice($entries, $offset, $limit);
     }

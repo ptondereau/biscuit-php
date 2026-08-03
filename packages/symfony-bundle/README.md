@@ -140,6 +140,10 @@ biscuit:
                 key_prefix: biscuit_revoked_
             in_memory:
                 enabled: false
+            doctrine:
+                enabled:    false
+                connection: doctrine.dbal.default_connection
+                table:      biscuit_revoked_tokens
         push:
             enabled: false                  # Broadcast writes over Symfony Messenger
             bus:     messenger.default_bus  # Bus used to dispatch and to register handlers
@@ -469,6 +473,7 @@ Stores are consulted in priority order and the first match wins.
 | `static` | 256 | no | In-memory list from config, an env var or a file. No I/O on the request path. |
 | `in_memory` | 192 | yes | Per-process list. For tests and worker runtimes. |
 | `cache` | 128 | yes | PSR-6 pool. Point it at Redis and every instance converges. |
+| `doctrine` | 64 | yes | Database table. Survives a restart, and does the slowest I/O, so it answers last. |
 | yours | 0 | optional | Any service implementing `RevocationStoreInterface`. |
 
 The static store is the break-glass option. It needs nothing provisioned:
@@ -494,32 +499,106 @@ Implement one method. Autoconfiguration wires it up, so the class needs no tag a
 config:
 
 ```php
+use Biscuit\BiscuitBundle\Revocation\Exception\RevocationStoreUnavailableException;
 use Biscuit\BiscuitBundle\Revocation\RevocationStoreInterface;
 
-final class DoctrineRevocationStore implements RevocationStoreInterface
+final class ApiRevocationStore implements RevocationStoreInterface
 {
-    public function __construct(private readonly Connection $connection)
+    public function __construct(private readonly HttpClientInterface $client)
     {
     }
 
     public function findRevoked(array $revocationIds): ?string
     {
-        $found = $this->connection->fetchOne(
-            'SELECT revocation_id FROM revoked_tokens WHERE revocation_id IN (?)',
-            [$revocationIds],
-            [ArrayParameterType::STRING],
-        );
+        try {
+            $revoked = $this->client
+                ->request('POST', '/revocations/check', ['json' => ['ids' => $revocationIds]])
+                ->toArray();
+        } catch (ExceptionInterface $e) {
+            throw new RevocationStoreUnavailableException($e->getMessage(), 0, $e);
+        }
 
-        return false === $found ? null : $found;
+        foreach ($revocationIds as $revocationId) {
+            if (\in_array($revocationId, $revoked['revoked'], true)) {
+                return $revocationId;
+            }
+        }
+
+        return null;
     }
 }
 ```
 
 Resolve the whole batch in one round trip, and return the identifier as you received it so
 callers can correlate it with the token. Throw `RevocationStoreUnavailableException` when the
-backend cannot answer; that is what `on_unavailable` reacts to. Add
-`RevocationWriterInterface` if the store can be written to, and
-`EnumerableRevocationStoreInterface` if it can list its entries.
+backend cannot answer; that is what `on_unavailable` reacts to. Nothing else may escape.
+`RevocationChecker` catches only that exception, so any other one becomes a 500 on every
+authenticated request no matter what `on_unavailable` says. Add `RevocationWriterInterface` if
+the store can be written to, and `EnumerableRevocationStoreInterface` if it can list its
+entries.
+
+### Storing Revocations in a Database
+
+Revocations kept in a database survive a restart. The cache store expires its entries and
+`in_memory` dies with the process, so a node that comes back up starts accepting tokens that
+were revoked while it was down. It needs `doctrine/dbal`.
+
+```yaml
+biscuit:
+    revocation:
+        enabled: true
+        on_unavailable: deny
+        stores:
+            doctrine:
+                enabled: true
+                connection: doctrine.dbal.default_connection
+                table: biscuit_revoked_tokens
+```
+
+It reads, writes, enumerates and purges. `biscuit:revocation:purge` deletes rows and reports a
+real count, which the cache store cannot do because a PSR-6 pool expires entries on its own.
+
+MySQL, MariaDB, PostgreSQL and SQLite are supported. Each needs a different upsert, and the
+bundle picks it from the platform. Oracle, SQL Server and DB2 fail with a named error rather
+than a syntax error, so implement `RevocationStoreInterface` yourself on those.
+
+#### The table
+
+The bundle declares the table but never creates it. Your migrations own the DDL:
+
+```bash
+bin/console doctrine:migrations:diff   # picks the table up, produces a reviewable migration
+bin/console doctrine:migrations:migrate
+```
+
+Without migrations:
+
+```bash
+bin/console biscuit:revocation:doctrine:setup            # create it
+bin/console biscuit:revocation:doctrine:setup --dump-sql # print the DDL instead
+```
+
+If you use the ORM, keep `doctrine/doctrine-bundle` installed. The bundle hooks
+`postGenerateSchema` to declare the table, and that hook is what stops
+`doctrine:migrations:diff` from generating `DROP TABLE biscuit_revoked_tokens`. Run that
+migration and revocation is silently off: every token passes and nothing is logged.
+
+`revocation_id` is the primary key, and `expires_at` is indexed so purging is not a full scan.
+On MySQL the identifier column is pinned to `utf8mb4_bin`, because a default `_ci` collation
+matches case-, accent- and trailing-space-insensitively and would revoke a token that was
+never revoked.
+
+#### Revoke outside your own transaction
+
+`ChainRevocationWriter` writes every store in turn, and the volatile ones come first. If you
+call `revoke()` inside a transaction that later rolls back, the cache says revoked and the
+database does not. The token keeps failing until the cache entry lapses, then quietly starts
+working again. Revoke after you commit, or outside the transaction.
+
+Dates are stored in UTC regardless of your `date.timezone`, and sub-second precision is not
+portable across drivers, so timestamps round to the second. Note that
+`biscuit:revocation:purge --before=2026-01-01` parses that date in PHP's default timezone, so
+pass an explicit offset when it matters.
 
 ### Revoking a Token
 
@@ -740,8 +819,8 @@ so a restart brings a node back accepting the token when `in_memory` is the only
 replays what is still in the stream, which narrows the gap to entries trimmed past
 `stream_max_entries` but does not close it. Two ways to cover it, and you want one of them:
 
-- Keep a second store behind the in-memory one. A `cache` store on a shared pool, or your own
-  store, answers for anything the node missed while it was down.
+- Keep a second store behind the in-memory one. The `doctrine` store holds entries until you
+  purge them; a `cache` store on a shared pool answers until they expire.
 - Promote long-lived revocations to the static list. `biscuit:revocation:list --format=txt`
   writes the exact format `stores.static.file` reads, so a node has them at startup.
 

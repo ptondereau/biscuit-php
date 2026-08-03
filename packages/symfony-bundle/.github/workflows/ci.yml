@@ -194,7 +194,7 @@ jobs:
       - name: No suggested package may be needed to load the bundle
         run: |
           set -euo pipefail
-          for package in symfony/maker-bundle symfony/messenger symfony/web-profiler-bundle symfony/yaml; do
+          for package in doctrine/dbal doctrine/orm symfony/maker-bundle symfony/messenger symfony/web-profiler-bundle symfony/yaml; do
             if composer show "$package" >/dev/null 2>&1; then
               echo "::error::$package leaked into a --no-dev install; it should stay a suggestion"
               exit 1

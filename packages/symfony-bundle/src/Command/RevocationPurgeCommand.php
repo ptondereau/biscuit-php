@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Command;
 
 use Biscuit\BiscuitBundle\Revocation\EnumerableRevocationStoreInterface;
+use Biscuit\BiscuitBundle\Revocation\Exception\RevocationStoreUnavailableException;
 use Biscuit\BiscuitBundle\Revocation\RevocationWriterInterface;
 use DateTimeImmutable;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -75,7 +76,13 @@ final class RevocationPurgeCommand extends Command
             return Command::FAILURE;
         }
 
-        $purged = $this->writer->purgeExpired($now);
+        try {
+            $purged = $this->writer->purgeExpired($now);
+        } catch (RevocationStoreUnavailableException $e) {
+            $io->error('A revocation store could not be purged: ' . $e->getMessage());
+
+            return Command::FAILURE;
+        }
 
         $io->success(sprintf('Purged %d entry(ies).', $purged));
 
@@ -86,12 +93,18 @@ final class RevocationPurgeCommand extends Command
     {
         $neverExpires = 0;
 
-        foreach ($this->stores as $store) {
-            foreach ($store->all() as $entry) {
-                if (null === $entry->expiresAt) {
-                    ++$neverExpires;
+        try {
+            foreach ($this->stores as $store) {
+                foreach ($store->all() as $entry) {
+                    if (null === $entry->expiresAt) {
+                        ++$neverExpires;
+                    }
                 }
             }
+        } catch (RevocationStoreUnavailableException $e) {
+            $io->note('Could not check for entries without an expiration: ' . $e->getMessage());
+
+            return;
         }
 
         if ($neverExpires > 0) {

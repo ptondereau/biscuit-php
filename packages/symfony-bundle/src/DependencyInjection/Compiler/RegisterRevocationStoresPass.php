@@ -27,6 +27,8 @@ final class RegisterRevocationStoresPass implements CompilerPassInterface
 
     private const PUSH_HANDLER_ID = 'biscuit.revocation.push_handler';
 
+    private const DOCTRINE_STORE_ID = 'biscuit.revocation.store.doctrine';
+
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition(self::CHECKER_ID)) {
@@ -54,6 +56,23 @@ final class RegisterRevocationStoresPass implements CompilerPassInterface
         );
         $this->assertCachePoolExists($container);
         $this->assertPushBusExists($container);
+        $this->assertDoctrineConnectionExists($container);
+    }
+
+    private function assertDoctrineConnectionExists(ContainerBuilder $container): void
+    {
+        if (!$container->hasDefinition(self::DOCTRINE_STORE_ID)) {
+            return;
+        }
+
+        /** @var string $connection */
+        $connection = $container->getParameter('biscuit.revocation.stores.doctrine.connection');
+
+        if ($container->has($connection)) {
+            return;
+        }
+
+        throw new InvalidConfigurationException(sprintf('biscuit.revocation.stores.doctrine is enabled but the DBAL connection "%s" does not exist. Install and configure doctrine/doctrine-bundle, or set biscuit.revocation.stores.doctrine.connection to a connection your application defines. Having doctrine/dbal installed is not enough on its own.', $connection));
     }
 
     private function assertPushBusExists(ContainerBuilder $container): void

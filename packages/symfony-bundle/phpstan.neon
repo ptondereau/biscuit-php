@@ -62,6 +62,11 @@ parameters:
             message: '#has invalid type Symfony\\Component\\Security\\Core\\Authorization\\Voter\\Vote#'
             path: src/Security/Voter/BiscuitVoter.php
             reportUnmatched: false
+        # doctrine/dbal 3 can return null from getSchemaAssetsFilter(); dbal 4 never does
+        -
+            message: '#between null and callable\(\): mixed will always evaluate to true#'
+            path: src/Revocation/Doctrine/RevocationSchemaListener.php
+            reportUnmatched: false
         # Older symfony/config (prefer-lowest) does not expose generic types on TreeBuilder/NodeBuilder
         -
             message: '#return type with generic class Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder does not specify its types#'

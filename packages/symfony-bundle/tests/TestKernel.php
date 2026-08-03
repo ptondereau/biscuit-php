@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Tests;
 
 use Biscuit\BiscuitBundle\BiscuitBundle;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
 use Psr\Log\NullLogger;
 use ReflectionClass;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -35,6 +37,8 @@ final class TestKernel extends Kernel
 
     public static bool $withFirewall = false;
 
+    public static bool $withDoctrineConnection = false;
+
     /**
      * @param array<string, mixed> $biscuitConfig
      * @param array<string, mixed> $frameworkConfig
@@ -43,10 +47,12 @@ final class TestKernel extends Kernel
         array $biscuitConfig = [],
         bool $withFirewall = false,
         array $frameworkConfig = [],
+        bool $withDoctrineConnection = false,
     ): void {
         self::$biscuitConfig = $biscuitConfig;
         self::$withFirewall = $withFirewall;
         self::$frameworkConfig = $frameworkConfig;
+        self::$withDoctrineConnection = $withDoctrineConnection;
     }
 
     public static function reset(): void
@@ -106,6 +112,14 @@ final class TestKernel extends Kernel
 
         $container->services()->set('logger', NullLogger::class);
 
+        if (self::$withDoctrineConnection) {
+            $container->services()
+                ->set('doctrine.dbal.default_connection', Connection::class)
+                ->factory([DriverManager::class, 'getConnection'])
+                ->args([['driver' => 'pdo_sqlite', 'memory' => true]])
+                ->public();
+        }
+
         $container->parameters()->set('container.dumper.inline_factories', false);
     }
 
@@ -162,6 +176,7 @@ final class TestKernel extends Kernel
             self::$biscuitConfig,
             self::$withFirewall,
             self::$frameworkConfig,
+            self::$withDoctrineConnection,
         ])), 0, 16);
 
         return sys_get_temp_dir() . '/biscuit-bundle-tests/' . $fingerprint;

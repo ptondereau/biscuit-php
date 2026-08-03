@@ -22,6 +22,8 @@
     "symfony/security-bundle": "^6.4 || ^7.0 || ^8.0"
   },
   "require-dev": {
+    "doctrine/dbal": "^3.6 || ^4.0",
+    "doctrine/orm": "^2.19 || ^3.0",
     "friendsofphp/php-cs-fixer": "^3.90",
     "phpstan/phpstan": "^2.0",
     "phpstan/phpstan-phpunit": "^2.0",
@@ -39,6 +41,7 @@
     "symfony/yaml": "^6.4 || ^7.0 || ^8.0"
   },
   "suggest": {
+    "doctrine/dbal": "To keep revocations in a database with biscuit.revocation.stores.doctrine",
     "symfony/maker-bundle": "To scaffold policy classes with make:biscuit-policy",
     "symfony/messenger": "To broadcast revocations to other instances with biscuit.revocation.push",
     "symfony/web-profiler-bundle": "To inspect tokens, policy checks and revocation in the profiler",
