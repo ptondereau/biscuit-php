@@ -140,6 +140,9 @@ biscuit:
                 key_prefix: biscuit_revoked_
             in_memory:
                 enabled: false
+        push:
+            enabled: false                  # Broadcast writes over Symfony Messenger
+            bus:     messenger.default_bus  # Bus used to dispatch and to register handlers
 
     policies:                # Named policies referenced by #[IsGranted]
         admin_only:    'allow if role("admin")'
@@ -538,6 +541,210 @@ authority block. Use `allFromToken()` only when you mean to invalidate sibling t
 Give every token an expiration date. Entries with no expiration can never be purged, so the
 list grows forever, and `biscuit:revocation:list` will nag you about them.
 
+### Pushing Revocations to Other Instances
+
+Push gives you the shortest gap between "revoked" and "rejected everywhere", which is why the
+[Biscuit revocation guide](https://www.biscuitsec.org/docs/guides/revocation/) rates a
+subscribe-on-startup queue the safest of the four distribution strategies. It also asks the
+most of your infrastructure.
+
+If you can point `stores.cache.pool` at Redis, do that first. Every instance reads the same
+list, nothing new to operate, and the gap is one cache lookup. Push is what you reach for when
+that shortcut does not apply: worker runtimes such as FrankenPHP or RoadRunner where each
+instance holds its own `in_memory` list and there is no shared store to converge on.
+
+```yaml
+biscuit:
+    revocation:
+        enabled: true
+        on_unavailable: deny
+        stores:
+            in_memory:
+                enabled: true
+        push:
+            enabled: true
+```
+
+Push needs `symfony/messenger`. The container refuses to build without it rather than
+silently doing nothing.
+
+That config alone is not enough to propagate anything. Four more steps follow, and skipping
+any of them fails quietly.
+
+#### Step 1: pick a transport that can fan out
+
+Messenger hides which broker you run, but it does not hide delivery topology, and there is no
+`framework.messenger` setting that means "broadcast". You express it in transport-specific
+`options`, and most transports cannot express it at all:
+
+| Transport | Can deliver to every instance |
+| --- | --- |
+| AMQP | Yes. Fanout exchange, one queue per instance |
+| Redis | Yes. One consumer group per instance |
+| Doctrine | No. A row is claimed by a single consumer |
+| Beanstalkd | No. Work queue only |
+| Amazon SQS | Not on its own. Needs SNS in front of one queue per instance, which the bridge does not manage |
+| Kafka | No official bridge. Symfony points at [Enqueue](https://github.com/php-enqueue/enqueue-dev) |
+| `sync://`, `in-memory://` | No. One process, nothing leaves it |
+
+Routing these messages to Doctrine or Beanstalkd is the failure this feature exists to prevent:
+each message goes to exactly one consumer, so one instance stops accepting the token and every
+other node keeps going. Nothing errors. `doctrine://default` is the tempting default when you
+have no broker, and it is the wrong answer here. Without AMQP or Redis, use a shared
+`stores.cache` pool instead of push.
+
+#### Step 2: give every instance its own queue
+
+The guide's model is one queue per subscriber. A fanout exchange with a queue per instance, or
+Redis with a consumer group per instance.
+
+`INSTANCE_ID` has to differ per running instance and stay stable across a restart, or the
+instance subscribes to a fresh empty queue every boot. On Kubernetes use the pod name
+(`valueFrom.fieldRef.fieldPath: metadata.name`); with Docker Compose replicas use the
+container hostname; on bare metal use the hostname.
+
+With AMQP:
+
+```yaml
+framework:
+    messenger:
+        transports:
+            biscuit_revocation:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange: { name: biscuit_revocation, type: fanout }
+                    queues:   { 'biscuit_revocation_%env(INSTANCE_ID)%': ~ }
+```
+
+With Redis, the consumer group is what separates the subscribers, and it needs
+`symfony/redis-messenger`. `delete_after_ack: false` is required, not a tuning choice: the
+default deletes each message once one group acks it, which drops it before the other
+instances have read it. Cap the stream with `stream_max_entries` instead:
+
+```yaml
+framework:
+    messenger:
+        transports:
+            biscuit_revocation:
+                dsn: '%env(REDIS_TRANSPORT_DSN)%'
+                options:
+                    stream:             biscuit_revocation
+                    group:              '%env(INSTANCE_ID)%'
+                    consumer:           '%env(INSTANCE_ID)%'
+                    delete_after_ack:   false
+                    stream_max_entries: 10000
+```
+
+Redis behaves better than AMQP on restart. Symfony creates the consumer group at offset `0`,
+so a group reads the stream from the beginning, and a group that already exists resumes from
+what it last acked. Either way a returning instance replays everything still in the stream, so
+`stream_max_entries` is what bounds the catch-up window rather than the message being gone the
+moment it was delivered. Size it for your worst expected downtime.
+
+The cost is bookkeeping. One group per instance means retired instances leave their groups
+behind, holding pending entries in Redis metadata. Prefer a stable identity that gets reused
+(a StatefulSet ordinal, not a random pod name) and drop groups for instances you have retired
+with `XGROUP DESTROY`.
+
+#### Step 3: route the three messages
+
+```yaml
+framework:
+    messenger:
+        routing:
+            'Biscuit\BiscuitBundle\Revocation\Message\RevokeToken':             biscuit_revocation
+            'Biscuit\BiscuitBundle\Revocation\Message\UnrevokeToken':           biscuit_revocation
+            'Biscuit\BiscuitBundle\Revocation\Message\PurgeExpiredRevocations': biscuit_revocation
+```
+
+Leave a message out of `routing` and Messenger handles it in-process the moment it is
+dispatched. The revoking node applies it twice, harmlessly, and no other node ever hears
+about it. Local testing looks fine and production propagates nothing, so route all three or
+none.
+
+#### Step 4: run a consumer on every instance
+
+Nothing arrives until something reads the queue:
+
+```bash
+bin/console messenger:consume biscuit_revocation
+```
+
+Run it as a supervised process alongside each instance, not as one shared worker. A single
+worker for the whole cluster puts the revocation list on one machine, which is the problem
+push exists to solve. Give it `--time-limit` and let your supervisor restart it, as with any
+Messenger worker.
+
+Nothing else changes in your code. `RevocationWriterInterface` now resolves to a publisher
+that writes locally and then broadcasts, so the commands and the `logout()` above start
+propagating without an edit. The node doing the revoking never waits for its own message.
+
+#### Checking that it works
+
+Revoke on one instance and check from another. `biscuit:revocation:check` exits `0` for a
+valid token and `1` for a revoked one, so this works as a shell test:
+
+```bash
+# on instance A
+bin/console biscuit:revocation:revoke "$TOKEN" --ttl=3600
+
+# on instance B, a moment later
+bin/console biscuit:revocation:check "$TOKEN" && echo 'PUSH IS NOT WORKING'
+```
+
+If instance B still exits `0`, the queue is the place to look. One queue shared by every
+consumer is the usual cause, and `messenger:stats` will show a single queue draining instead
+of one per instance.
+
+A malformed message is rejected rather than written, so it follows your retry strategy and
+lands in `failure_transport` if you configured one. Set one up: a revocation stuck in a retry
+loop is a revocation that is not being enforced.
+
+Two services keep a consumed message from being broadcast again. The publisher writes and
+dispatches; the handler holds a writer that only writes. A handler can't reach the bus, so
+there is no loop to break and no origin identifier to track. A local write that fails stops
+the broadcast, because telling the cluster about a revocation this node could not apply
+would leave it inconsistent.
+
+The three messages carry strings only, and dates travel as RFC 3339, so they survive the
+JSON and AMQP serializers unchanged.
+
+Events split along the same line. The origin node fires `BiscuitTokenRevokedEvent` as it
+always did. Consuming nodes fire `BiscuitRevocationReceivedEvent` instead, so a listener
+that emails "your session ended" sends one mail rather than one per node:
+
+```php
+use Biscuit\BiscuitBundle\Event\BiscuitRevocationReceivedEvent;
+use Biscuit\BiscuitBundle\Revocation\RevocationPushOperation;
+
+#[AsEventListener]
+public function onReceived(BiscuitRevocationReceivedEvent $event): void
+{
+    match ($event->operation) {
+        RevocationPushOperation::Revoke => $this->warmCaches($event->entry),
+        RevocationPushOperation::Unrevoke => $this->clearCaches($event->revocationId),
+        RevocationPushOperation::Purge => $this->recordPurge($event->purged),
+    };
+}
+```
+
+`purgeExpired()` returns the count this node dropped. Counts from the other instances cannot
+be collected back across a fanout. The cutoff is resolved before dispatch, so every node
+purges to the same instant instead of to its own clock, which is also why
+`biscuit:revocation:purge` reports one node's number in a cluster.
+
+#### What push does not give you
+
+With AMQP, an instance that boots after a revocation was broadcast never sees that message,
+so a restart brings a node back accepting the token when `in_memory` is the only store. Redis
+replays what is still in the stream, which narrows the gap to entries trimmed past
+`stream_max_entries` but does not close it. Two ways to cover it, and you want one of them:
+
+- Keep a second store behind the in-memory one. A `cache` store on a shared pool, or your own
+  store, answers for anything the node missed while it was down.
+- Promote long-lived revocations to the static list. `biscuit:revocation:list --format=txt`
+  writes the exact format `stores.static.file` reads, so a node has them at startup.
+
 ### Revocation Commands
 
 ```bash
@@ -566,9 +773,12 @@ bin/console biscuit:revocation:list --format=txt > config/revoked_ids.txt
 - `BiscuitRevocationCheckedEvent` carries the full `RevocationResult`. Checks run on every
   authenticated request, so it only fires for revoked tokens by default. Set
   `dispatch_check_events` to `always` or `never` to change that.
-- `BiscuitTokenRevokedEvent` fires when an entry is written.
+- `BiscuitTokenRevokedEvent` fires when an entry is written locally, on the node doing the
+  writing.
 - `BiscuitRevocationDegradedEvent` fires when a store fails, under either failure policy, so
   alerting works whether the request was rejected or let through.
+- `BiscuitRevocationReceivedEvent` fires on a node that applied a change pushed from another
+  instance. See [Pushing Revocations to Other Instances](#pushing-revocations-to-other-instances).
 
 ### Where the Check Sits
 
@@ -622,6 +832,72 @@ final class ProtectedEndpointTest extends WebTestCase
 `TestBiscuitAuthenticator` is a drop-in replacement for the production authenticator that trusts tokens signed by the test key pair.
 
 `BiscuitFixtures` and `BiscuitFixtureLoader` load Datalog scenarios from YAML files for repeatable fixture data.
+
+### Testing Revocation
+
+`BiscuitRevocationTestTrait` answers the question a revoked token actually raises: how does my
+endpoint behave? `assertTokenRevoked()` and `assertTokenNotRevoked()` work against whichever
+stores you configured, with no knowledge of which one answered.
+
+`receiveRevocation()` applies a revocation the way a consuming node does, so you can test the
+case that is otherwise hard to reach: another instance revoked this token and yours has not
+handled the message through a broker. It writes locally and publishes nothing, which is exactly
+what the push handler does. It takes a `Biscuit`, an `UnverifiedBiscuit`, a `RevocationEntry` or
+a raw identifier, and a token is revoked by its deepest identifier, matching
+`RevocationEntryFactory::fromToken()`.
+
+```php
+use Biscuit\BiscuitBundle\Test\BiscuitRevocationTestTrait;
+use Biscuit\BiscuitBundle\Test\BiscuitTestTrait;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+
+final class LogoutTest extends WebTestCase
+{
+    use BiscuitRevocationTestTrait;
+    use BiscuitTestTrait;
+
+    public function testAnotherInstanceRevokedTheToken(): void
+    {
+        $client = static::createClient();
+        $token = $this->createTestToken('user("alice")');
+
+        $this->receiveRevocation($token, reason: 'logout');
+
+        $this->assertTokenRevoked($token);
+
+        $client->request('GET', '/api/me', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer ' . $token->toBase64(),
+        ]);
+
+        self::assertResponseStatusCodeSame(401);
+    }
+}
+```
+
+The assertions need `biscuit.revocation.enabled`. The `receive` helpers also need
+`biscuit.revocation.push.enabled`, and say so if it is off rather than failing obscurely.
+
+To assert the other direction, that your code published a revocation, route the messages to
+`in-memory://` in the test environment and read the transport. No bundle helper is involved:
+
+```yaml
+# config/packages/test/messenger.yaml
+framework:
+    messenger:
+        transports:
+            biscuit_revocation: 'in-memory://'
+```
+
+```php
+$this->writer->revoke($this->entryFactory->fromToken($token, reason: 'logout'));
+
+$transport = static::getContainer()->get('messenger.transport.biscuit_revocation');
+self::assertInstanceOf(RevokeToken::class, $transport->getSent()[0]->getMessage());
+```
+
+One thing no test can tell you: whether your transport really fans out to every instance. That
+is a property of your broker topology, not of your code, so verify it against a running cluster
+with the `biscuit:revocation:check` recipe above.
 
 ## Development
 

@@ -32,6 +32,7 @@
     "symfony/cache": "^6.4 || ^7.0 || ^8.0",
     "symfony/css-selector": "^6.4 || ^7.0 || ^8.0",
     "symfony/maker-bundle": "^1.50",
+    "symfony/messenger": "^6.4 || ^7.0 || ^8.0",
     "symfony/runtime": "^6.4 || ^7.0 || ^8.0",
     "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0",
     "symfony/web-profiler-bundle": "^6.4 || ^7.0 || ^8.0",
@@ -39,6 +40,7 @@
   },
   "suggest": {
     "symfony/maker-bundle": "To scaffold policy classes with make:biscuit-policy",
+    "symfony/messenger": "To broadcast revocations to other instances with biscuit.revocation.push",
     "symfony/web-profiler-bundle": "To inspect tokens, policy checks and revocation in the profiler",
     "symfony/yaml": "To load Datalog fixtures from YAML in tests"
   },

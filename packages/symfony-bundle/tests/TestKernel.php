@@ -28,15 +28,25 @@ final class TestKernel extends Kernel
      */
     public static array $biscuitConfig = [];
 
+    /**
+     * @var array<string, mixed>
+     */
+    public static array $frameworkConfig = [];
+
     public static bool $withFirewall = false;
 
     /**
      * @param array<string, mixed> $biscuitConfig
+     * @param array<string, mixed> $frameworkConfig
      */
-    public static function configure(array $biscuitConfig = [], bool $withFirewall = false): void
-    {
+    public static function configure(
+        array $biscuitConfig = [],
+        bool $withFirewall = false,
+        array $frameworkConfig = [],
+    ): void {
         self::$biscuitConfig = $biscuitConfig;
         self::$withFirewall = $withFirewall;
+        self::$frameworkConfig = $frameworkConfig;
     }
 
     public static function reset(): void
@@ -83,6 +93,7 @@ final class TestKernel extends Kernel
             'test' => true,
             'php_errors' => ['log' => false, 'throw' => false],
             'profiler' => ['enabled' => true, 'collect' => true, 'only_exceptions' => false],
+            ...self::$frameworkConfig,
         ]);
 
         $container->extension('security', $this->securityConfig());
@@ -147,7 +158,11 @@ final class TestKernel extends Kernel
 
     private function temporaryDir(): string
     {
-        $fingerprint = substr(hash('xxh128', serialize([self::$biscuitConfig, self::$withFirewall])), 0, 16);
+        $fingerprint = substr(hash('xxh128', serialize([
+            self::$biscuitConfig,
+            self::$withFirewall,
+            self::$frameworkConfig,
+        ])), 0, 16);
 
         return sys_get_temp_dir() . '/biscuit-bundle-tests/' . $fingerprint;
     }

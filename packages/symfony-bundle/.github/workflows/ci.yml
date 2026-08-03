@@ -81,6 +81,7 @@ jobs:
             "symfony/property-info:${{ matrix.symfony }}" \
             "symfony/browser-kit:${{ matrix.symfony }}" \
             "symfony/css-selector:${{ matrix.symfony }}" \
+            "symfony/messenger:${{ matrix.symfony }}" \
             "symfony/runtime:${{ matrix.symfony }}" \
             "symfony/yaml:${{ matrix.symfony }}"
 
@@ -143,6 +144,7 @@ jobs:
             "symfony/property-info:7.4.*" \
             "symfony/browser-kit:7.4.*" \
             "symfony/css-selector:7.4.*" \
+            "symfony/messenger:7.4.*" \
             "symfony/runtime:7.4.*" \
             "symfony/yaml:7.4.*"
 
@@ -192,7 +194,7 @@ jobs:
       - name: No suggested package may be needed to load the bundle
         run: |
           set -euo pipefail
-          for package in symfony/maker-bundle symfony/web-profiler-bundle symfony/yaml; do
+          for package in symfony/maker-bundle symfony/messenger symfony/web-profiler-bundle symfony/yaml; do
             if composer show "$package" >/dev/null 2>&1; then
               echo "::error::$package leaked into a --no-dev install; it should stay a suggestion"
               exit 1
@@ -205,6 +207,10 @@ jobs:
               "Biscuit\\BiscuitBundle\\DependencyInjection\\BiscuitExtension",
               "Biscuit\\BiscuitBundle\\Revocation\\RevocationChecker",
               "Biscuit\\BiscuitBundle\\Revocation\\Store\\CacheRevocationStore",
+              "Biscuit\\BiscuitBundle\\Revocation\\Message\\RevokeToken",
+              "Biscuit\\BiscuitBundle\\Revocation\\Message\\UnrevokeToken",
+              "Biscuit\\BiscuitBundle\\Revocation\\Message\\PurgeExpiredRevocations",
+              "Biscuit\\BiscuitBundle\\Revocation\\Message\\RevocationPushHandler",
               "Biscuit\\BiscuitBundle\\Security\\Http\\AuthenticationFailureResponseFactory",
             ];
             foreach ($classes as $class) {

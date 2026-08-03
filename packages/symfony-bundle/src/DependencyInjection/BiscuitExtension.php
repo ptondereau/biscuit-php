@@ -6,11 +6,13 @@ namespace Biscuit\BiscuitBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Resource\ClassExistenceResource;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 final class BiscuitExtension extends Extension
 {
@@ -55,6 +57,46 @@ final class BiscuitExtension extends Extension
 
         if (false === $revocation['stores']['in_memory']['enabled']) {
             $container->removeDefinition('biscuit.revocation.store.in_memory');
+        }
+
+        $this->configureRevocationPush($container, $revocation['push'], $loader);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function configureRevocationPush(
+        ContainerBuilder $container,
+        array $config,
+        PhpFileLoader $loader,
+    ): void {
+        if (false === $config['enabled']) {
+            return;
+        }
+
+        $container->addResource(new ClassExistenceResource(MessageBusInterface::class));
+
+        if (!interface_exists(MessageBusInterface::class)) {
+            throw new InvalidConfigurationException('biscuit.revocation.push.enabled is true but symfony/messenger is not installed. Run "composer require symfony/messenger", or drop the push key and point biscuit.revocation.stores.cache.pool at a shared pool instead.');
+        }
+
+        $loader->load('revocation_push.php');
+
+        /** @var string $bus */
+        $bus = $config['bus'];
+
+        $container->setParameter('biscuit.revocation.push.bus', $bus);
+
+        $container->getDefinition('biscuit.revocation.publisher')
+            ->setArgument('$bus', new Reference($bus));
+
+        $handler = $container->getDefinition('biscuit.revocation.push_handler');
+        $tags = $handler->getTag('messenger.message_handler');
+
+        $handler->clearTag('messenger.message_handler');
+
+        foreach ($tags as $tag) {
+            $handler->addTag('messenger.message_handler', ['bus' => $bus] + $tag);
         }
     }
 

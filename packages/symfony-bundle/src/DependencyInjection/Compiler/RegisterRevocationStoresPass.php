@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\DependencyInjection\Compiler;
 
+use Biscuit\BiscuitBundle\Revocation\EnumerableRevocationStoreInterface;
 use Biscuit\BiscuitBundle\Revocation\RevocationStoreInterface;
 use Biscuit\BiscuitBundle\Revocation\RevocationWriterInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -24,6 +25,8 @@ final class RegisterRevocationStoresPass implements CompilerPassInterface
 
     private const CACHE_STORE_ID = 'biscuit.revocation.store.cache';
 
+    private const PUSH_HANDLER_ID = 'biscuit.revocation.push_handler';
+
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition(self::CHECKER_ID)) {
@@ -43,7 +46,30 @@ final class RegisterRevocationStoresPass implements CompilerPassInterface
             self::WRITER_TAG,
             RevocationWriterInterface::class,
         );
+        $this->assertTaggedServicesImplement(
+            $container,
+            $container->findTaggedServiceIds(self::ENUMERABLE_TAG, true),
+            self::ENUMERABLE_TAG,
+            EnumerableRevocationStoreInterface::class,
+        );
         $this->assertCachePoolExists($container);
+        $this->assertPushBusExists($container);
+    }
+
+    private function assertPushBusExists(ContainerBuilder $container): void
+    {
+        if (!$container->hasDefinition(self::PUSH_HANDLER_ID)) {
+            return;
+        }
+
+        /** @var string $bus */
+        $bus = $container->getParameter('biscuit.revocation.push.bus');
+
+        if ($container->has($bus)) {
+            return;
+        }
+
+        throw new InvalidConfigurationException(sprintf('biscuit.revocation.push is enabled but the message bus "%s" does not exist. Configure framework.messenger so the default bus is registered, or set biscuit.revocation.push.bus to a bus your application defines.', $bus));
     }
 
     private function assertCachePoolExists(ContainerBuilder $container): void

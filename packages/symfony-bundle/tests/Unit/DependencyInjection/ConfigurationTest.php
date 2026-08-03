@@ -155,6 +155,46 @@ final class ConfigurationTest extends TestCase
     }
 
     #[Test]
+    public function itLeavesPushOffByDefault(): void
+    {
+        $config = $this->processConfiguration([]);
+
+        self::assertFalse($config['revocation']['push']['enabled']);
+        self::assertSame('messenger.default_bus', $config['revocation']['push']['bus']);
+    }
+
+    #[Test]
+    public function itAcceptsPushEnabledAsAShorthand(): void
+    {
+        $config = $this->processConfiguration([
+            'biscuit' => ['revocation' => ['push' => true]],
+        ]);
+
+        self::assertTrue($config['revocation']['push']['enabled']);
+        self::assertSame('messenger.default_bus', $config['revocation']['push']['bus']);
+    }
+
+    #[Test]
+    public function itAcceptsACustomPushBus(): void
+    {
+        $config = $this->processConfiguration([
+            'biscuit' => ['revocation' => ['push' => ['enabled' => true, 'bus' => 'app.audit_bus']]],
+        ]);
+
+        self::assertSame('app.audit_bus', $config['revocation']['push']['bus']);
+    }
+
+    #[Test]
+    public function itRejectsAnEmptyPushBus(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $this->processConfiguration([
+            'biscuit' => ['revocation' => ['push' => ['enabled' => true, 'bus' => '']]],
+        ]);
+    }
+
+    #[Test]
     public function itAcceptsRevocationConfiguration(): void
     {
         $config = $this->processConfiguration([

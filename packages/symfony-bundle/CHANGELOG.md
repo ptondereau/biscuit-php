@@ -18,6 +18,8 @@ See [UPGRADE-0.4.md](UPGRADE-0.4.md) for migration steps.
 - `BiscuitRevocationCheckedEvent`, `BiscuitTokenRevokedEvent` and `BiscuitRevocationDegradedEvent`. The degraded event fires under either failure policy, so alerting works whether the request was rejected or let through.
 - `biscuit.security.user_identifier_fact` replaces the previously hardcoded `user` fact name.
 - `X-Test-Biscuit-Revoked` header on `TestBiscuitAuthenticator`, so a functional test can assert how an endpoint answers a revoked token.
+- `Test\BiscuitRevocationTestTrait` for testing revocation from the consuming side. `assertTokenRevoked()` and `assertTokenNotRevoked()` work against whichever stores you configured. `receiveRevocation()` applies a revocation the way a node consuming a pushed message does, writing locally and publishing nothing, so you can test how your endpoints answer a token another instance revoked without standing up a broker. `RevocationPushHandler` is now a public alias, so reaching for it needs no private service id.
+- `biscuit.revocation.push` broadcasts every revoke, unrevoke and purge over Symfony Messenger, so instances holding a per-process `in_memory` list learn about a revocation immediately instead of never. Turn it on and `RevocationWriterInterface` starts publishing; your `logout()` and the console commands propagate with no code change. Route the messages to a fanout transport, because a work-queue transport delivers each one to a single instance and leaves every other node accepting the token. Aimed at worker runtimes such as FrankenPHP and RoadRunner; a shared Redis pool is still the simpler answer when you have one. A consumed message cannot be rebroadcast: the handler holds a writer with no bus, so there is no loop to break. Consuming nodes fire the new `BiscuitRevocationReceivedEvent` rather than `BiscuitTokenRevokedEvent`, so a listener that mails the user sends one mail and not one per node.
 
 ### Changed
 
@@ -25,6 +27,7 @@ See [UPGRADE-0.4.md](UPGRADE-0.4.md) for migration steps.
 - `BiscuitAuthenticator` implements `AuthenticationEntryPointInterface`, so anonymous requests get the same response shape as rejected tokens once you set `entry_point: biscuit.authenticator`.
 - `biscuit.revocation.on_unavailable` must be set explicitly whenever revocation is enabled. There is no default because the right answer depends on whether an unreachable revocation list should take your API down.
 - Enabling revocation with no store configured fails the container build. It used to be possible to have revocation reported as active while every token passed.
+- Tagging a service `biscuit.revocation_enumerable_store` when it cannot enumerate its entries fails the container build, matching the checks already done on the store and writer tags. It used to compile and then fail at runtime inside `biscuit:revocation:list`.
 
 ### Removed
 
