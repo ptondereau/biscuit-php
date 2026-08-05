@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\Security\Voter;
 
-use Biscuit\Auth\AuthorizerBuilder;
+use Biscuit\BiscuitBundle\Authorizer\AuthorizerBuilderFactory;
 use Biscuit\BiscuitBundle\DataCollector\BiscuitDataCollector;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
 use Biscuit\BiscuitBundle\Security\User\BiscuitUser;
-use Biscuit\BiscuitBundle\Token\Template\Applier;
-use Biscuit\BiscuitBundle\Token\Template\AuthorizerBuilderAdapter;
-use Biscuit\BiscuitBundle\Token\Template\Template;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
@@ -22,14 +19,10 @@ use Throwable;
  */
 final class BiscuitVoter extends Voter
 {
-    /**
-     * @param array<string, array{facts?: list<non-empty-string>, checks?: list<non-empty-string>, rules?: list<non-empty-string>}> $authorizerFactTemplates
-     */
     public function __construct(
         private readonly PolicyRegistry $policyRegistry,
         private readonly ?BiscuitDataCollector $dataCollector = null,
-        private readonly ?Applier $applier = null,
-        private readonly array $authorizerFactTemplates = [],
+        private readonly AuthorizerBuilderFactory $authorizerBuilderFactory = new AuthorizerBuilderFactory(),
         private readonly ?LoggerInterface $logger = null,
     ) {
     }
@@ -55,12 +48,9 @@ final class BiscuitVoter extends Voter
         // Pass all policies to the data collector for the sandbox
         $this->dataCollector?->setPolicies($this->policyRegistry->all());
 
-        $authBuilder = new AuthorizerBuilder();
-
         try {
+            $authBuilder = $this->authorizerBuilderFactory->create($attribute, $params);
             $authBuilder->addPolicy($policy);
-
-            $this->applyAuthorizerFactTemplate($attribute, $params, $authBuilder);
 
             $authorizer = $authBuilder->build($biscuit);
         } catch (Throwable $e) {
@@ -85,27 +75,6 @@ final class BiscuitVoter extends Voter
 
             return false;
         }
-    }
-
-    /**
-     * Inject request-context facts into the authorizer from the fact template
-     * named after the policy. Token checks (caps, zone, expiry) and the policy
-     * itself can only reason about request attributes that live in the
-     * authorizer, so this is where amount/geo/wallet_tier/time/etc. enter.
-     *
-     * @param array<string, mixed> $params
-     */
-    private function applyAuthorizerFactTemplate(string $attribute, array $params, AuthorizerBuilder $authBuilder): void
-    {
-        if (null === $this->applier || !isset($this->authorizerFactTemplates[$attribute])) {
-            return;
-        }
-
-        $this->applier->populate(
-            new AuthorizerBuilderAdapter($authBuilder),
-            Template::fromArray($this->authorizerFactTemplates[$attribute]),
-            $params,
-        );
     }
 
     /**

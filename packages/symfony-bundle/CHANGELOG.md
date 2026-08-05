@@ -32,6 +32,8 @@ See [UPGRADE-0.4.md](UPGRADE-0.4.md) for migration steps.
 - `biscuit.revocation.on_unavailable` must be set explicitly whenever revocation is enabled. There is no default because the right answer depends on whether an unreachable revocation list should take your API down.
 - Enabling revocation with no store configured fails the container build. It used to be possible to have revocation reported as active while every token passed.
 - Tagging a service `biscuit.revocation_enumerable_store` when it cannot enumerate its entries fails the container build, matching the checks already done on the store and writer tags. It used to compile and then fail at runtime inside `biscuit:revocation:list`.
+- `biscuit:policy:test` applies the authorizer fact template named after the policy, so it reproduces the authorizer the voter builds. Pass the template parameters as `--param`. The command used to ignore `authorizer_fact_templates` entirely and could report a pass for a policy the voter denies.
+- `Authorizer\AuthorizerBuilderFactory` (service `biscuit.authorizer_builder_factory`) owns authorizer setup for both the voter and the command. `BiscuitVoter` takes it as its third constructor argument in place of the `Applier` and the fact template array, so a manually constructed voter needs updating; the container wires it for you.
 
 ### Removed
 
@@ -48,6 +50,7 @@ See [UPGRADE-0.4.md](UPGRADE-0.4.md) for migration steps.
 - `biscuit:revocation:list` reports an unreadable store through the usual styled error and exits `1`, rather than printing a stack trace. An enumerable store backed by I/O throws while being iterated, which the command did not account for.
 - `biscuit:revocation:purge` no longer aborts when it cannot count entries that never expire. That count is advisory and ran before the purge, so an unreachable store took out the operation it was only advising on.
 - `biscuit:revocation:list` stops reading once it has enough entries for `--limit` and `--offset`, instead of loading every entry from every store first.
+- Tokens carrying an expiry check now authorize. `BiscuitVoter` never added a `time()` fact to the authorizer, so `check if time($t), $t < <date>` could not be satisfied and every such token was denied whatever the date said. The voter now adds the current time to every authorizer it builds, and `biscuit:policy:test` does the same so it reproduces what the voter evaluates. Drop any `time()` fact you declared in `authorizer_fact_templates` as a workaround.
 - `BiscuitVoter` denies instead of throwing when the `subject:` array omits a parameter the policy or the authorizer fact template references. Binding those parameters happened above the voter's `try`, so a forgotten key in `#[IsGranted('policy', subject: [...])]` surfaced as a 500 and the profiler recorded nothing for the check. You now get a 403 and a failed check you can read in the panel.
 
 ### For contributors

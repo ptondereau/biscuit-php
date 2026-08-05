@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Biscuit\BiscuitBundle\Authorizer\AuthorizerBuilderFactory;
 use Biscuit\BiscuitBundle\Command\AttenuateTokenCommand;
 use Biscuit\BiscuitBundle\Command\CreateTokenCommand;
 use Biscuit\BiscuitBundle\Command\GenerateKeysCommand;
@@ -56,6 +57,12 @@ return static function (ContainerConfigurator $container): void {
         ]);
 
     $services->set('biscuit.template_applier', Applier::class);
+
+    $services->set('biscuit.authorizer_builder_factory', AuthorizerBuilderFactory::class)
+        ->args([
+            service('biscuit.template_applier'),
+            '%biscuit.authorizer_fact_templates%',
+        ]);
 
     $services->set('biscuit.token_factory', BiscuitTokenFactory::class)
         ->args([
@@ -113,8 +120,7 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('biscuit.policy_registry'),
             service('biscuit.data_collector')->nullOnInvalid(),
-            service('biscuit.template_applier'),
-            '%biscuit.authorizer_fact_templates%',
+            service('biscuit.authorizer_builder_factory'),
             service('logger')->nullOnInvalid(),
         ])
         ->tag('security.voter');
@@ -146,6 +152,7 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('biscuit.policy_registry'),
             service('biscuit.token_manager'),
+            service('biscuit.authorizer_builder_factory'),
         ])
         ->tag('console.command');
 

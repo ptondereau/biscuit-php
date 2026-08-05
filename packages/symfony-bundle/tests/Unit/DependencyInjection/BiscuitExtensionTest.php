@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\Tests\Unit\DependencyInjection;
 
+use Biscuit\BiscuitBundle\Command\TestPolicyCommand;
 use Biscuit\BiscuitBundle\DependencyInjection\BiscuitExtension;
 use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -385,15 +386,31 @@ final class BiscuitExtensionTest extends TestCase
     }
 
     #[Test]
-    public function itWiresApplierAndAuthorizerFactTemplatesIntoVoter(): void
+    public function itWiresApplierAndAuthorizerFactTemplatesIntoTheAuthorizerBuilderFactory(): void
+    {
+        $this->extension->load([], $this->container);
+
+        $factory = $this->container->getDefinition('biscuit.authorizer_builder_factory');
+
+        self::assertCount(2, $factory->getArguments());
+        self::assertSame('biscuit.template_applier', (string) $factory->getArgument(0));
+        self::assertSame('%biscuit.authorizer_fact_templates%', $factory->getArgument(1));
+    }
+
+    #[Test]
+    public function itSharesTheAuthorizerBuilderFactoryBetweenTheVoterAndThePolicyTestCommand(): void
     {
         $this->extension->load([], $this->container);
 
         $voter = $this->container->getDefinition('biscuit.voter');
 
-        self::assertCount(5, $voter->getArguments());
-        self::assertSame('%biscuit.authorizer_fact_templates%', $voter->getArgument(3));
-        self::assertSame('logger', (string) $voter->getArgument(4));
+        self::assertCount(4, $voter->getArguments());
+        self::assertSame('biscuit.authorizer_builder_factory', (string) $voter->getArgument(2));
+        self::assertSame('logger', (string) $voter->getArgument(3));
+
+        $command = $this->container->getDefinition(TestPolicyCommand::class);
+
+        self::assertSame('biscuit.authorizer_builder_factory', (string) $command->getArgument(2));
     }
 
     #[Test]

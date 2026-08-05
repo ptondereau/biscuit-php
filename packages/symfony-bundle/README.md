@@ -293,7 +293,7 @@ If the configured policies do not match, the voter abstains and falls back to ot
 
 ## Authorizer Fact Templates
 
-Policies and token checks can only reason about facts that are present in the authorizer. Token-side facts come from the token itself; **request-context** facts (the amount being moved, the current time, the target resource's tier, ...) must be supplied by the verifier at authorization time. `authorizer_fact_templates` lets you declare those facts in configuration and have `BiscuitVoter` inject them automatically, keyed by policy name:
+Policies and token checks can only reason about facts that are present in the authorizer. Token-side facts come from the token itself; **request-context** facts (the amount being moved, the target resource's tier, ...) must be supplied by the verifier at authorization time. `authorizer_fact_templates` lets you declare those facts in configuration and have `BiscuitVoter` inject them automatically, keyed by policy name:
 
 ```yaml
 biscuit:
@@ -306,21 +306,27 @@ biscuit:
                 - 'operation("credit_wallet")'
                 - 'amount({amount})'
                 - 'geo({req_zone})'
-                - 'time({now})'
 ```
 
 ```php
 #[IsGranted('credit_authorized', subject: [
     'req_zone' => $wilaya,
     'amount'   => $amountInDinars,
-    'now'      => time(),
 ])]
 public function credit(): Response { /* ... */ }
 ```
 
+Do not declare a `time()` fact yourself. The voter adds the current time to every authorizer it builds, so a token check such as `check if time($t), $t < 2026-01-01T00:00:00Z` works with no configuration. Adding a second `time()` fact from a template makes the engine compare an integer against a date and fail with `Invalid type`.
+
 When `credit_authorized` is evaluated, the voter applies the same-named fact template against the `subject:` parameters and adds the resulting facts to the authorizer before `authorize()` runs; the token's own checks are evaluated against those facts too. The `subject:` array may carry more keys than the policy references: extra keys feed the fact template and are ignored by the policy.
 
 A *missing* key denies the check. If the policy or the fact template references a parameter the `subject:` array does not provide, the voter votes deny, records a failed check in the profiler and logs a warning naming the policy and the error behind it. A malformed Datalog snippet in the template behaves the same way.
+
+`Authorizer\AuthorizerBuilderFactory` (service `biscuit.authorizer_builder_factory`) does this setup, and `biscuit:policy:test` uses the same service. Pass the template parameters as `--param` and the command builds the authorizer the voter would build:
+
+```bash
+bin/console biscuit:policy:test credit_authorized -p amount=50 -p req_zone=algiers -t "$TOKEN"
+```
 
 ## Token Templates
 

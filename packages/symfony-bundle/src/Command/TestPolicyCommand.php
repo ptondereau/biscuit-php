@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\Command;
 
-use Biscuit\Auth\AuthorizerBuilder;
 use Biscuit\Auth\Fact;
+use Biscuit\BiscuitBundle\Authorizer\AuthorizerBuilderFactory;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
 use Biscuit\Exception\AuthorizationException;
@@ -27,6 +27,7 @@ final class TestPolicyCommand extends Command
     public function __construct(
         private readonly PolicyRegistry $policyRegistry,
         private readonly BiscuitTokenManagerInterface $tokenManager,
+        private readonly AuthorizerBuilderFactory $authorizerBuilderFactory = new AuthorizerBuilderFactory(),
     ) {
         parent::__construct();
     }
@@ -108,7 +109,7 @@ final class TestPolicyCommand extends Command
         );
 
         try {
-            $authorizerBuilder = new AuthorizerBuilder();
+            $authorizerBuilder = $this->authorizerBuilderFactory->create($policyName, $params);
 
             foreach ($factStrings as $factString) {
                 if ('' === $factString) {
