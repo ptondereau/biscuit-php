@@ -8,6 +8,7 @@ use Biscuit\Auth\Biscuit;
 use Biscuit\Auth\BiscuitBuilder;
 use Biscuit\Auth\Fact;
 use Biscuit\Auth\KeyPair;
+use Biscuit\BiscuitBundle\DataCollector\BiscuitDataCollector;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
 use Biscuit\BiscuitBundle\Security\User\BiscuitUser;
 use Biscuit\BiscuitBundle\Security\Voter\BiscuitVoter;
@@ -15,10 +16,14 @@ use Biscuit\BiscuitBundle\Token\Template\Applier;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use ReflectionMethod;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Throwable;
 
 #[CoversClass(BiscuitVoter::class)]
 final class BiscuitVoterTest extends TestCase
@@ -306,11 +311,6 @@ final class BiscuitVoterTest extends TestCase
     #[Test]
     public function itInjectsAuthorizerFactsFromTemplateBeforeAuthorizing(): void
     {
-        $keyPair = new KeyPair();
-        $builder = new BiscuitBuilder();
-        $builder->addFact(new Fact('role("agent")'));
-        $biscuit = $builder->build($keyPair->getPrivateKey());
-
         $registry = new PolicyRegistry([
             'credit' => 'allow if role("agent"), amount($a), $a <= 100',
         ]);
@@ -321,7 +321,7 @@ final class BiscuitVoterTest extends TestCase
             ['credit' => ['facts' => ['amount({amount})']]],
         );
 
-        $user = new BiscuitUser($biscuit, 'agent-1');
+        $user = new BiscuitUser($this->buildAgentToken(), 'agent-1');
         $token = $this->createMock(TokenInterface::class);
         $token->method('getUser')->willReturn($user);
 
@@ -330,6 +330,126 @@ final class BiscuitVoterTest extends TestCase
 
         // amount(150) injected: 150 <= 100 fails, denied.
         self::assertSame(Voter::ACCESS_DENIED, $voter->vote($token, ['amount' => 150], ['credit']));
+    }
+
+    #[Test]
+    public function itDeniesWhenFactTemplateParameterIsMissing(): void
+    {
+        $registry = new PolicyRegistry([
+            'credit' => 'allow if role("agent"), amount($a), $a <= 100',
+        ]);
+        $voter = new BiscuitVoter(
+            $registry,
+            null,
+            new Applier(),
+            ['credit' => ['facts' => ['amount({amount})']]],
+        );
+
+        $token = $this->createMock(TokenInterface::class);
+        $token->method('getUser')->willReturn(new BiscuitUser($this->buildAgentToken(), 'agent-1'));
+
+        self::assertSame(Voter::ACCESS_DENIED, $voter->vote($token, ['wrong_key' => 50], ['credit']));
+    }
+
+    #[Test]
+    public function itDeniesWhenPolicyParameterIsMissing(): void
+    {
+        $registry = new PolicyRegistry([
+            'resource_access' => 'allow if resource({resource})',
+        ]);
+        $voter = new BiscuitVoter($registry);
+
+        $token = $this->createMock(TokenInterface::class);
+        $token->method('getUser')->willReturn(new BiscuitUser($this->buildAgentToken(), 'agent-1'));
+
+        self::assertSame(Voter::ACCESS_DENIED, $voter->vote($token, [], ['resource_access']));
+    }
+
+    #[Test]
+    public function itRecordsAFailedCheckWhenTheTemplateCannotBeApplied(): void
+    {
+        $collector = new BiscuitDataCollector();
+        $registry = new PolicyRegistry([
+            'credit' => 'allow if role("agent"), amount($a), $a <= 100',
+        ]);
+        $voter = new BiscuitVoter(
+            $registry,
+            $collector,
+            new Applier(),
+            ['credit' => ['facts' => ['amount({amount})']]],
+        );
+
+        $token = $this->createMock(TokenInterface::class);
+        $token->method('getUser')->willReturn(new BiscuitUser($this->buildAgentToken(), 'agent-1'));
+
+        $voter->vote($token, [], ['credit']);
+        $collector->collect(new Request(), new Response());
+
+        self::assertSame(1, $collector->getFailedChecks());
+        self::assertSame(0, $collector->getPassedChecks());
+        self::assertSame('credit', $collector->getPolicyChecks()[0]['policy']);
+    }
+
+    #[Test]
+    public function itLogsTheReasonWhenAPolicyCheckCannotBeEvaluated(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger
+            ->expects(self::once())
+            ->method('warning')
+            ->with(
+                'Biscuit policy check could not be evaluated',
+                self::callback(static fn (array $context): bool => 'credit' === $context['policy']
+                    && $context['exception'] instanceof Throwable),
+            );
+
+        $registry = new PolicyRegistry([
+            'credit' => 'allow if role("agent"), amount($a), $a <= 100',
+        ]);
+        $voter = new BiscuitVoter(
+            $registry,
+            null,
+            new Applier(),
+            ['credit' => ['facts' => ['amount({amount})']]],
+            $logger,
+        );
+
+        $token = $this->createMock(TokenInterface::class);
+        $token->method('getUser')->willReturn(new BiscuitUser($this->buildAgentToken(), 'agent-1'));
+
+        self::assertSame(Voter::ACCESS_DENIED, $voter->vote($token, [], ['credit']));
+    }
+
+    #[Test]
+    public function itDoesNotLogWhenAPolicySimplyDenies(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::never())->method('warning');
+
+        $registry = new PolicyRegistry([
+            'credit' => 'allow if role("agent"), amount($a), $a <= 100',
+        ]);
+        $voter = new BiscuitVoter(
+            $registry,
+            null,
+            new Applier(),
+            ['credit' => ['facts' => ['amount({amount})']]],
+            $logger,
+        );
+
+        $token = $this->createMock(TokenInterface::class);
+        $token->method('getUser')->willReturn(new BiscuitUser($this->buildAgentToken(), 'agent-1'));
+
+        self::assertSame(Voter::ACCESS_DENIED, $voter->vote($token, ['amount' => 150], ['credit']));
+    }
+
+    private function buildAgentToken(): Biscuit
+    {
+        $keyPair = new KeyPair();
+        $builder = new BiscuitBuilder();
+        $builder->addFact(new Fact('role("agent")'));
+
+        return $builder->build($keyPair->getPrivateKey());
     }
 
     /**

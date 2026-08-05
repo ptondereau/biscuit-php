@@ -11,6 +11,7 @@ use Biscuit\BiscuitBundle\Security\User\BiscuitUser;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
 use Biscuit\BiscuitBundle\Token\Template\AuthorizerBuilderAdapter;
 use Biscuit\BiscuitBundle\Token\Template\Template;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
@@ -29,6 +30,7 @@ final class BiscuitVoter extends Voter
         private readonly ?BiscuitDataCollector $dataCollector = null,
         private readonly ?Applier $applier = null,
         private readonly array $authorizerFactTemplates = [],
+        private readonly ?LoggerInterface $logger = null,
     ) {
     }
 
@@ -54,12 +56,25 @@ final class BiscuitVoter extends Voter
         $this->dataCollector?->setPolicies($this->policyRegistry->all());
 
         $authBuilder = new AuthorizerBuilder();
-        $authBuilder->addPolicy($policy);
-
-        $this->applyAuthorizerFactTemplate($attribute, $params, $authBuilder);
 
         try {
+            $authBuilder->addPolicy($policy);
+
+            $this->applyAuthorizerFactTemplate($attribute, $params, $authBuilder);
+
             $authorizer = $authBuilder->build($biscuit);
+        } catch (Throwable $e) {
+            $this->logger?->warning('Biscuit policy check could not be evaluated', [
+                'policy' => $attribute,
+                'exception' => $e,
+            ]);
+
+            $this->dataCollector?->recordPolicyCheck($attribute, false, $params);
+
+            return false;
+        }
+
+        try {
             $authorizer->authorize();
 
             $this->dataCollector?->recordPolicyCheck($attribute, true, $params);

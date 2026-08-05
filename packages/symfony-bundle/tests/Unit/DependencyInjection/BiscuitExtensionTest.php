@@ -391,8 +391,9 @@ final class BiscuitExtensionTest extends TestCase
 
         $voter = $this->container->getDefinition('biscuit.voter');
 
-        self::assertCount(4, $voter->getArguments());
+        self::assertCount(5, $voter->getArguments());
         self::assertSame('%biscuit.authorizer_fact_templates%', $voter->getArgument(3));
+        self::assertSame('logger', (string) $voter->getArgument(4));
     }
 
     #[Test]

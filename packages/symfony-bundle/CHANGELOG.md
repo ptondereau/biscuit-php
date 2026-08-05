@@ -17,6 +17,7 @@ See [UPGRADE-0.4.md](UPGRADE-0.4.md) for migration steps.
 - The profiler gained a Revocation tab showing the verdict, which store answered, per-store timings and whether the check ran degraded. It is populated for rejected requests too, so a revoked token still shows its blocks.
 - `BiscuitRevocationCheckedEvent`, `BiscuitTokenRevokedEvent` and `BiscuitRevocationDegradedEvent`. The degraded event fires under either failure policy, so alerting works whether the request was rejected or let through.
 - `biscuit.security.user_identifier_fact` replaces the previously hardcoded `user` fact name.
+- `BiscuitVoter` takes an optional PSR-3 logger, autowired to `logger` when the container has one. A check that cannot be evaluated logs a warning naming the policy and carrying the underlying exception, so a typo in a policy or a fact template leaves a trace outside the profiler.
 - `X-Test-Biscuit-Revoked` header on `TestBiscuitAuthenticator`, so a functional test can assert how an endpoint answers a revoked token.
 - `Test\BiscuitRevocationTestTrait` for testing revocation from the consuming side. `assertTokenRevoked()` and `assertTokenNotRevoked()` work against whichever stores you configured. `receiveRevocation()` applies a revocation the way a node consuming a pushed message does, writing locally and publishing nothing, so you can test how your endpoints answer a token another instance revoked without standing up a broker. `RevocationPushHandler` is now a public alias, so reaching for it needs no private service id.
 - A `doctrine` revocation store, so revocations survive a restart. It reads, writes, enumerates and purges, so `biscuit:revocation:purge` deletes rows and reports a real count instead of the zero a PSR-6 pool has to return. Supports MySQL, MariaDB, PostgreSQL and SQLite, each with its own upsert; unsupported platforms fail with a named error rather than a syntax error. Enable it behind `biscuit.revocation.stores.doctrine` and it is consulted last, after every cheaper store.
@@ -47,6 +48,7 @@ See [UPGRADE-0.4.md](UPGRADE-0.4.md) for migration steps.
 - `biscuit:revocation:list` reports an unreadable store through the usual styled error and exits `1`, rather than printing a stack trace. An enumerable store backed by I/O throws while being iterated, which the command did not account for.
 - `biscuit:revocation:purge` no longer aborts when it cannot count entries that never expire. That count is advisory and ran before the purge, so an unreachable store took out the operation it was only advising on.
 - `biscuit:revocation:list` stops reading once it has enough entries for `--limit` and `--offset`, instead of loading every entry from every store first.
+- `BiscuitVoter` denies instead of throwing when the `subject:` array omits a parameter the policy or the authorizer fact template references. Binding those parameters happened above the voter's `try`, so a forgotten key in `#[IsGranted('policy', subject: [...])]` surfaced as a 500 and the profiler recorded nothing for the check. You now get a 403 and a failed check you can read in the panel.
 
 ### For contributors
 

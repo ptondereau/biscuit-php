@@ -320,6 +320,8 @@ public function credit(): Response { /* ... */ }
 
 When `credit_authorized` is evaluated, the voter applies the same-named fact template against the `subject:` parameters and adds the resulting facts to the authorizer before `authorize()` runs; the token's own checks are evaluated against those facts too. The `subject:` array may carry more keys than the policy references: extra keys feed the fact template and are ignored by the policy.
 
+A *missing* key denies the check. If the policy or the fact template references a parameter the `subject:` array does not provide, the voter votes deny, records a failed check in the profiler and logs a warning naming the policy and the error behind it. A malformed Datalog snippet in the template behaves the same way.
+
 ## Token Templates
 
 Define reusable token shapes in configuration:

@@ -115,6 +115,7 @@ return static function (ContainerConfigurator $container): void {
             service('biscuit.data_collector')->nullOnInvalid(),
             service('biscuit.template_applier'),
             '%biscuit.authorizer_fact_templates%',
+            service('logger')->nullOnInvalid(),
         ])
         ->tag('security.voter');
 
