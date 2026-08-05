@@ -53,6 +53,7 @@ See [UPGRADE-0.4.md](UPGRADE-0.4.md) for migration steps.
 - `tests/Functional` and `tests/Integration` suites now compile and boot a real container, which is what unit tests calling `Extension::load()` cannot reach. `TestKernel` finally exists at the path `phpunit.xml.dist` has been pointing at.
 - A `no-optional-deps` CI job removes every suggested package and reruns the unit suite, so the `suggest` block is a contract rather than documentation.
 - `BiscuitExtension` no longer patches `biscuit.authenticator` with a positional `replaceArgument()`. Arguments are named throughout, and the checker is resolved with `nullOnInvalid()`.
+- `RevocationSchemaListener` only calls `GenerateSchemaEventArgs::setSchema()` when `Schema::edit()` exists. doctrine/orm 3.6.8 added the setter but it throws below doctrine/dbal 4.5.
 
 ## [0.3.0] - 2026-07-07
 

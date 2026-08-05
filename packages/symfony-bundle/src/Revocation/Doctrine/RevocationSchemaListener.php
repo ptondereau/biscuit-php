@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Revocation\Doctrine;
 
 use Biscuit\BiscuitBundle\Revocation\Store\DoctrineRevocationStore;
+use Doctrine\DBAL\Schema\Schema;
 use Doctrine\ORM\Tools\Event\GenerateSchemaEventArgs;
 
 /**
@@ -37,7 +38,7 @@ final class RevocationSchemaListener
 
         $schema = $this->store->configureSchema($event->getSchema());
 
-        if (method_exists($event, 'setSchema')) {
+        if (method_exists($event, 'setSchema') && method_exists(Schema::class, 'edit')) {
             $event->setSchema($schema);
         }
     }
