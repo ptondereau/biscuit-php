@@ -6,25 +6,15 @@ use ext_php_rs::prelude::*;
 use crate::biscuit::Biscuit;
 use crate::datalog::{Check, Fact, Rule};
 use crate::errors::{BuildKind, DatalogKind, ResultExt};
-use crate::helpers::{MixedValue, get_builder, mixed_value_to_term, take_builder};
+use crate::helpers::{
+    MixedValue, collect_scope_params, collect_term_params, get_builder, take_builder,
+};
 use crate::keys::{PrivateKey, PublicKey};
 
 #[php_class]
 #[php(name = "Biscuit\\Auth\\BiscuitBuilder")]
 #[derive(Clone)]
 pub struct BiscuitBuilder(pub(crate) Option<biscuit_auth::builder::BiscuitBuilder>);
-
-impl Default for BiscuitBuilder {
-    fn default() -> Self {
-        Self(Some(biscuit_auth::builder::BiscuitBuilder::new()))
-    }
-}
-
-impl BiscuitBuilder {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 
 #[php_impl]
 impl BiscuitBuilder {
@@ -46,7 +36,7 @@ impl BiscuitBuilder {
             .clone()
             .build(&keypair)
             .build(BuildKind::Token)?;
-        Ok(Biscuit::wrap(token))
+        Ok(Biscuit(token))
     }
 
     pub fn add_code(
@@ -170,26 +160,5 @@ impl BlockBuilder {
 
     pub fn __to_string(&self) -> PhpResult<String> {
         Ok(format!("{}", get_builder(&self.0)?))
-    }
-}
-
-fn collect_term_params(
-    params: Option<HashMap<String, MixedValue>>,
-) -> PhpResult<HashMap<String, biscuit_auth::builder::Term>> {
-    match params {
-        Some(p) => p
-            .iter()
-            .map(|(k, v)| mixed_value_to_term(v).map(|term| (k.clone(), term)))
-            .collect(),
-        None => Ok(HashMap::new()),
-    }
-}
-
-fn collect_scope_params(
-    scope_params: Option<HashMap<String, &PublicKey>>,
-) -> HashMap<String, biscuit_auth::PublicKey> {
-    match scope_params {
-        Some(sp) => sp.iter().map(|(k, v)| (k.clone(), v.0)).collect(),
-        None => HashMap::new(),
     }
 }

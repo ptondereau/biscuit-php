@@ -8,7 +8,9 @@ use crate::biscuit::Biscuit;
 use crate::builders::BlockBuilder;
 use crate::datalog::{Check, Fact, Policy, Rule};
 use crate::errors::{BiscuitError, BuildKind, DatalogKind, FormatKind, ResultExt};
-use crate::helpers::{MixedValue, get_builder, mixed_value_to_term, take_builder};
+use crate::helpers::{
+    MixedValue, collect_scope_params, collect_term_params, get_builder, take_builder,
+};
 use crate::keys::PublicKey;
 
 #[php_class]
@@ -25,7 +27,11 @@ impl Authorizer {
                 let code = policies.get(idx).map(ToString::to_string);
                 Ok(MatchedPolicy::allow(idx, code))
             }
-            Err(err) => Err(BiscuitError::authorization(err, policies).into()),
+            Err(err) => Err(BiscuitError::Authorization {
+                source: err,
+                policies,
+            }
+            .into()),
         }
     }
 
@@ -88,18 +94,8 @@ impl AuthorizerBuilder {
         params: Option<HashMap<String, MixedValue>>,
         scope_params: Option<HashMap<String, &PublicKey>>,
     ) -> PhpResult<()> {
-        let term_params: HashMap<String, biscuit_auth::builder::Term> = match params {
-            Some(p) => p
-                .iter()
-                .map(|(k, v)| mixed_value_to_term(v).map(|term| (k.clone(), term)))
-                .collect::<PhpResult<HashMap<_, _>>>()?,
-            None => HashMap::new(),
-        };
-
-        let scope: HashMap<String, biscuit_auth::PublicKey> = match scope_params {
-            Some(sp) => sp.iter().map(|(k, v)| (k.clone(), v.0)).collect(),
-            None => HashMap::new(),
-        };
+        let term_params = collect_term_params(params)?;
+        let scope = collect_scope_params(scope_params);
 
         let next = take_builder(&mut self.0)?
             .code_with_params(source, term_params, scope)

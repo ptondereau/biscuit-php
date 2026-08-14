@@ -12,17 +12,11 @@ use crate::third_party::{ThirdPartyBlock, ThirdPartyRequest};
 #[derive(Clone)]
 pub struct Biscuit(pub(crate) biscuit_auth::Biscuit);
 
-impl Biscuit {
-    pub fn wrap(inner: biscuit_auth::Biscuit) -> Self {
-        Self(inner)
-    }
-}
-
 #[php_impl]
 impl Biscuit {
     #[php(name = "builder")]
     pub fn builder() -> BiscuitBuilder {
-        BiscuitBuilder::new()
+        BiscuitBuilder(Some(biscuit_auth::builder::BiscuitBuilder::new()))
     }
 
     #[php(name = "fromBytes")]

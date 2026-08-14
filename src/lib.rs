@@ -23,10 +23,6 @@ pub use third_party::*;
 use ext_php_rs::zend::ModuleEntry;
 use ext_php_rs::{info_table_end, info_table_row, info_table_start, prelude::*};
 
-pub fn startup(_ty: i32, _mod_num: i32) -> i32 {
-    0
-}
-
 pub extern "C" fn php_module_info(_module: *mut ModuleEntry) {
     info_table_start!();
     info_table_row!("ext-biscuit_php", "enabled");
@@ -36,7 +32,6 @@ pub extern "C" fn php_module_info(_module: *mut ModuleEntry) {
 }
 
 #[php_module]
-#[php(startup = "startup")]
 pub fn get_module(module: ModuleBuilder) -> ModuleBuilder {
     module
         .info_function(php_module_info)

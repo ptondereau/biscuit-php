@@ -44,39 +44,35 @@ fn populate_exception_message(zval: &mut Zval, message: &str) {
 type BoxedError = Box<dyn std::error::Error + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(i32)]
 pub(crate) enum KeyKind {
-    PublicKey = 1,
-    PrivateKey = 2,
+    PublicKey,
+    PrivateKey,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(i32)]
 pub(crate) enum DatalogKind {
-    Fact = 1,
-    Rule = 2,
-    Check = 3,
-    Policy = 4,
-    Term = 5,
-    Scope = 6,
+    Fact,
+    Rule,
+    Check,
+    Policy,
+    Term,
+    Scope,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(i32)]
 pub(crate) enum FormatKind {
-    Base64 = 1,
-    Bytes = 2,
-    Signature = 3,
-    Snapshot = 4,
+    Base64,
+    Bytes,
+    Signature,
+    Snapshot,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(i32)]
 pub(crate) enum BuildKind {
-    Token = 1,
-    Append = 2,
-    Authorizer = 3,
-    ThirdPartyAppend = 4,
+    Token,
+    Append,
+    Authorizer,
+    ThirdPartyAppend,
 }
 
 #[derive(Debug, Error)]
@@ -123,15 +119,6 @@ pub(crate) enum BiscuitError {
 #[derive(Debug, Error)]
 #[error("{0}")]
 pub(crate) struct StaticError(pub(crate) &'static str);
-
-impl BiscuitError {
-    pub(crate) fn authorization(
-        source: biscuit_auth::error::Token,
-        policies: Vec<biscuit_auth::builder::Policy>,
-    ) -> Self {
-        Self::Authorization { source, policies }
-    }
-}
 
 pub(crate) trait ResultExt<T> {
     fn key(self, kind: KeyKind) -> Result<T, BiscuitError>;
@@ -231,21 +218,6 @@ marker_subclass!(
 #[php(extends(BiscuitException))]
 #[derive(Debug, Default, Clone)]
 pub struct DatalogException;
-
-#[php_impl]
-impl DatalogException {
-    pub fn get_parse_errors(&self) -> Option<Vec<ParseError>> {
-        None
-    }
-
-    pub fn get_missing_parameters(&self) -> Option<Vec<String>> {
-        None
-    }
-
-    pub fn get_unused_parameters(&self) -> Option<Vec<String>> {
-        None
-    }
-}
 
 macro_rules! datalog_subclass {
     ($struct_name:ident, $php_name:literal) => {
@@ -417,55 +389,26 @@ fn build_datalog_exception(
 ) -> PhpException {
     let payload = classify_datalog(source);
 
+    macro_rules! datalog_exception {
+        ($exception:ident) => {
+            into_php_exception(
+                $exception::new(
+                    payload.parse_errors,
+                    payload.missing_parameters,
+                    payload.unused_parameters,
+                ),
+                message,
+            )
+        };
+    }
+
     match kind {
-        DatalogKind::Fact => into_php_exception(
-            FactException::new(
-                payload.parse_errors,
-                payload.missing_parameters,
-                payload.unused_parameters,
-            ),
-            message,
-        ),
-        DatalogKind::Rule => into_php_exception(
-            RuleException::new(
-                payload.parse_errors,
-                payload.missing_parameters,
-                payload.unused_parameters,
-            ),
-            message,
-        ),
-        DatalogKind::Check => into_php_exception(
-            CheckException::new(
-                payload.parse_errors,
-                payload.missing_parameters,
-                payload.unused_parameters,
-            ),
-            message,
-        ),
-        DatalogKind::Policy => into_php_exception(
-            PolicyException::new(
-                payload.parse_errors,
-                payload.missing_parameters,
-                payload.unused_parameters,
-            ),
-            message,
-        ),
-        DatalogKind::Term => into_php_exception(
-            TermException::new(
-                payload.parse_errors,
-                payload.missing_parameters,
-                payload.unused_parameters,
-            ),
-            message,
-        ),
-        DatalogKind::Scope => into_php_exception(
-            ScopeException::new(
-                payload.parse_errors,
-                payload.missing_parameters,
-                payload.unused_parameters,
-            ),
-            message,
-        ),
+        DatalogKind::Fact => datalog_exception!(FactException),
+        DatalogKind::Rule => datalog_exception!(RuleException),
+        DatalogKind::Check => datalog_exception!(CheckException),
+        DatalogKind::Policy => datalog_exception!(PolicyException),
+        DatalogKind::Term => datalog_exception!(TermException),
+        DatalogKind::Scope => datalog_exception!(ScopeException),
     }
 }
 
