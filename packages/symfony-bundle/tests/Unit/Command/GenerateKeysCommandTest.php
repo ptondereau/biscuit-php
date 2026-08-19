@@ -8,7 +8,6 @@ use Biscuit\BiscuitBundle\Command\GenerateKeysCommand;
 use Biscuit\BiscuitBundle\Tests\ConsoleApplicationTrait;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
@@ -21,7 +20,6 @@ final class GenerateKeysCommandTest extends TestCase
     use ConsoleApplicationTrait;
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itGeneratesEd25519KeyPairByDefault(): void
     {
         $commandTester = $this->createCommandTester();
@@ -41,7 +39,6 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itGeneratesEd25519KeyPairWithExplicitOption(): void
     {
         $commandTester = $this->createCommandTester();
@@ -55,7 +52,6 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itGeneratesSecp256r1KeyPair(): void
     {
         $commandTester = $this->createCommandTester();
@@ -70,7 +66,6 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itGeneratesShortAlgorithmOption(): void
     {
         $commandTester = $this->createCommandTester();
@@ -81,7 +76,6 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itThrowsForUnknownAlgorithm(): void
     {
         $commandTester = $this->createCommandTester();
@@ -93,7 +87,6 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itShowsSecurityWarning(): void
     {
         $commandTester = $this->createCommandTester();
@@ -105,7 +98,6 @@ final class GenerateKeysCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itShowsConfigurationExample(): void
     {
         $commandTester = $this->createCommandTester();

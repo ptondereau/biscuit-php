@@ -7,7 +7,6 @@ namespace Biscuit\BiscuitBundle\Tests\Unit\Test;
 use Biscuit\BiscuitBundle\Test\BiscuitFixtures;
 use Biscuit\BiscuitBundle\Test\BiscuitTestTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -23,7 +22,6 @@ final class BiscuitFixturesTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itGetsTokenByName(): void
     {
         $token = $this->createTestToken('user("fixture_test")');
@@ -38,7 +36,6 @@ final class BiscuitFixturesTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itGetsTokenBase64ByName(): void
     {
         $token = $this->createTestToken('user("base64_test")');
@@ -54,7 +51,6 @@ final class BiscuitFixturesTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itThrowsExceptionForUnknownToken(): void
     {
         $fixtures = new BiscuitFixtures([], self::getTestPublicKey());
@@ -66,7 +62,6 @@ final class BiscuitFixturesTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itChecksIfTokenExists(): void
     {
         $token = $this->createTestToken();
@@ -80,7 +75,6 @@ final class BiscuitFixturesTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itGetsAllTokenNames(): void
     {
         $token1 = $this->createTestToken('user("user1")');
@@ -98,7 +92,6 @@ final class BiscuitFixturesTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itGetsAllTokens(): void
     {
         $token1 = $this->createTestToken('user("user1")');
@@ -116,7 +109,6 @@ final class BiscuitFixturesTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itGetsPublicKey(): void
     {
         $publicKey = self::getTestPublicKey();
@@ -126,7 +118,6 @@ final class BiscuitFixturesTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCountsTokens(): void
     {
         $token1 = $this->createTestToken('user("user1")');
@@ -141,7 +132,6 @@ final class BiscuitFixturesTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itReturnsZeroCountForEmptyFixtures(): void
     {
         $fixtures = new BiscuitFixtures([], self::getTestPublicKey());
@@ -150,7 +140,6 @@ final class BiscuitFixturesTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itShowsAvailableTokensInErrorMessage(): void
     {
         $token = $this->createTestToken();

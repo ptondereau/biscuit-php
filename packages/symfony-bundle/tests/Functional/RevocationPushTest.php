@@ -8,7 +8,7 @@ use Biscuit\BiscuitBundle\Revocation\Message\PurgeExpiredRevocations;
 use Biscuit\BiscuitBundle\Revocation\Message\RevocationPushHandler;
 use Biscuit\BiscuitBundle\Revocation\Message\RevokeToken;
 use Biscuit\BiscuitBundle\Revocation\Message\UnrevokeToken;
-use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationChecker;
 use Biscuit\BiscuitBundle\Revocation\RevocationEntry;
 use Biscuit\BiscuitBundle\Revocation\RevocationWriterInterface;
 use Biscuit\BiscuitBundle\Revocation\Store\PublishingRevocationWriter;
@@ -172,11 +172,11 @@ final class RevocationPushTest extends KernelTestCase
         return $handler;
     }
 
-    private function checker(): RevocationCheckerInterface
+    private function checker(): RevocationChecker
     {
-        $checker = self::getContainer()->get(RevocationCheckerInterface::class);
+        $checker = self::getContainer()->get(RevocationChecker::class);
 
-        self::assertInstanceOf(RevocationCheckerInterface::class, $checker);
+        self::assertInstanceOf(RevocationChecker::class, $checker);
 
         return $checker;
     }

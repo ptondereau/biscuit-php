@@ -10,7 +10,6 @@ use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Tests\ConsoleApplicationTrait;
 use Biscuit\BiscuitBundle\Token\BiscuitBlockFactory;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -66,7 +65,7 @@ final class AttenuateTokenCommandTest extends TestCase
     #[Test]
     public function itListsRegisteredBlockTemplates(): void
     {
-        $tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
+        $tokenManager = $this->createMock(BiscuitTokenManager::class);
         $tester = $this->createCommandTester($tokenManager, [
             'read_only' => ['checks' => ['check if operation("read")']],
             'expires' => ['checks' => ['check if now($t), $t <= {exp}']],
@@ -83,7 +82,7 @@ final class AttenuateTokenCommandTest extends TestCase
     #[Test]
     public function itFailsWhenBothTemplateAndCodeProvided(): void
     {
-        $tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
+        $tokenManager = $this->createMock(BiscuitTokenManager::class);
         $tester = $this->createCommandTester($tokenManager, [
             'read_only' => ['checks' => ['check if operation("read")']],
         ]);
@@ -122,7 +121,7 @@ final class AttenuateTokenCommandTest extends TestCase
     #[Test]
     public function itFailsWhenNeitherTemplateNorCodeProvided(): void
     {
-        $tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
+        $tokenManager = $this->createMock(BiscuitTokenManager::class);
         $tester = $this->createCommandTester($tokenManager, []);
 
         $tester->execute(['token' => 'unused']);
@@ -151,7 +150,7 @@ final class AttenuateTokenCommandTest extends TestCase
     #[Test]
     public function itShowsHelpWhenNoBlockTemplatesConfigured(): void
     {
-        $tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
+        $tokenManager = $this->createMock(BiscuitTokenManager::class);
         $tester = $this->createCommandTester($tokenManager, []);
 
         $tester->execute(['token' => 'unused', '--list' => true]);
@@ -213,7 +212,7 @@ final class AttenuateTokenCommandTest extends TestCase
      * @param array<string, array{facts?: list<non-empty-string>, checks?: list<non-empty-string>, rules?: list<non-empty-string>}> $templates
      */
     private function createCommandTester(
-        BiscuitTokenManagerInterface $tokenManager,
+        BiscuitTokenManager $tokenManager,
         array $templates,
     ): CommandTester {
         $factory = new BiscuitBlockFactory($tokenManager, new Applier(), $templates);
@@ -234,13 +233,12 @@ final class AttenuateTokenCommandTest extends TestCase
             $keyPair->getPrivateKey()->toHex(),
             null,
             null,
-            'ed25519',
         );
 
         return new BiscuitTokenManager($keyManager);
     }
 
-    private function buildParentToken(BiscuitTokenManagerInterface $tokenManager): string
+    private function buildParentToken(BiscuitTokenManager $tokenManager): string
     {
         $builder = $tokenManager->createBuilder('user("alice")');
 

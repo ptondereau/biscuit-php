@@ -11,10 +11,8 @@ use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
 use Biscuit\BiscuitBundle\Tests\ConsoleApplicationTrait;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
@@ -27,7 +25,6 @@ final class TestPolicyCommandTest extends TestCase
     use ConsoleApplicationTrait;
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsPassingPolicyWithFacts(): void
     {
         $commandTester = $this->createCommandTester([
@@ -48,7 +45,6 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsFailingPolicy(): void
     {
         $commandTester = $this->createCommandTester([
@@ -66,7 +62,6 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsInlinePolicy(): void
     {
         $commandTester = $this->createCommandTester([]);
@@ -83,7 +78,6 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsPolicyWithToken(): void
     {
         $tokenManager = $this->createTokenManager();
@@ -112,7 +106,6 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsPolicyWithATokenCarryingAnExpiryCheck(): void
     {
         $tokenManager = $this->createTokenManager();
@@ -134,7 +127,6 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itAppliesTheAuthorizerFactTemplateTheVoterWouldApply(): void
     {
         $commandTester = $this->createCommandTester(
@@ -155,7 +147,6 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsPolicyWithParameters(): void
     {
         $commandTester = $this->createCommandTester([
@@ -175,7 +166,6 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itTestsMultipleFacts(): void
     {
         $commandTester = $this->createCommandTester([
@@ -238,7 +228,6 @@ final class TestPolicyCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itShowsAuthorizerState(): void
     {
         $commandTester = $this->createCommandTester([
@@ -273,7 +262,7 @@ final class TestPolicyCommandTest extends TestCase
     /**
      * @param array<string, string> $policies
      */
-    private function createCommandTesterWithManager(array $policies, BiscuitTokenManagerInterface $tokenManager): CommandTester
+    private function createCommandTesterWithManager(array $policies, BiscuitTokenManager $tokenManager): CommandTester
     {
         $registry = new PolicyRegistry($policies);
 
@@ -290,7 +279,7 @@ final class TestPolicyCommandTest extends TestCase
      */
     private function createCommandTesterWithMocks(array $policies): CommandTester
     {
-        $tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
+        $tokenManager = $this->createMock(BiscuitTokenManager::class);
         $registry = new PolicyRegistry($policies);
 
         $command = new TestPolicyCommand($registry, $tokenManager);
@@ -310,7 +299,6 @@ final class TestPolicyCommandTest extends TestCase
             $keyPair->getPrivateKey()->toHex(),
             null,
             null,
-            'ed25519',
         );
 
         return new BiscuitTokenManager($keyManager);

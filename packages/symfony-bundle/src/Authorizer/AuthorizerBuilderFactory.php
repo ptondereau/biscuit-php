@@ -6,7 +6,6 @@ namespace Biscuit\BiscuitBundle\Authorizer;
 
 use Biscuit\Auth\AuthorizerBuilder;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
-use Biscuit\BiscuitBundle\Token\Template\AuthorizerBuilderAdapter;
 use Biscuit\BiscuitBundle\Token\Template\Template;
 
 /**
@@ -44,7 +43,7 @@ final class AuthorizerBuilderFactory
         }
 
         $this->applier->populate(
-            new AuthorizerBuilderAdapter($builder),
+            $builder,
             Template::fromArray($this->authorizerFactTemplates[$policyName]),
             $params,
         );

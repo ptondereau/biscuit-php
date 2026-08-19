@@ -9,7 +9,7 @@ use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
 use Biscuit\BiscuitBundle\Security\Authenticator\BiscuitAuthenticator;
 use Biscuit\BiscuitBundle\Tests\TestKernel;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
+use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use Biscuit\BiscuitBundle\Token\Extractor\TokenExtractorInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -35,7 +35,7 @@ final class BundleBootTest extends KernelTestCase
 
         foreach ([
             KeyManager::class,
-            BiscuitTokenManagerInterface::class,
+            BiscuitTokenManager::class,
             PolicyRegistry::class,
             TokenExtractorInterface::class,
             BiscuitAuthenticator::class,

@@ -6,9 +6,9 @@ namespace Biscuit\BiscuitBundle\Command;
 
 use Biscuit\Auth\UnverifiedBiscuit;
 use Biscuit\BiscuitBundle\Revocation\Exception\RevocationStoreUnavailableException;
-use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationChecker;
 use Biscuit\BiscuitBundle\Revocation\RevocationResult;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
+use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -25,8 +25,8 @@ use Throwable;
 final class RevocationCheckCommand extends Command
 {
     public function __construct(
-        private readonly ?RevocationCheckerInterface $checker = null,
-        private readonly ?BiscuitTokenManagerInterface $tokenManager = null,
+        private readonly ?RevocationChecker $checker = null,
+        private readonly ?BiscuitTokenManager $tokenManager = null,
     ) {
         parent::__construct();
     }

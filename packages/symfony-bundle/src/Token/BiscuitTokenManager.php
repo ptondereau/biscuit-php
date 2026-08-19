@@ -11,7 +11,7 @@ use Biscuit\BiscuitBundle\Event\BiscuitTokenAttenuatedEvent;
 use Biscuit\BiscuitBundle\Key\KeyManager;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-final class BiscuitTokenManager implements BiscuitTokenManagerInterface
+class BiscuitTokenManager
 {
     public function __construct(
         private readonly KeyManager $keyManager,

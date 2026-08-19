@@ -12,7 +12,7 @@ use Biscuit\BiscuitBundle\Revocation\Exception\RevocationStoreUnavailableExcepti
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-final class RevocationChecker implements RevocationCheckerInterface
+class RevocationChecker
 {
     private readonly RevocationFailurePolicy $failurePolicy;
 
@@ -37,11 +37,19 @@ final class RevocationChecker implements RevocationCheckerInterface
             : $eventPolicy;
     }
 
+    /**
+     * @throws RevocationStoreUnavailableException
+     */
     public function check(Biscuit|UnverifiedBiscuit $token): RevocationResult
     {
         return $this->checkIds($token->revocationIds(), $token instanceof Biscuit);
     }
 
+    /**
+     * @param list<non-empty-string> $revocationIds
+     *
+     * @throws RevocationStoreUnavailableException
+     */
     public function checkIds(array $revocationIds, bool $verified = false): RevocationResult
     {
         $startedAt = hrtime(true);

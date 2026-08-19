@@ -112,6 +112,28 @@ Two exceptions replace `CustomUserMessageAuthenticationException`:
 
 Both extend `AuthenticationException`, so `catch (AuthenticationException)` keeps working.
 
+## Configuration removed
+
+Delete `biscuit.keys.algorithm` from your configuration. Nothing ever read it: hex keys carry
+their algorithm in the `ed25519/<hex>` prefix and PEM files are self-describing.
+`biscuit:keys:generate --algorithm` still picks the algorithm at generation time.
+
+## Interfaces removed
+
+`Token\BiscuitTokenManagerInterface` and `Revocation\RevocationCheckerInterface` are gone; each
+had exactly one implementation. Replace the type hints:
+
+| 0.3 | 0.4 |
+| --- | --- |
+| `Token\BiscuitTokenManagerInterface` | `Token\BiscuitTokenManager` |
+| `Revocation\RevocationCheckerInterface` | `Revocation\RevocationChecker` |
+
+Both classes are no longer `final`, so mocks and decorators keep working.
+
+`Token\Template\TemplatableBuilder` and its three adapters are also gone:
+`Applier::populate()` now takes a `BiscuitBuilder`, `BlockBuilder` or `AuthorizerBuilder`
+directly.
+
 ## Configuration added
 
 - `biscuit.security.user_identifier_fact` (default `user`) replaces the hardcoded fact name.

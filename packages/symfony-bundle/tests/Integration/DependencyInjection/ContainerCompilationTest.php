@@ -6,7 +6,7 @@ namespace Biscuit\BiscuitBundle\Tests\Integration\DependencyInjection;
 
 use Biscuit\BiscuitBundle\BiscuitBundle;
 use Biscuit\BiscuitBundle\DependencyInjection\BiscuitExtension;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
+use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -28,7 +28,7 @@ final class ContainerCompilationTest extends TestCase
         $container = $this->compile();
 
         self::assertTrue($container->hasDefinition('biscuit.token_manager'));
-        self::assertTrue($container->has(BiscuitTokenManagerInterface::class));
+        self::assertTrue($container->has(BiscuitTokenManager::class));
     }
 
     #[Test]

@@ -60,7 +60,6 @@ final class GenerateKeysCommand extends Command
             '# Add to your config/packages/biscuit.yaml:',
             'biscuit:',
             '    keys:',
-            sprintf('        algorithm: %s', $algorithm),
             sprintf("        public_key: '%%env(BISCUIT_PUBLIC_KEY)%%'"),
             sprintf("        private_key: '%%env(BISCUIT_PRIVATE_KEY)%%'"),
             '',

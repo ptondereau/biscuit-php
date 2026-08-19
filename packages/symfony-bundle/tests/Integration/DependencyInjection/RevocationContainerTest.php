@@ -11,7 +11,6 @@ use Biscuit\BiscuitBundle\Revocation\RevocationChecker;
 use Biscuit\BiscuitBundle\Security\Authenticator\BiscuitAuthenticator;
 use Biscuit\BiscuitBundle\Tests\Integration\Fixtures\CustomEnumerableRevocationStore;
 use Biscuit\BiscuitBundle\Tests\Integration\Fixtures\CustomRevocationStore;
-use Biscuit\BiscuitBundle\Tests\Integration\Fixtures\NotARevocationStore;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -136,39 +135,6 @@ final class RevocationContainerTest extends TestCase
         );
 
         self::assertSame(['static', 'app.custom_store'], $this->storeKeys($container));
-    }
-
-    #[Test]
-    public function itRejectsATaggedServiceThatIsNotAStore(): void
-    {
-        $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessageMatches('/does not implement/');
-
-        $this->compile(
-            ['revocation' => ['enabled' => true, 'on_unavailable' => 'deny']],
-            static function (ContainerBuilder $container): void {
-                $container->register('app.broken', NotARevocationStore::class)
-                    ->addTag(RegisterRevocationStoresPass::STORE_TAG);
-            },
-        );
-    }
-
-    #[Test]
-    public function itRejectsATaggedServiceThatCannotEnumerateItsEntries(): void
-    {
-        $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessageMatches(
-            '/tagged "biscuit\.revocation_enumerable_store".+does not implement.+EnumerableRevocationStoreInterface/',
-        );
-
-        $this->compile(
-            ['revocation' => ['enabled' => true, 'on_unavailable' => 'deny']],
-            static function (ContainerBuilder $container): void {
-                $container->register('app.not_enumerable', CustomRevocationStore::class)
-                    ->addTag(RegisterRevocationStoresPass::STORE_TAG)
-                    ->addTag(RegisterRevocationStoresPass::ENUMERABLE_TAG);
-            },
-        );
     }
 
     #[Test]

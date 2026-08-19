@@ -6,7 +6,7 @@ namespace Biscuit\BiscuitBundle\Command;
 
 use Biscuit\Auth\UnverifiedBiscuit;
 use Biscuit\BiscuitBundle\Token\BiscuitBlockFactory;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
+use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -22,9 +22,11 @@ use Throwable;
 )]
 final class AttenuateTokenCommand extends Command
 {
+    use CliParams;
+
     public function __construct(
         private readonly BiscuitBlockFactory $blockFactory,
-        private readonly BiscuitTokenManagerInterface $tokenManager,
+        private readonly BiscuitTokenManager $tokenManager,
     ) {
         parent::__construct();
     }
@@ -170,47 +172,5 @@ final class AttenuateTokenCommand extends Command
         }
 
         return Command::SUCCESS;
-    }
-
-    /**
-     * @param array<int, string> $paramStrings
-     *
-     * @return array<string, mixed>
-     */
-    private function parseParams(array $paramStrings): array
-    {
-        $params = [];
-
-        foreach ($paramStrings as $paramString) {
-            if (!str_contains($paramString, '=')) {
-                continue;
-            }
-
-            [$key, $value] = explode('=', $paramString, 2);
-            $params[$key] = $this->parseValue($value);
-        }
-
-        return $params;
-    }
-
-    private function parseValue(string $value): mixed
-    {
-        if ('true' === $value) {
-            return true;
-        }
-
-        if ('false' === $value) {
-            return false;
-        }
-
-        if ('null' === $value) {
-            return null;
-        }
-
-        if (is_numeric($value) && !str_contains($value, '.')) {
-            return (int) $value;
-        }
-
-        return $value;
     }
 }

@@ -12,7 +12,6 @@ use Biscuit\BiscuitBundle\Event\BiscuitTokenAttenuatedEvent;
 use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -22,7 +21,6 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 final class BiscuitTokenManagerTest extends TestCase
 {
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesBiscuitBuilder(): void
     {
         $manager = $this->createTokenManager();
@@ -33,7 +31,6 @@ final class BiscuitTokenManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesBiscuitBuilderWithCode(): void
     {
         $manager = $this->createTokenManager();
@@ -44,7 +41,6 @@ final class BiscuitTokenManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesBiscuitBuilderWithCodeAndParams(): void
     {
         $manager = $this->createTokenManager();
@@ -55,7 +51,6 @@ final class BiscuitTokenManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesBlockBuilder(): void
     {
         $manager = $this->createTokenManager();
@@ -66,7 +61,6 @@ final class BiscuitTokenManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesBlockBuilderWithCode(): void
     {
         $manager = $this->createTokenManager();
@@ -77,7 +71,6 @@ final class BiscuitTokenManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesBlockBuilderWithCodeAndParams(): void
     {
         $manager = $this->createTokenManager();
@@ -88,7 +81,6 @@ final class BiscuitTokenManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itBuildsBiscuitToken(): void
     {
         $manager = $this->createTokenManager();
@@ -100,7 +92,6 @@ final class BiscuitTokenManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itSerializesBiscuitToBase64(): void
     {
         $manager = $this->createTokenManager();
@@ -114,7 +105,6 @@ final class BiscuitTokenManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itParsesBiscuitFromBase64(): void
     {
         $manager = $this->createTokenManager();
@@ -130,7 +120,6 @@ final class BiscuitTokenManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itAttenuatesBiscuitWithBlock(): void
     {
         $manager = $this->createTokenManager();
@@ -146,7 +135,6 @@ final class BiscuitTokenManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itDispatchesAttenuatedEventWithFullPayload(): void
     {
         $dispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -175,7 +163,6 @@ final class BiscuitTokenManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itRoundTripsToken(): void
     {
         $manager = $this->createTokenManager();
@@ -199,7 +186,6 @@ final class BiscuitTokenManagerTest extends TestCase
             $privateKey->toHex(),
             null,
             null,
-            'ed25519',
         );
 
         return new BiscuitTokenManager($keyManager, $dispatcher);

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Tests\Functional;
 
 use Biscuit\Auth\BlockBuilder;
-use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationChecker;
 use Biscuit\BiscuitBundle\Test\BiscuitTestTrait;
 use Biscuit\BiscuitBundle\Tests\TestKernel;
 use PHPUnit\Framework\Attributes\Test;
@@ -59,8 +59,8 @@ final class RevocationCommandTest extends KernelTestCase
         self::assertSame(Command::SUCCESS, $exit);
         self::assertStringContainsString($deepest, $tester->getDisplay());
 
-        $checker = self::getContainer()->get(RevocationCheckerInterface::class);
-        self::assertInstanceOf(RevocationCheckerInterface::class, $checker);
+        $checker = self::getContainer()->get(RevocationChecker::class);
+        self::assertInstanceOf(RevocationChecker::class, $checker);
         self::assertTrue($checker->check($child)->isRevoked());
         self::assertFalse($checker->check($parent)->isRevoked(), 'The ancestor must keep working.');
     }
@@ -77,8 +77,8 @@ final class RevocationCommandTest extends KernelTestCase
 
         self::assertStringContainsString('Nothing was written', $tester->getDisplay());
 
-        $checker = self::getContainer()->get(RevocationCheckerInterface::class);
-        self::assertInstanceOf(RevocationCheckerInterface::class, $checker);
+        $checker = self::getContainer()->get(RevocationChecker::class);
+        self::assertInstanceOf(RevocationChecker::class, $checker);
         self::assertFalse($checker->check($token)->isRevoked());
     }
 

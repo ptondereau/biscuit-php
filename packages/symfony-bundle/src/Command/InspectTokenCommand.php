@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Command;
 
 use Biscuit\Auth\UnverifiedBiscuit;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
+use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -22,7 +22,7 @@ use Throwable;
 final class InspectTokenCommand extends Command
 {
     public function __construct(
-        private readonly BiscuitTokenManagerInterface $tokenManager,
+        private readonly BiscuitTokenManager $tokenManager,
     ) {
         parent::__construct();
     }

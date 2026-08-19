@@ -8,7 +8,6 @@ use Biscuit\BiscuitBundle\Test\BiscuitFixtureLoader;
 use Biscuit\BiscuitBundle\Test\BiscuitFixtures;
 use Biscuit\BiscuitBundle\Test\BiscuitTestTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -41,7 +40,6 @@ final class BiscuitFixtureLoaderTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itLoadsFixturesFromYamlFile(): void
     {
         $yamlContent = <<<YAML
@@ -67,7 +65,6 @@ final class BiscuitFixtureLoaderTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itLoadsFixturesFromArray(): void
     {
         $data = [
@@ -86,7 +83,6 @@ final class BiscuitFixtureLoaderTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itLoadsTokenWithParams(): void
     {
         $data = [
@@ -149,7 +145,6 @@ final class BiscuitFixtureLoaderTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itUsesDefaultCodeWhenNotProvided(): void
     {
         $data = [

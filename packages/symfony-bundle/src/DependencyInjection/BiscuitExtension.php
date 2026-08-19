@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\DependencyInjection;
 
+use Biscuit\BiscuitBundle\Maker\MakeBiscuitPolicy;
 use Doctrine\DBAL\Connection as DoctrineConnection;
 use Doctrine\ORM\Tools\Event\GenerateSchemaEventArgs;
+use Symfony\Bundle\MakerBundle\Maker\AbstractMaker;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Resource\ClassExistenceResource;
@@ -32,6 +34,19 @@ final class BiscuitExtension extends Extension
         $this->setParameters($container, $config);
         $this->configureTokenExtractor($container, $config);
         $this->configureRevocation($container, $config, $loader);
+        $this->configureMaker($container);
+    }
+
+    private function configureMaker(ContainerBuilder $container): void
+    {
+        $container->addResource(new ClassExistenceResource(AbstractMaker::class));
+
+        if (!class_exists(AbstractMaker::class)) {
+            return;
+        }
+
+        $container->register('biscuit.maker.make_policy', MakeBiscuitPolicy::class)
+            ->addTag('maker.command');
     }
 
     /**
@@ -92,15 +107,6 @@ final class BiscuitExtension extends Extension
 
         $container->getDefinition('biscuit.revocation.publisher')
             ->setArgument('$bus', new Reference($bus));
-
-        $handler = $container->getDefinition('biscuit.revocation.push_handler');
-        $tags = $handler->getTag('messenger.message_handler');
-
-        $handler->clearTag('messenger.message_handler');
-
-        foreach ($tags as $tag) {
-            $handler->addTag('messenger.message_handler', ['bus' => $bus] + $tag);
-        }
     }
 
     /**
@@ -214,84 +220,29 @@ final class BiscuitExtension extends Extension
         ContainerBuilder $container,
         array $config,
     ): void {
-        $container->setParameter(
-            'biscuit.keys.public_key',
-            $config['keys']['public_key'],
-        );
-        $container->setParameter(
-            'biscuit.keys.private_key',
-            $config['keys']['private_key'],
-        );
-        $container->setParameter(
-            'biscuit.keys.public_key_file',
-            $config['keys']['public_key_file'],
-        );
-        $container->setParameter(
-            'biscuit.keys.private_key_file',
-            $config['keys']['private_key_file'],
-        );
-        $container->setParameter(
-            'biscuit.keys.algorithm',
-            $config['keys']['algorithm'],
-        );
+        $parameters = [
+            'biscuit.keys.public_key' => $config['keys']['public_key'],
+            'biscuit.keys.private_key' => $config['keys']['private_key'],
+            'biscuit.keys.public_key_file' => $config['keys']['public_key_file'],
+            'biscuit.keys.private_key_file' => $config['keys']['private_key_file'],
+            'biscuit.security.token_extractor.header' => $config['security']['token_extractor']['header'],
+            'biscuit.security.token_extractor.cookie' => $config['security']['token_extractor']['cookie'],
+            'biscuit.security.user_identifier_fact' => $config['security']['user_identifier_fact'],
+            'biscuit.security.www_authenticate' => $config['security']['www_authenticate'],
+            'biscuit.security.realm' => $config['security']['realm'],
+            'biscuit.revocation.enabled' => $config['revocation']['enabled'],
+            'biscuit.revocation.on_unavailable' => $config['revocation']['on_unavailable'],
+            'biscuit.revocation.dispatch_check_events' => $config['revocation']['dispatch_check_events'],
+            'biscuit.revocation.default_expiry' => $config['revocation']['default_expiry'],
+            'biscuit.revocation.stores.cache.key_prefix' => $config['revocation']['stores']['cache']['key_prefix'],
+            'biscuit.policies' => $config['policies'],
+            'biscuit.token_templates' => $config['token_templates'],
+            'biscuit.block_templates' => $config['block_templates'],
+            'biscuit.authorizer_fact_templates' => $config['authorizer_fact_templates'],
+        ];
 
-        $container->setParameter(
-            'biscuit.security.token_extractor.header',
-            $config['security']['token_extractor']['header'],
-        );
-        $container->setParameter(
-            'biscuit.security.token_extractor.cookie',
-            $config['security']['token_extractor']['cookie'],
-        );
-        $container->setParameter(
-            'biscuit.security.user_identifier_fact',
-            $config['security']['user_identifier_fact'],
-        );
-        $container->setParameter(
-            'biscuit.security.www_authenticate',
-            $config['security']['www_authenticate'],
-        );
-        $container->setParameter(
-            'biscuit.security.realm',
-            $config['security']['realm'],
-        );
-
-        $container->setParameter(
-            'biscuit.revocation.enabled',
-            $config['revocation']['enabled'],
-        );
-        $container->setParameter(
-            'biscuit.revocation.on_unavailable',
-            $config['revocation']['on_unavailable'],
-        );
-        $container->setParameter(
-            'biscuit.revocation.dispatch_check_events',
-            $config['revocation']['dispatch_check_events'],
-        );
-        $container->setParameter(
-            'biscuit.revocation.default_expiry',
-            $config['revocation']['default_expiry'],
-        );
-        $container->setParameter(
-            'biscuit.revocation.stores.cache.key_prefix',
-            $config['revocation']['stores']['cache']['key_prefix'],
-        );
-
-        $container->setParameter('biscuit.policies', $config['policies']);
-
-        $container->setParameter(
-            'biscuit.token_templates',
-            $config['token_templates'],
-        );
-
-        $container->setParameter(
-            'biscuit.block_templates',
-            $config['block_templates'],
-        );
-
-        $container->setParameter(
-            'biscuit.authorizer_fact_templates',
-            $config['authorizer_fact_templates'],
-        );
+        foreach ($parameters as $name => $value) {
+            $container->setParameter($name, $value);
+        }
     }
 }

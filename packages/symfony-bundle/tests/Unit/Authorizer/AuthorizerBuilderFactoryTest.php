@@ -7,12 +7,10 @@ namespace Biscuit\BiscuitBundle\Tests\Unit\Authorizer;
 use Biscuit\BiscuitBundle\Authorizer\AuthorizerBuilderFactory;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(AuthorizerBuilderFactory::class)]
-#[RequiresPhpExtension('biscuit_php')]
 final class AuthorizerBuilderFactoryTest extends TestCase
 {
     #[Test]

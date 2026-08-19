@@ -8,7 +8,7 @@ use Biscuit\Auth\UnverifiedBiscuit;
 use Biscuit\BiscuitBundle\Revocation\RevocationEntry;
 use Biscuit\BiscuitBundle\Revocation\RevocationEntryFactory;
 use Biscuit\BiscuitBundle\Revocation\RevocationWriterInterface;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
+use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use DateTimeImmutable;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -28,7 +28,7 @@ final class RevocationRevokeCommand extends Command
     public function __construct(
         private readonly ?RevocationWriterInterface $writer = null,
         private readonly ?RevocationEntryFactory $entryFactory = null,
-        private readonly ?BiscuitTokenManagerInterface $tokenManager = null,
+        private readonly ?BiscuitTokenManager $tokenManager = null,
     ) {
         parent::__construct();
     }

@@ -21,14 +21,17 @@ final class ResolveRevocationPushBusPass implements CompilerPassInterface
             return;
         }
 
+        /** @var string $bus */
+        $bus = $container->getParameter('biscuit.revocation.push.bus');
+        $bus = $this->resolveBusId($container, $bus);
+
         $definition = $container->getDefinition(self::HANDLER_ID);
         $tags = $definition->getTag(self::HANDLER_TAG);
 
         $definition->clearTag(self::HANDLER_TAG);
 
         foreach ($tags as $tag) {
-            $tag['bus'] = $this->resolveBusId($container, (string) $tag['bus']);
-            $definition->addTag(self::HANDLER_TAG, $tag);
+            $definition->addTag(self::HANDLER_TAG, ['bus' => $bus] + $tag);
         }
     }
 

@@ -6,7 +6,7 @@ namespace Biscuit\BiscuitBundle\Tests\Functional;
 
 use Biscuit\Auth\Biscuit;
 use Biscuit\Auth\BlockBuilder;
-use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationChecker;
 use Biscuit\BiscuitBundle\Revocation\RevocationEntry;
 use Biscuit\BiscuitBundle\Revocation\RevocationEntryFactory;
 use Biscuit\BiscuitBundle\Revocation\RevocationWriterInterface;
@@ -225,11 +225,11 @@ final class RevocationDoctrineTest extends WebTestCase
         return $writer;
     }
 
-    private function checker(): RevocationCheckerInterface
+    private function checker(): RevocationChecker
     {
-        $checker = self::getContainer()->get(RevocationCheckerInterface::class);
+        $checker = self::getContainer()->get(RevocationChecker::class);
 
-        self::assertInstanceOf(RevocationCheckerInterface::class, $checker);
+        self::assertInstanceOf(RevocationChecker::class, $checker);
 
         return $checker;
     }

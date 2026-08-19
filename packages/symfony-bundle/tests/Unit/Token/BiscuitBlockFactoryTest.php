@@ -9,7 +9,6 @@ use Biscuit\Auth\PrivateKey;
 use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Token\BiscuitBlockFactory;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -43,7 +42,7 @@ final class BiscuitBlockFactoryTest extends TestCase
     public function attenuateThrowsForUnknownTemplate(): void
     {
         $factory = new BiscuitBlockFactory(
-            $this->createMock(BiscuitTokenManagerInterface::class),
+            $this->createMock(BiscuitTokenManager::class),
             new Applier(),
             [],
         );
@@ -60,7 +59,7 @@ final class BiscuitBlockFactoryTest extends TestCase
     public function hasTemplateDistinguishesRegisteredAndUnknownNames(): void
     {
         $factory = new BiscuitBlockFactory(
-            $this->createMock(BiscuitTokenManagerInterface::class),
+            $this->createMock(BiscuitTokenManager::class),
             new Applier(),
             ['known' => ['checks' => ['check if true']]],
         );
@@ -73,7 +72,7 @@ final class BiscuitBlockFactoryTest extends TestCase
     public function getTemplateNamesReturnsRegisteredKeys(): void
     {
         $factory = new BiscuitBlockFactory(
-            $this->createMock(BiscuitTokenManagerInterface::class),
+            $this->createMock(BiscuitTokenManager::class),
             new Applier(),
             [
                 'read_only' => ['checks' => ['check if operation("read")']],
@@ -99,13 +98,12 @@ final class BiscuitBlockFactoryTest extends TestCase
             $privateKey->toHex(),
             null,
             null,
-            'ed25519',
         );
 
         return new BiscuitTokenManager($keyManager);
     }
 
-    private function buildSimpleToken(BiscuitTokenManagerInterface $tokenManager): Biscuit
+    private function buildSimpleToken(BiscuitTokenManager $tokenManager): Biscuit
     {
         $builder = $tokenManager->createBuilder('user("alice")');
 

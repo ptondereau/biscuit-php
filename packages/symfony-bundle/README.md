@@ -114,7 +114,6 @@ biscuit:
         private_key:       ~       # Private key in hex
         public_key_file:   ~       # Path to public key file (alternative to public_key)
         private_key_file:  ~       # Path to private key file (alternative to private_key)
-        algorithm:         ed25519 # ed25519 or secp256r1
 
     security:
         user_identifier_fact: user  # Authority block fact holding the user identifier

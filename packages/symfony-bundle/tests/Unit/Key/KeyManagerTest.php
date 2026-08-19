@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\Tests\Unit\Key;
 
-use Biscuit\Auth\Algorithm;
 use Biscuit\Auth\PrivateKey;
 use Biscuit\Auth\PublicKey;
 use Biscuit\BiscuitBundle\Key\KeyManager;
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -47,7 +44,6 @@ final class KeyManagerTest extends TestCase
             null,
             null,
             null,
-            'ed25519',
         );
 
         self::assertTrue($manager->hasPublicKey());
@@ -61,7 +57,6 @@ final class KeyManagerTest extends TestCase
             null,
             '/path/to/key.pem',
             null,
-            'ed25519',
         );
 
         self::assertTrue($manager->hasPublicKey());
@@ -75,7 +70,6 @@ final class KeyManagerTest extends TestCase
             null,
             null,
             null,
-            'ed25519',
         );
 
         self::assertFalse($manager->hasPublicKey());
@@ -89,7 +83,6 @@ final class KeyManagerTest extends TestCase
             'def456',
             null,
             null,
-            'ed25519',
         );
 
         self::assertTrue($manager->hasPrivateKey());
@@ -103,7 +96,6 @@ final class KeyManagerTest extends TestCase
             null,
             null,
             '/path/to/private.pem',
-            'ed25519',
         );
 
         self::assertTrue($manager->hasPrivateKey());
@@ -117,7 +109,6 @@ final class KeyManagerTest extends TestCase
             null,
             null,
             null,
-            'ed25519',
         );
 
         self::assertFalse($manager->hasPrivateKey());
@@ -131,7 +122,6 @@ final class KeyManagerTest extends TestCase
             null,
             null,
             null,
-            'ed25519',
         );
 
         $this->expectException(RuntimeException::class);
@@ -148,7 +138,6 @@ final class KeyManagerTest extends TestCase
             null,
             null,
             null,
-            'ed25519',
         );
 
         $this->expectException(RuntimeException::class);
@@ -165,7 +154,6 @@ final class KeyManagerTest extends TestCase
             null,
             '/non/existent/path.pem',
             null,
-            'ed25519',
         );
 
         $this->expectException(RuntimeException::class);
@@ -182,7 +170,6 @@ final class KeyManagerTest extends TestCase
             null,
             null,
             '/non/existent/path.pem',
-            'ed25519',
         );
 
         $this->expectException(RuntimeException::class);
@@ -192,54 +179,6 @@ final class KeyManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
-    public function itReturnsAlgorithmEd25519(): void
-    {
-        $manager = new KeyManager(
-            null,
-            null,
-            null,
-            null,
-            'ed25519',
-        );
-
-        self::assertSame(Algorithm::Ed25519, $manager->getAlgorithm());
-    }
-
-    #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
-    public function itReturnsAlgorithmSecp256r1(): void
-    {
-        $manager = new KeyManager(
-            null,
-            null,
-            null,
-            null,
-            'secp256r1',
-        );
-
-        self::assertSame(Algorithm::Secp256r1, $manager->getAlgorithm());
-    }
-
-    #[Test]
-    public function itThrowsForUnknownAlgorithm(): void
-    {
-        $manager = new KeyManager(
-            null,
-            null,
-            null,
-            null,
-            'unknown_algo',
-        );
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown algorithm: unknown_algo');
-
-        $manager->getAlgorithm();
-    }
-
-    #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itLoadsPublicKeyFromHexString(): void
     {
         $privateKey = PrivateKey::generate();
@@ -250,7 +189,6 @@ final class KeyManagerTest extends TestCase
             null,
             null,
             null,
-            'ed25519',
         );
 
         $publicKey = $manager->getPublicKey();
@@ -260,7 +198,6 @@ final class KeyManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itLoadsPrivateKeyFromHexString(): void
     {
         $originalPrivateKey = PrivateKey::generate();
@@ -271,7 +208,6 @@ final class KeyManagerTest extends TestCase
             $privateKeyHex,
             null,
             null,
-            'ed25519',
         );
 
         $privateKey = $manager->getPrivateKey();
@@ -281,7 +217,6 @@ final class KeyManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCachesPublicKey(): void
     {
         $privateKey = PrivateKey::generate();
@@ -292,7 +227,6 @@ final class KeyManagerTest extends TestCase
             null,
             null,
             null,
-            'ed25519',
         );
 
         $firstCall = $manager->getPublicKey();
@@ -302,7 +236,6 @@ final class KeyManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCachesPrivateKey(): void
     {
         $originalPrivateKey = PrivateKey::generate();
@@ -313,7 +246,6 @@ final class KeyManagerTest extends TestCase
             $privateKeyHex,
             null,
             null,
-            'ed25519',
         );
 
         $firstCall = $manager->getPrivateKey();
@@ -323,7 +255,6 @@ final class KeyManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itLoadsPublicKeyFromPemFile(): void
     {
         $publicPem = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAqIR/FDhIoNgaC4g2B+miJll8qDV9pVYVGfPuNFz1Omw=\n-----END PUBLIC KEY-----";
@@ -337,7 +268,6 @@ final class KeyManagerTest extends TestCase
             null,
             $pemPath,
             null,
-            'ed25519',
         );
 
         $loadedKey = $manager->getPublicKey();
@@ -347,7 +277,6 @@ final class KeyManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itLoadsPrivateKeyFromPemFile(): void
     {
         $privatePem = "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIASZaU0NoF3KxABSZj5x1QwVOUZfiSbf6SAzz3qq1T1l\n-----END PRIVATE KEY-----";
@@ -361,7 +290,6 @@ final class KeyManagerTest extends TestCase
             null,
             null,
             $pemPath,
-            'ed25519',
         );
 
         $loadedKey = $manager->getPrivateKey();
@@ -371,7 +299,6 @@ final class KeyManagerTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itPrefersHexKeyOverFileKey(): void
     {
         $hexPrivateKey = PrivateKey::generate();
@@ -388,7 +315,6 @@ final class KeyManagerTest extends TestCase
             null,
             $pemPath,
             null,
-            'ed25519',
         );
 
         $loadedKey = $manager->getPublicKey();

@@ -6,7 +6,7 @@ namespace Biscuit\BiscuitBundle\Tests\Unit\DependencyInjection;
 
 use Biscuit\BiscuitBundle\Command\TestPolicyCommand;
 use Biscuit\BiscuitBundle\DependencyInjection\BiscuitExtension;
-use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationChecker;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -53,6 +53,15 @@ final class BiscuitExtensionTest extends TestCase
     }
 
     #[Test]
+    public function itRegistersThePolicyMakerWhenMakerBundleIsInstalled(): void
+    {
+        $this->extension->load([], $this->container);
+
+        self::assertTrue($this->container->hasDefinition('biscuit.maker.make_policy'));
+        self::assertTrue($this->container->getDefinition('biscuit.maker.make_policy')->hasTag('maker.command'));
+    }
+
+    #[Test]
     public function itRegistersBlockFactoryService(): void
     {
         $this->extension->load([], $this->container);
@@ -69,7 +78,6 @@ final class BiscuitExtensionTest extends TestCase
         self::assertNull($this->container->getParameter('biscuit.keys.private_key'));
         self::assertNull($this->container->getParameter('biscuit.keys.public_key_file'));
         self::assertNull($this->container->getParameter('biscuit.keys.private_key_file'));
-        self::assertSame('ed25519', $this->container->getParameter('biscuit.keys.algorithm'));
     }
 
     #[Test]
@@ -80,14 +88,12 @@ final class BiscuitExtensionTest extends TestCase
                 'keys' => [
                     'public_key' => 'abc123',
                     'private_key' => 'def456',
-                    'algorithm' => 'secp256r1',
                 ],
             ],
         ], $this->container);
 
         self::assertSame('abc123', $this->container->getParameter('biscuit.keys.public_key'));
         self::assertSame('def456', $this->container->getParameter('biscuit.keys.private_key'));
-        self::assertSame('secp256r1', $this->container->getParameter('biscuit.keys.algorithm'));
     }
 
     #[Test]
@@ -167,7 +173,7 @@ final class BiscuitExtensionTest extends TestCase
         $checker = $this->container->getDefinition('biscuit.authenticator')->getArgument('$revocationChecker');
 
         self::assertInstanceOf(Reference::class, $checker);
-        self::assertSame(RevocationCheckerInterface::class, (string) $checker);
+        self::assertSame(RevocationChecker::class, (string) $checker);
         self::assertSame(
             ContainerInterface::NULL_ON_INVALID_REFERENCE,
             $checker->getInvalidBehavior(),
@@ -182,7 +188,7 @@ final class BiscuitExtensionTest extends TestCase
 
         self::assertFalse($this->container->hasDefinition('biscuit.revocation.checker'));
         self::assertFalse($this->container->hasDefinition('biscuit.revocation.writer'));
-        self::assertFalse($this->container->hasAlias(RevocationCheckerInterface::class));
+        self::assertFalse($this->container->hasAlias(RevocationChecker::class));
     }
 
     #[Test]
@@ -191,7 +197,7 @@ final class BiscuitExtensionTest extends TestCase
         $this->loadWithRevocation();
 
         self::assertTrue($this->container->hasDefinition('biscuit.revocation.checker'));
-        self::assertTrue($this->container->hasAlias(RevocationCheckerInterface::class));
+        self::assertTrue($this->container->hasAlias(RevocationChecker::class));
     }
 
     #[Test]

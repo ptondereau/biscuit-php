@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\DependencyInjection\Compiler;
 
-use Biscuit\BiscuitBundle\Revocation\EnumerableRevocationStoreInterface;
 use Biscuit\BiscuitBundle\Revocation\RevocationStoreInterface;
-use Biscuit\BiscuitBundle\Revocation\RevocationWriterInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -41,19 +39,6 @@ final class RegisterRevocationStoresPass implements CompilerPassInterface
             throw new InvalidConfigurationException('biscuit.revocation.enabled is true but no revocation store is registered. Set biscuit.revocation.stores.static.ids, enable biscuit.revocation.stores.cache, or tag a service implementing ' . RevocationStoreInterface::class . ' with "' . self::STORE_TAG . '" (autoconfiguration adds the tag for you).');
         }
 
-        $this->assertTaggedServicesImplement($container, $stores, self::STORE_TAG, RevocationStoreInterface::class);
-        $this->assertTaggedServicesImplement(
-            $container,
-            $container->findTaggedServiceIds(self::WRITER_TAG, true),
-            self::WRITER_TAG,
-            RevocationWriterInterface::class,
-        );
-        $this->assertTaggedServicesImplement(
-            $container,
-            $container->findTaggedServiceIds(self::ENUMERABLE_TAG, true),
-            self::ENUMERABLE_TAG,
-            EnumerableRevocationStoreInterface::class,
-        );
         $this->assertCachePoolExists($container);
         $this->assertPushBusExists($container);
         $this->assertDoctrineConnectionExists($container);
@@ -133,34 +118,5 @@ final class RegisterRevocationStoresPass implements CompilerPassInterface
         }
 
         return null;
-    }
-
-    /**
-     * @param array<string, array<array<string, mixed>>> $taggedServiceIds
-     * @param class-string $contract
-     */
-    private function assertTaggedServicesImplement(
-        ContainerBuilder $container,
-        array $taggedServiceIds,
-        string $tag,
-        string $contract,
-    ): void {
-        foreach (array_keys($taggedServiceIds) as $id) {
-            $class = $container->findDefinition($id)->getClass();
-
-            if (null === $class) {
-                continue;
-            }
-
-            $class = $container->getParameterBag()->resolveValue($class);
-
-            if (!\is_string($class) || !class_exists($class)) {
-                continue;
-            }
-
-            if (!is_a($class, $contract, true)) {
-                throw new InvalidConfigurationException(sprintf('Service "%s" is tagged "%s" but "%s" does not implement "%s".', $id, $tag, $class, $contract));
-            }
-        }
     }
 }

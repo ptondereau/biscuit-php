@@ -45,7 +45,6 @@ final class ConfigurationTest extends TestCase
         self::assertNull($config['keys']['private_key']);
         self::assertNull($config['keys']['public_key_file']);
         self::assertNull($config['keys']['private_key_file']);
-        self::assertSame('ed25519', $config['keys']['algorithm']);
     }
 
     #[Test]
@@ -78,30 +77,6 @@ final class ConfigurationTest extends TestCase
 
         self::assertSame('/path/to/public.key', $config['keys']['public_key_file']);
         self::assertSame('/path/to/private.key', $config['keys']['private_key_file']);
-    }
-
-    #[Test]
-    public function itAcceptsAlgorithmConfiguration(): void
-    {
-        $configEd25519 = $this->processConfiguration([
-            'biscuit' => [
-                'keys' => [
-                    'algorithm' => 'ed25519',
-                ],
-            ],
-        ]);
-
-        self::assertSame('ed25519', $configEd25519['keys']['algorithm']);
-
-        $configSecp = $this->processConfiguration([
-            'biscuit' => [
-                'keys' => [
-                    'algorithm' => 'secp256r1',
-                ],
-            ],
-        ]);
-
-        self::assertSame('secp256r1', $configSecp['keys']['algorithm']);
     }
 
     #[Test]

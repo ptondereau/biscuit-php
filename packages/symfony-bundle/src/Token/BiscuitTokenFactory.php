@@ -6,7 +6,6 @@ namespace Biscuit\BiscuitBundle\Token;
 
 use Biscuit\Auth\Biscuit;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
-use Biscuit\BiscuitBundle\Token\Template\BiscuitBuilderAdapter;
 use Biscuit\BiscuitBundle\Token\Template\Template;
 use InvalidArgumentException;
 
@@ -16,7 +15,7 @@ final class BiscuitTokenFactory
      * @param array<string, array{facts?: list<non-empty-string>, checks?: list<non-empty-string>, rules?: list<non-empty-string>}> $templates
      */
     public function __construct(
-        private readonly BiscuitTokenManagerInterface $tokenManager,
+        private readonly BiscuitTokenManager $tokenManager,
         private readonly Applier $applier,
         private readonly array $templates = [],
     ) {
@@ -33,7 +32,7 @@ final class BiscuitTokenFactory
 
         $builder = $this->tokenManager->createBuilder();
         $this->applier->populate(
-            new BiscuitBuilderAdapter($builder),
+            $builder,
             Template::fromArray($this->templates[$template]),
             $params,
         );

@@ -9,11 +9,9 @@ use Biscuit\Auth\PrivateKey;
 use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenFactory;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -32,7 +30,6 @@ final class BiscuitTokenFactoryTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itComposesApplierAndProducesBiscuit(): void
     {
         $factory = $this->createFactory([
@@ -96,7 +93,6 @@ final class BiscuitTokenFactoryTest extends TestCase
             $privateKey->toHex(),
             null,
             null,
-            'ed25519',
         );
 
         $tokenManager = new BiscuitTokenManager($keyManager);
@@ -109,7 +105,7 @@ final class BiscuitTokenFactoryTest extends TestCase
      */
     private function createFactoryWithMockedManager(array $templates): BiscuitTokenFactory
     {
-        $tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
+        $tokenManager = $this->createMock(BiscuitTokenManager::class);
 
         return new BiscuitTokenFactory($tokenManager, new Applier(), $templates);
     }

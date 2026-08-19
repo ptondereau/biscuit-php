@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\Token\Template;
 
+use Biscuit\Auth\AuthorizerBuilder;
+use Biscuit\Auth\BiscuitBuilder;
+use Biscuit\Auth\BlockBuilder;
 use Biscuit\Auth\Check;
 use Biscuit\Auth\Fact;
 use Biscuit\Auth\Rule;
@@ -13,7 +16,7 @@ final class Applier
     /**
      * @param array<string, mixed> $params
      */
-    public function populate(TemplatableBuilder $builder, Template $template, array $params = []): void
+    public function populate(AuthorizerBuilder|BiscuitBuilder|BlockBuilder $builder, Template $template, array $params = []): void
     {
         foreach ($template->facts as $factCode) {
             $fact = new Fact($factCode);

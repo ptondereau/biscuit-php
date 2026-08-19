@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\Key;
 
-use Biscuit\Auth\Algorithm;
 use Biscuit\Auth\PrivateKey;
 use Biscuit\Auth\PublicKey;
-use InvalidArgumentException;
 use RuntimeException;
 
 final class KeyManager
@@ -21,7 +19,6 @@ final class KeyManager
         private readonly ?string $privateKey,
         private readonly ?string $publicKeyFile,
         private readonly ?string $privateKeyFile,
-        private readonly string $algorithm,
     ) {
     }
 
@@ -69,15 +66,6 @@ final class KeyManager
         }
 
         throw new RuntimeException('No private key configured. Set either "biscuit.keys.private_key" or "biscuit.keys.private_key_file".');
-    }
-
-    public function getAlgorithm(): Algorithm
-    {
-        return match ($this->algorithm) {
-            'ed25519' => Algorithm::Ed25519,
-            'secp256r1' => Algorithm::Secp256r1,
-            default => throw new InvalidArgumentException(sprintf('Unknown algorithm: %s', $this->algorithm)),
-        };
     }
 
     public function hasPublicKey(): bool

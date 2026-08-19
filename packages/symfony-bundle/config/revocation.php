@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Biscuit\BiscuitBundle\Revocation\RevocationChecker;
-use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
 use Biscuit\BiscuitBundle\Revocation\RevocationEntryFactory;
 use Biscuit\BiscuitBundle\Revocation\RevocationWriterInterface;
 use Biscuit\BiscuitBundle\Revocation\Store\ArrayRevocationStore;
@@ -60,7 +59,7 @@ return static function (ContainerConfigurator $container): void {
         ->arg('$authorityBlockReader', service('biscuit.revocation.authority_block_reader'))
         ->arg('$userIdentifierFact', '%biscuit.security.user_identifier_fact%');
 
-    $services->alias(RevocationCheckerInterface::class, 'biscuit.revocation.checker')
+    $services->alias(RevocationChecker::class, 'biscuit.revocation.checker')
         ->public();
 
     $services->alias(RevocationWriterInterface::class, 'biscuit.revocation.writer')

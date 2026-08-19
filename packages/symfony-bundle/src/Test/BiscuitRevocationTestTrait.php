@@ -9,7 +9,7 @@ use Biscuit\Auth\UnverifiedBiscuit;
 use Biscuit\BiscuitBundle\Revocation\Message\RevocationPushHandler;
 use Biscuit\BiscuitBundle\Revocation\Message\RevokeToken;
 use Biscuit\BiscuitBundle\Revocation\Message\UnrevokeToken;
-use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationChecker;
 use Biscuit\BiscuitBundle\Revocation\RevocationEntry;
 use Biscuit\BiscuitBundle\Revocation\RevocationEntryFactory;
 use LogicException;
@@ -125,9 +125,9 @@ trait BiscuitRevocationTestTrait
         return $this->biscuitService(RevocationPushHandler::class);
     }
 
-    private function biscuitRevocationChecker(): RevocationCheckerInterface
+    private function biscuitRevocationChecker(): RevocationChecker
     {
-        return $this->biscuitService(RevocationCheckerInterface::class);
+        return $this->biscuitService(RevocationChecker::class);
     }
 
     /**

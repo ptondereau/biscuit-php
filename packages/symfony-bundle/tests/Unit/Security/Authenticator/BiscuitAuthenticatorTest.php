@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Biscuit\BiscuitBundle\Tests\Unit\Security\Authenticator;
 
 use Biscuit\Auth\Biscuit;
-use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationChecker;
 use Biscuit\BiscuitBundle\Revocation\RevocationResult;
 use Biscuit\BiscuitBundle\Security\Authenticator\BiscuitAuthenticator;
 use Biscuit\BiscuitBundle\Security\Badge\BiscuitBadge;
 use Biscuit\BiscuitBundle\Security\Exception\MissingTokenException;
 use Biscuit\BiscuitBundle\Security\Exception\RevokedTokenException;
 use Biscuit\BiscuitBundle\Security\User\BiscuitUser;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
+use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
 use Biscuit\BiscuitBundle\Token\Extractor\TokenExtractorInterface;
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -32,15 +32,15 @@ final class BiscuitAuthenticatorTest extends TestCase
 {
     private TokenExtractorInterface&MockObject $tokenExtractor;
 
-    private BiscuitTokenManagerInterface&MockObject $tokenManager;
+    private BiscuitTokenManager&MockObject $tokenManager;
 
-    private RevocationCheckerInterface&MockObject $revocationChecker;
+    private RevocationChecker&MockObject $revocationChecker;
 
     protected function setUp(): void
     {
         $this->tokenExtractor = $this->createMock(TokenExtractorInterface::class);
-        $this->tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
-        $this->revocationChecker = $this->createMock(RevocationCheckerInterface::class);
+        $this->tokenManager = $this->createMock(BiscuitTokenManager::class);
+        $this->revocationChecker = $this->createMock(RevocationChecker::class);
     }
 
     #[Test]

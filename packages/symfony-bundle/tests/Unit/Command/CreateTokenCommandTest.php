@@ -10,10 +10,8 @@ use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Tests\ConsoleApplicationTrait;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenFactory;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
@@ -26,7 +24,6 @@ final class CreateTokenCommandTest extends TestCase
     use ConsoleApplicationTrait;
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTokenFromTemplate(): void
     {
         $commandTester = $this->createCommandTester([
@@ -49,7 +46,6 @@ final class CreateTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTokenWithParameters(): void
     {
         $commandTester = $this->createCommandTester([
@@ -71,7 +67,6 @@ final class CreateTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itCreatesTokenWithMultipleParameters(): void
     {
         $commandTester = $this->createCommandTester([
@@ -92,7 +87,24 @@ final class CreateTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
+    public function itIgnoresAParamEntryWithoutAnEqualsSign(): void
+    {
+        $commandTester = $this->createCommandTester([
+            'user_token' => [
+                'facts' => ['user({user_id})'],
+            ],
+        ]);
+
+        $commandTester->execute([
+            'template' => 'user_token',
+            '--param' => ['user_id=alice', 'malformed_no_equals'],
+        ]);
+
+        self::assertSame(Command::SUCCESS, $commandTester->getStatusCode());
+        self::assertStringContainsString('user("alice")', $commandTester->getDisplay());
+    }
+
+    #[Test]
     public function itParsesIntegerParameters(): void
     {
         $commandTester = $this->createCommandTester([
@@ -113,7 +125,6 @@ final class CreateTokenCommandTest extends TestCase
     }
 
     #[Test]
-    #[RequiresPhpExtension('biscuit_php')]
     public function itParsesBooleanParameters(): void
     {
         $commandTester = $this->createCommandTester([
@@ -224,7 +235,7 @@ final class CreateTokenCommandTest extends TestCase
      */
     private function createCommandTesterWithMocks(array $templates): CommandTester
     {
-        $tokenManager = $this->createMock(BiscuitTokenManagerInterface::class);
+        $tokenManager = $this->createMock(BiscuitTokenManager::class);
         $factory = new BiscuitTokenFactory($tokenManager, new Applier(), $templates);
 
         $command = new CreateTokenCommand($factory, $tokenManager);
@@ -244,7 +255,6 @@ final class CreateTokenCommandTest extends TestCase
             $keyPair->getPrivateKey()->toHex(),
             null,
             null,
-            'ed25519',
         );
 
         return new BiscuitTokenManager($keyManager);

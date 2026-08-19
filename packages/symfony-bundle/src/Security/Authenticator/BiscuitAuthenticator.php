@@ -7,14 +7,15 @@ namespace Biscuit\BiscuitBundle\Security\Authenticator;
 use Biscuit\Auth\Biscuit;
 use Biscuit\BiscuitBundle\DataCollector\BiscuitDataCollector;
 use Biscuit\BiscuitBundle\Key\KeyManager;
-use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationChecker;
 use Biscuit\BiscuitBundle\Security\Badge\BiscuitBadge;
 use Biscuit\BiscuitBundle\Security\Exception\InvalidTokenException;
 use Biscuit\BiscuitBundle\Security\Exception\MissingTokenException;
 use Biscuit\BiscuitBundle\Security\Exception\RevokedTokenException;
 use Biscuit\BiscuitBundle\Security\Http\AuthenticationFailureResponseFactory;
 use Biscuit\BiscuitBundle\Security\User\BiscuitUser;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
+use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
+use Biscuit\BiscuitBundle\Token\Datalog\AuthorityBlockReader;
 use Biscuit\BiscuitBundle\Token\Extractor\TokenExtractorInterface;
 use Exception;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,8 +32,8 @@ final class BiscuitAuthenticator extends AbstractAuthenticator implements Authen
 {
     public function __construct(
         private readonly TokenExtractorInterface $tokenExtractor,
-        private readonly BiscuitTokenManagerInterface $tokenManager,
-        private readonly ?RevocationCheckerInterface $revocationChecker = null,
+        private readonly BiscuitTokenManager $tokenManager,
+        private readonly ?RevocationChecker $revocationChecker = null,
         private readonly string $userIdentifierFact = 'user',
         private readonly ?BiscuitDataCollector $dataCollector = null,
         private readonly ?KeyManager $keyManager = null,
@@ -113,17 +114,10 @@ final class BiscuitAuthenticator extends AbstractAuthenticator implements Authen
      */
     private function extractUserIdentifier(Biscuit $biscuit): string
     {
-        $source = $biscuit->blockSource(0);
+        $identifier = (new AuthorityBlockReader())->readFact($biscuit->blockSource(0), $this->userIdentifierFact);
 
-        $factName = preg_quote($this->userIdentifierFact, '/');
-        $stringPattern = '/' . $factName . '\("([^"]+)"\)/';
-        if (1 === preg_match($stringPattern, $source, $matches) && '' !== $matches[1]) {
-            return $matches[1];
-        }
-
-        $intPattern = '/' . $factName . '\((\d+)\)/';
-        if (1 === preg_match($intPattern, $source, $matches) && '' !== $matches[1]) {
-            return $matches[1];
+        if (null !== $identifier) {
+            return $identifier;
         }
 
         $revocationIds = $biscuit->revocationIds();

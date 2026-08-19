@@ -15,7 +15,7 @@ use Biscuit\BiscuitBundle\Command\TestPolicyCommand;
 use Biscuit\BiscuitBundle\DataCollector\BiscuitDataCollector;
 use Biscuit\BiscuitBundle\Key\KeyManager;
 use Biscuit\BiscuitBundle\Policy\PolicyRegistry;
-use Biscuit\BiscuitBundle\Revocation\RevocationCheckerInterface;
+use Biscuit\BiscuitBundle\Revocation\RevocationChecker;
 use Biscuit\BiscuitBundle\Revocation\RevocationEntryFactory;
 use Biscuit\BiscuitBundle\Revocation\RevocationWriterInterface;
 use Biscuit\BiscuitBundle\Security\Authenticator\BiscuitAuthenticator;
@@ -24,7 +24,6 @@ use Biscuit\BiscuitBundle\Security\Voter\BiscuitVoter;
 use Biscuit\BiscuitBundle\Token\BiscuitBlockFactory;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenFactory;
 use Biscuit\BiscuitBundle\Token\BiscuitTokenManager;
-use Biscuit\BiscuitBundle\Token\BiscuitTokenManagerInterface;
 use Biscuit\BiscuitBundle\Token\Extractor\ChainTokenExtractor;
 use Biscuit\BiscuitBundle\Token\Extractor\CookieTokenExtractor;
 use Biscuit\BiscuitBundle\Token\Extractor\HeaderTokenExtractor;
@@ -47,7 +46,6 @@ return static function (ContainerConfigurator $container): void {
             '%biscuit.keys.private_key%',
             '%biscuit.keys.public_key_file%',
             '%biscuit.keys.private_key_file%',
-            '%biscuit.keys.algorithm%',
         ]);
 
     $services->set('biscuit.token_manager', BiscuitTokenManager::class)
@@ -110,7 +108,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set('biscuit.authenticator', BiscuitAuthenticator::class)
         ->arg('$tokenExtractor', service('biscuit.token_extractor'))
         ->arg('$tokenManager', service('biscuit.token_manager'))
-        ->arg('$revocationChecker', service(RevocationCheckerInterface::class)->nullOnInvalid())
+        ->arg('$revocationChecker', service(RevocationChecker::class)->nullOnInvalid())
         ->arg('$userIdentifierFact', '%biscuit.security.user_identifier_fact%')
         ->arg('$dataCollector', service('biscuit.data_collector')->nullOnInvalid())
         ->arg('$keyManager', service('biscuit.key_manager'))
@@ -166,7 +164,7 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(RevocationCheckCommand::class)
         ->args([
-            service(RevocationCheckerInterface::class)->nullOnInvalid(),
+            service(RevocationChecker::class)->nullOnInvalid(),
             service('biscuit.token_manager'),
         ])
         ->tag('console.command');
@@ -188,9 +186,6 @@ return static function (ContainerConfigurator $container): void {
         ->public();
 
     $services->alias(BiscuitTokenManager::class, 'biscuit.token_manager')
-        ->public();
-
-    $services->alias(BiscuitTokenManagerInterface::class, 'biscuit.token_manager')
         ->public();
 
     $services->alias(BiscuitTokenFactory::class, 'biscuit.token_factory')
