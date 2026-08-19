@@ -62,6 +62,7 @@ See [UPGRADE-0.4.md](UPGRADE-0.4.md) for migration steps.
 
 ### For contributors
 
+- `benchmark/request-path.php` measures the per-request hot path (header extraction, token parse, revocation check, voter authorization) so a perf regression shows up as a number, not a feeling. A Blackfire profile of the baseline showed `Biscuit::fromBase64` signature verification dominating at ~35% of the loop; no PHP-side edge stood above measurement variance. Excluded from dist archives.
 - `tests/Functional` and `tests/Integration` suites now compile and boot a real container, which is what unit tests calling `Extension::load()` cannot reach. `TestKernel` finally exists at the path `phpunit.xml.dist` has been pointing at.
 - A `no-optional-deps` CI job removes every suggested package and reruns the unit suite, so the `suggest` block is a contract rather than documentation.
 - `BiscuitExtension` no longer patches `biscuit.authenticator` with a positional `replaceArgument()`. Arguments are named throughout, and the checker is resolved with `nullOnInvalid()`.
