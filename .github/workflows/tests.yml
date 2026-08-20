@@ -53,7 +53,7 @@ jobs:
         run: cargo clippy -- -D warnings
 
       - name: "Install dependencies (Composer)"
-        uses: ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f # v3
+        uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # v3
 
       - name: Validate stubs
         run: |
@@ -112,7 +112,7 @@ jobs:
         run: cargo build --release --all-features
 
       - name: "Install dependencies (Composer)"
-        uses: ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f # v3
+        uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # v3
 
       - name: "Run PHPUnit"
         run: php -dextension=./target/release/libbiscuit_php.so vendor/bin/phpunit
