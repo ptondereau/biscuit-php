@@ -15,9 +15,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
-permissions:
-  contents: write
-  id-token: write
+permissions: {}
 
 jobs:
   build-linux-x86_64:
@@ -29,10 +27,10 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Cache Cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: |
             ~/.cargo/registry
@@ -42,12 +40,13 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
         with:
+          toolchain: stable
           targets: x86_64-unknown-linux-gnu
 
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -72,7 +71,7 @@ jobs:
           rm biscuit_php.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pie-linux-x86_64-glibc-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -90,7 +89,7 @@ jobs:
       RUSTFLAGS: "-C target-feature=-crt-static -C linker=gcc"
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install build dependencies
         run: |
@@ -135,7 +134,7 @@ jobs:
           rm biscuit_php.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pie-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -149,10 +148,10 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Cache Cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: |
             ~/.cargo/registry
@@ -162,12 +161,13 @@ jobs:
             ${{ runner.os }}-arm64-cargo-
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
         with:
+          toolchain: stable
           targets: aarch64-unknown-linux-gnu
 
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -192,7 +192,7 @@ jobs:
           rm biscuit_php.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pie-linux-arm64-glibc-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -206,7 +206,7 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Build in Alpine container
         run: |
@@ -237,7 +237,7 @@ jobs:
           rm biscuit_php.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pie-linux-arm64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -251,10 +251,10 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Cache Cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: |
             ~/.cargo/registry
@@ -264,12 +264,13 @@ jobs:
             macos-x86_64-cargo-
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
         with:
+          toolchain: stable
           targets: x86_64-apple-darwin
 
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -294,7 +295,7 @@ jobs:
           rm biscuit_php.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pie-macos-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -314,10 +315,10 @@ jobs:
           - { php-version: "8.5", compiler: "vs17" }
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Cache Cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: |
             ~/.cargo/registry
@@ -327,13 +328,14 @@ jobs:
             windows-x86_64-cargo-
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
         with:
+          toolchain: nightly
           targets: x86_64-pc-windows-msvc
           components: rustfmt
 
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -358,7 +360,7 @@ jobs:
           rm "${BASE_NAME}.dll"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pie-windows-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -372,10 +374,10 @@ jobs:
         phpts: ["ts", "nts"]
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Cache Cargo registry
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: |
             ~/.cargo/registry
@@ -385,12 +387,13 @@ jobs:
             macos-arm64-cargo-
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
         with:
+          toolchain: stable
           targets: aarch64-apple-darwin
 
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -415,7 +418,7 @@ jobs:
           rm biscuit_php.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pie-macos-arm64-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -431,7 +434,7 @@ jobs:
 
     steps:
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -439,7 +442,7 @@ jobs:
           phpts: ${{ matrix.phpts }}
 
       - name: Download artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: pie-linux-x86_64-glibc-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist
@@ -466,7 +469,7 @@ jobs:
         run: apk add --no-cache unzip
 
       - name: Download artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: pie-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist
@@ -488,7 +491,7 @@ jobs:
 
     steps:
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -496,7 +499,7 @@ jobs:
           phpts: ${{ matrix.phpts }}
 
       - name: Download artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: pie-linux-arm64-glibc-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist
@@ -518,7 +521,7 @@ jobs:
 
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: pie-linux-arm64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist
@@ -546,7 +549,7 @@ jobs:
 
     steps:
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -554,7 +557,7 @@ jobs:
           phpts: ${{ matrix.phpts }}
 
       - name: Download artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: pie-macos-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist
@@ -576,7 +579,7 @@ jobs:
 
     steps:
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -584,7 +587,7 @@ jobs:
           phpts: ${{ matrix.phpts }}
 
       - name: Download artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: pie-macos-arm64-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist
@@ -612,7 +615,7 @@ jobs:
 
     steps:
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -620,7 +623,7 @@ jobs:
           phpts: ${{ matrix.phpts }}
 
       - name: Download artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: pie-windows-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist
@@ -638,6 +641,8 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     needs:
       - verify-linux-x86_64
       - verify-linux-x86_64-musl
@@ -648,12 +653,12 @@ jobs:
       - verify-windows
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           path: artifacts
 
@@ -664,14 +669,16 @@ jobs:
 
       - name: Create Release
         if: ${{ !inputs.dry_run }}
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release/*
-          draft: false
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
-          generate_release_notes: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRERELEASE=""
+          case "$GITHUB_REF_NAME" in
+            *alpha*|*beta*|*rc*) PRERELEASE="--prerelease" ;;
+          esac
+          gh release create "$GITHUB_REF_NAME" release/* \
+            --generate-notes \
+            $PRERELEASE
 
       - name: Dry run summary
         if: ${{ inputs.dry_run }}
