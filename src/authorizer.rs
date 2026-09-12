@@ -20,6 +20,23 @@ pub struct Authorizer(biscuit_auth::Authorizer);
 
 #[php_impl]
 impl Authorizer {
+    /// Returns the recorded cumulative engine time in seconds, when available.
+    pub fn execution_time(&self) -> Option<f64> {
+        self.0
+            .execution_time()
+            .map(|duration| duration.as_secs_f64())
+    }
+
+    /// Returns the engine's recorded fact-generation iteration count.
+    pub fn iterations(&self) -> u64 {
+        self.0.iterations()
+    }
+
+    /// Counts stored facts across the engine's origin sets without running it.
+    pub fn fact_count(&self) -> usize {
+        self.0.fact_count()
+    }
+
     pub fn authorize(&mut self) -> PhpResult<MatchedPolicy> {
         let (_, _, _, policies) = self.0.dump();
         match self.0.authorize() {

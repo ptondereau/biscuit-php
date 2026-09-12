@@ -176,6 +176,36 @@ foreach ($facts as $fact) {
 }
 ```
 
+### Datalog Statistics
+
+Read the authorizer's engine statistics without triggering evaluation:
+
+```php
+try {
+    $policy = $authorizer->authorize();
+} finally {
+    $statistics = [
+        'execution_time_seconds' => $authorizer->executionTime(),
+        'iterations' => $authorizer->iterations(),
+        'fact_count' => $authorizer->factCount(),
+    ];
+}
+```
+
+`executionTime()` returns the cumulative engine time in seconds as a float, or
+`null` when unavailable. It includes inference and subsequent authorization or
+query evaluation, but excludes token verification, authorizer construction, and
+PHP binding overhead. It is not the duration of the last PHP call.
+
+`iterations()` counts inference passes that generated new facts. `factCount()`
+includes initial and derived facts, distinguished by their origin sets. Repeated
+calls may reuse completed inference without increasing either counter.
+
+Statistics remain readable after an exception. If inference was interrupted,
+the counters can contain partial results while the time is still `null`; a
+recorded time does not imply successful authorization. Snapshots preserve these
+statistics, so restored values can describe earlier execution.
+
 ### Snapshot Persistence
 
 ```php
