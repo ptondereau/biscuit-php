@@ -169,3 +169,20 @@ impl AuthorizationException {
         self.failed_checks.clone()
     }
 }
+
+#[php_class]
+#[php(name = "Biscuit\\Exception\\RunLimitException")]
+#[php(extends(AuthorizationException))]
+#[derive(Debug, Clone, Default)]
+pub struct RunLimitException;
+
+#[php_impl]
+impl RunLimitException {
+    pub fn get_matched_policy(&self) -> Option<MatchedPolicy> {
+        None
+    }
+
+    pub fn get_failed_checks(&self) -> Vec<FailedCheck> {
+        Vec::new()
+    }
+}

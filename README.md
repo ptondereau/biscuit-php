@@ -206,6 +206,29 @@ the counters can contain partial results while the time is still `null`; a
 recorded time does not imply successful authorization. Snapshots preserve these
 statistics, so restored values can describe earlier execution.
 
+### Run Limits
+
+The Datalog engine stops after 1000 facts, 100 iterations, or 1 ms of engine
+time by default. Hitting a limit is not a policy decision: it throws
+`Biscuit\Exception\RunLimitException`, a subclass of `AuthorizationException`
+whose `getCode()` is `1` (facts), `2` (iterations), or `3` (time). Raise the
+limits on the builder when the defaults are too tight for your host:
+
+```php
+$authBuilder->setLimits(maxTime: 0.05);
+
+try {
+    $authorizer = $authBuilder->build($token);
+    $authorizer->authorize();
+} catch (RunLimitException $e) {
+    // engine interrupted, not a denial
+} catch (AuthorizationException $e) {
+    // denied
+}
+```
+
+Arguments left `null` keep their current value. Limits travel with snapshots.
+
 ### Snapshot Persistence
 
 ```php

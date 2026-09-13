@@ -1,7 +1,11 @@
+#![allow(non_snake_case)]
+
 use std::collections::HashMap;
+use std::time::Duration;
 
 use ext_php_rs::binary_slice::BinarySlice;
 use ext_php_rs::prelude::*;
+use ext_php_rs::zend::ce;
 
 use crate::authorization::MatchedPolicy;
 use crate::biscuit::Biscuit;
@@ -86,6 +90,14 @@ impl Authorizer {
     }
 }
 
+fn non_negative(value: i64, name: &str) -> PhpResult<u64> {
+    u64::try_from(value).map_err(|_| value_error(&format!("{name} must be non-negative")))
+}
+
+fn value_error(message: &str) -> PhpException {
+    PhpException::new(message.to_owned(), 0, ce::value_error())
+}
+
 #[php_class]
 #[php(name = "Biscuit\\Auth\\AuthorizerBuilder")]
 #[derive(Clone)]
@@ -155,6 +167,29 @@ impl AuthorizerBuilder {
 
     pub fn set_time(&mut self) -> PhpResult<()> {
         self.0 = Some(take_builder(&mut self.0)?.time());
+        Ok(())
+    }
+
+    #[php(defaults(maxFacts = None, maxIterations = None, maxTime = None))]
+    pub fn set_limits(
+        &mut self,
+        maxFacts: Option<i64>,
+        maxIterations: Option<i64>,
+        maxTime: Option<f64>,
+    ) -> PhpResult<()> {
+        let mut limits = get_builder(&self.0)?.limits().clone();
+        if let Some(max_facts) = maxFacts {
+            limits.max_facts = non_negative(max_facts, "maxFacts")?;
+        }
+        if let Some(max_iterations) = maxIterations {
+            limits.max_iterations = non_negative(max_iterations, "maxIterations")?;
+        }
+        if let Some(max_time) = maxTime {
+            limits.max_time = Duration::try_from_secs_f64(max_time).map_err(|_| {
+                value_error("maxTime must be a finite, non-negative number of seconds")
+            })?;
+        }
+        self.0 = Some(take_builder(&mut self.0)?.set_limits(limits));
         Ok(())
     }
 

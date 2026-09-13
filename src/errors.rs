@@ -1,18 +1,18 @@
-use biscuit_auth::error::{Logic, Token};
+use biscuit_auth::error::{Logic, RunLimit, Token};
 use biscuit_parser::error::LanguageError;
 use ext_php_rs::class::RegisteredClass;
 use ext_php_rs::convert::IntoZval;
-use ext_php_rs::ffi::{zend_class_entry, zend_object};
+use ext_php_rs::ffi::{zend_class_entry, zend_long, zend_object};
 use ext_php_rs::prelude::*;
 use ext_php_rs::types::{ZendClassObject, Zval};
 use ext_php_rs::zend::ce;
 use std::os::raw::c_char;
 use thiserror::Error;
 
-use crate::authorization::{AuthorizationException, FailedCheck, MatchedPolicy};
+use crate::authorization::{AuthorizationException, FailedCheck, MatchedPolicy, RunLimitException};
 use crate::datalog::ParseError;
 
-// SAFETY: `zend_update_property_stringl` is a standard ZEND_API function exported
+// SAFETY: `zend_update_property_stringl` and `zend_update_property_long` are standard ZEND_API functions exported
 // by libphp; safe to call during PHP request execution.
 unsafe extern "C" {
     fn zend_update_property_stringl(
@@ -22,6 +22,13 @@ unsafe extern "C" {
         name_length: usize,
         value: *const c_char,
         value_len: usize,
+    );
+    fn zend_update_property_long(
+        scope: *mut zend_class_entry,
+        object: *mut zend_object,
+        name: *const c_char,
+        name_length: usize,
+        value: zend_long,
     );
 }
 
@@ -37,6 +44,21 @@ fn populate_exception_message(zval: &mut Zval, message: &str) {
             7,
             message.as_ptr().cast::<c_char>(),
             message.len(),
+        );
+    }
+}
+
+fn populate_exception_code(zval: &mut Zval, code: i64) {
+    let Some(obj) = zval.object_mut() else {
+        return;
+    };
+    unsafe {
+        zend_update_property_long(
+            std::ptr::from_ref(ce::exception()).cast_mut(),
+            std::ptr::from_mut::<ext_php_rs::types::ZendObject>(obj),
+            b"code".as_ptr().cast::<c_char>(),
+            4,
+            code,
         );
     }
 }
@@ -338,6 +360,9 @@ pub struct ThirdPartyException;
 impl From<BiscuitError> for PhpException {
     fn from(err: BiscuitError) -> Self {
         let message = collect_chain(&err);
+        if let Some(limit) = find_run_limit(&err) {
+            return build_run_limit_exception(limit, format!("{message}: {limit}"));
+        }
         match err {
             BiscuitError::Key { kind, .. } => match kind {
                 KeyKind::PublicKey => PhpException::from_class::<PublicKeyException>(message),
@@ -463,6 +488,37 @@ fn find_language_error<'a>(
         current = e.source();
     }
     None
+}
+
+fn find_run_limit<'a>(err: &'a (dyn std::error::Error + 'static)) -> Option<&'a RunLimit> {
+    let mut current: Option<&(dyn std::error::Error + 'static)> = Some(err);
+    while let Some(e) = current {
+        if let Some(Token::RunLimit(limit)) = e.downcast_ref::<Token>() {
+            return Some(limit);
+        }
+        current = e.source();
+    }
+    None
+}
+
+fn run_limit_code(limit: &RunLimit) -> i64 {
+    match limit {
+        RunLimit::TooManyFacts => 1,
+        RunLimit::TooManyIterations => 2,
+        RunLimit::Timeout => 3,
+        RunLimit::UnexpectedQueryResult(..) => 0,
+    }
+}
+
+fn build_run_limit_exception(limit: &RunLimit, message: String) -> PhpException {
+    match ZendClassObject::new(RunLimitException).into_zval(false) {
+        Ok(mut zval) => {
+            populate_exception_message(&mut zval, &message);
+            populate_exception_code(&mut zval, run_limit_code(limit));
+            PhpException::default(message).with_object(zval)
+        }
+        Err(_) => PhpException::from_class::<RunLimitException>(message),
+    }
 }
 
 fn build_authorization_exception(

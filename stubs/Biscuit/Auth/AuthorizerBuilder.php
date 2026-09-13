@@ -10,9 +10,11 @@ use Biscuit\Exception\CheckException;
 use Biscuit\Exception\FactException;
 use Biscuit\Exception\PolicyException;
 use Biscuit\Exception\RuleException;
+use Biscuit\Exception\RunLimitException;
 use Biscuit\Exception\SnapshotException;
 use Biscuit\Exception\TermException;
 use Error;
+use ValueError;
 
 /**
  * Accumulates facts, rules, checks, and policies, then builds an
@@ -122,6 +124,28 @@ class AuthorizerBuilder
     {
         throw new Error(
             'Biscuit\Auth\AuthorizerBuilder::setTime() should be implemented by the biscuit_php extension.',
+        );
+    }
+
+    /**
+     * Sets the Datalog run limits enforced by the built {@see Authorizer}.
+     *
+     * Limits apply to `authorize()` and `query()`; exceeding one throws a
+     * {@see RunLimitException}. Arguments left null keep the current value
+     * (defaults: 1000 facts, 100 iterations, 0.001 seconds). Limits are
+     * preserved in snapshots.
+     *
+     * @param int|null $maxFacts Maximum number of facts the engine may generate.
+     * @param int|null $maxIterations Maximum number of inference iterations.
+     * @param float|null $maxTime Maximum engine time in seconds.
+     *
+     * @throws ValueError If a value is negative or not finite.
+     * @throws BuilderStateException If the builder has already been consumed.
+     */
+    public function setLimits(?int $maxFacts = null, ?int $maxIterations = null, ?float $maxTime = null): void
+    {
+        throw new Error(
+            'Biscuit\Auth\AuthorizerBuilder::setLimits() should be implemented by the biscuit_php extension.',
         );
     }
 

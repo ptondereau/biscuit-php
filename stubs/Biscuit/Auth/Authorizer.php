@@ -6,6 +6,7 @@ namespace Biscuit\Auth;
 
 use Biscuit\Exception\AuthorizationException;
 use Biscuit\Exception\AuthorizerBuildException;
+use Biscuit\Exception\RunLimitException;
 use Biscuit\Exception\SnapshotException;
 use Error;
 
@@ -85,6 +86,7 @@ class Authorizer
      * throws an {@see AuthorizationException} carrying the matched `deny`
      * policy (when one matched) and the list of failed checks.
      *
+     * @throws RunLimitException If a Datalog run limit is reached before a decision.
      * @throws AuthorizationException If a check fails or no `allow` policy matches.
      */
     public function authorize(): MatchedPolicy
@@ -99,6 +101,7 @@ class Authorizer
      *
      * @return list<Fact>
      *
+     * @throws RunLimitException If a Datalog run limit is reached.
      * @throws AuthorizerBuildException If the query cannot be executed.
      */
     public function query(Rule $rule): array

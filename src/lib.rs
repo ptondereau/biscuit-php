@@ -78,4 +78,5 @@ pub fn get_module(module: ModuleBuilder) -> ModuleBuilder {
         .class::<MatchedPolicy>()
         .class::<FailedCheck>()
         .class::<AuthorizationException>()
+        .class::<RunLimitException>()
 }
