@@ -14,19 +14,16 @@ pub struct Biscuit(pub(crate) biscuit_auth::Biscuit);
 
 #[php_impl]
 impl Biscuit {
-    #[php(name = "builder")]
     pub fn builder() -> BiscuitBuilder {
         BiscuitBuilder(Some(biscuit_auth::builder::BiscuitBuilder::new()))
     }
 
-    #[php(name = "fromBytes")]
     pub fn from_bytes(data: BinarySlice<u8>, root: &PublicKey) -> PhpResult<Self> {
         Ok(Self(
             biscuit_auth::Biscuit::from(data.as_ref(), root.0).format(FormatKind::Bytes)?,
         ))
     }
 
-    #[php(name = "fromBase64")]
     pub fn from_base64(data: &str, root: &PublicKey) -> PhpResult<Self> {
         Ok(Self(
             biscuit_auth::Biscuit::from_base64(data, root.0).format(FormatKind::Base64)?,
@@ -105,7 +102,6 @@ pub struct UnverifiedBiscuit(biscuit_auth::UnverifiedBiscuit);
 
 #[php_impl]
 impl UnverifiedBiscuit {
-    #[php(name = "fromBase64")]
     pub fn from_base64(data: &str) -> PhpResult<Self> {
         Ok(Self(
             biscuit_auth::UnverifiedBiscuit::from_base64(data).format(FormatKind::Base64)?,
