@@ -37,17 +37,14 @@ impl KeyPair {
         Self(BiscuitKeyPair::new_with_algorithm(algorithm))
     }
 
-    #[php(name = "fromPrivateKey")]
     pub fn from_private_key(private_key: &PrivateKey) -> Self {
         Self(BiscuitKeyPair::from(&private_key.0))
     }
 
-    #[php(name = "getPublicKey")]
     pub fn get_public_key(&self) -> PublicKey {
         PublicKey(self.0.public())
     }
 
-    #[php(name = "getPrivateKey")]
     pub fn get_private_key(&self) -> PrivateKey {
         PrivateKey(self.0.private())
     }
@@ -66,7 +63,6 @@ impl PublicKey {
         ))
     }
 
-    #[php(name = "fromBytes")]
     pub fn from_bytes(data: BinarySlice<u8>, alg: Option<Algorithm>) -> PhpResult<Self> {
         let algorithm = alg.unwrap_or(Algorithm::Ed25519).into();
         Ok(Self(
@@ -75,14 +71,12 @@ impl PublicKey {
         ))
     }
 
-    #[php(name = "fromPem")]
     pub fn from_pem(pem: &str) -> PhpResult<Self> {
         Ok(Self(
             biscuit_auth::PublicKey::from_pem(pem).key(KeyKind::PublicKey)?,
         ))
     }
 
-    #[php(name = "fromDer")]
     pub fn from_der(der: BinarySlice<u8>) -> PhpResult<Self> {
         Ok(Self(
             biscuit_auth::PublicKey::from_der(der.as_ref()).key(KeyKind::PublicKey)?,
@@ -115,7 +109,6 @@ impl PrivateKey {
         ))
     }
 
-    #[php(name = "fromBytes")]
     pub fn from_bytes(data: BinarySlice<u8>, alg: Option<Algorithm>) -> PhpResult<Self> {
         let algorithm = alg.unwrap_or(Algorithm::Ed25519).into();
         Ok(Self(
@@ -124,14 +117,12 @@ impl PrivateKey {
         ))
     }
 
-    #[php(name = "fromPem")]
     pub fn from_pem(pem: &str) -> PhpResult<Self> {
         Ok(Self(
             biscuit_auth::PrivateKey::from_pem(pem).key(KeyKind::PrivateKey)?,
         ))
     }
 
-    #[php(name = "fromDer")]
     pub fn from_der(der: BinarySlice<u8>) -> PhpResult<Self> {
         Ok(Self(
             biscuit_auth::PrivateKey::from_der(der.as_ref()).key(KeyKind::PrivateKey)?,
@@ -144,7 +135,6 @@ impl PrivateKey {
         Self(keypair.private())
     }
 
-    #[php(name = "getPublicKey")]
     pub fn get_public_key(&self) -> PublicKey {
         let keypair = BiscuitKeyPair::from(&self.0);
         PublicKey(keypair.public())

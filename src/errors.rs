@@ -444,7 +444,7 @@ where
     match ZendClassObject::new(value).into_zval(false) {
         Ok(mut zval) => {
             populate_exception_message(&mut zval, &message);
-            PhpException::default(message).with_object(zval)
+            PhpException::from_message(message).with_object(zval)
         }
         Err(_) => PhpException::from_class::<T>(message),
     }
@@ -515,7 +515,7 @@ fn build_run_limit_exception(limit: &RunLimit, message: String) -> PhpException 
         Ok(mut zval) => {
             populate_exception_message(&mut zval, &message);
             populate_exception_code(&mut zval, run_limit_code(limit));
-            PhpException::default(message).with_object(zval)
+            PhpException::from_message(message).with_object(zval)
         }
         Err(_) => PhpException::from_class::<RunLimitException>(message),
     }
@@ -543,7 +543,7 @@ fn build_authorization_exception(
     match ZendClassObject::new(payload).into_zval(false) {
         Ok(mut zval) => {
             populate_exception_message(&mut zval, &message);
-            PhpException::default(message).with_object(zval)
+            PhpException::from_message(message).with_object(zval)
         }
         Err(_) => PhpException::from_class::<AuthorizationException>(message),
     }

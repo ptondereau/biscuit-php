@@ -70,14 +70,12 @@ impl Authorizer {
         Ok(self.0.to_raw_snapshot().format(FormatKind::Snapshot)?)
     }
 
-    #[php(name = "fromBase64Snapshot")]
     pub fn from_base64_snapshot(input: &str) -> PhpResult<Self> {
         Ok(Self(
             biscuit_auth::Authorizer::from_base64_snapshot(input).format(FormatKind::Snapshot)?,
         ))
     }
 
-    #[php(name = "fromRawSnapshot")]
     pub fn from_raw_snapshot(input: BinarySlice<u8>) -> PhpResult<Self> {
         Ok(Self(
             biscuit_auth::Authorizer::from_raw_snapshot(input.as_ref())
@@ -170,7 +168,6 @@ impl AuthorizerBuilder {
         Ok(())
     }
 
-    #[php(defaults(maxFacts = None, maxIterations = None, maxTime = None))]
     pub fn set_limits(
         &mut self,
         maxFacts: Option<i64>,
@@ -217,14 +214,12 @@ impl AuthorizerBuilder {
             .format(FormatKind::Snapshot)?)
     }
 
-    #[php(name = "fromBase64Snapshot")]
     pub fn from_base64_snapshot(input: &str) -> PhpResult<Self> {
         let builder = biscuit_auth::AuthorizerBuilder::from_base64_snapshot(input)
             .format(FormatKind::Snapshot)?;
         Ok(Self(Some(builder)))
     }
 
-    #[php(name = "fromRawSnapshot")]
     pub fn from_raw_snapshot(input: BinarySlice<u8>) -> PhpResult<Self> {
         let builder = biscuit_auth::AuthorizerBuilder::from_raw_snapshot(input.as_ref())
             .format(FormatKind::Snapshot)?;
