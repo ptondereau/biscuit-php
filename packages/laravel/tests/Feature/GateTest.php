@@ -6,47 +6,39 @@ use Biscuit\Auth\BiscuitBuilder;
 use Biscuit\Auth\KeyPair;
 use Biscuit\Auth\PrivateKey;
 use Biscuit\Auth\PublicKey;
-use Biscuit\Laravel\BiscuitUser;
 use Illuminate\Auth\GenericUser;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\Gate;
 
-it('rejects a request without token', function (): void {
-    testCase()->getJson('/me')->assertUnauthorized();
+it('denies a request without token', function (): void {
+    testCase()->getJson('/posts')->assertForbidden();
 });
 
-it('rejects a token signed by another key', function (): void {
-    $token = (new BiscuitBuilder('user("alice");'))
+it('denies a token signed by another key', function (): void {
+    $token = (new BiscuitBuilder('right("posts", "read");'))
         ->build((new KeyPair())->getPrivateKey())
         ->toBase64();
 
-    testCase()->getJson('/me', ['Authorization' => "Bearer {$token}"])->assertUnauthorized();
+    testCase()->getJson('/posts', ['Authorization' => "Bearer {$token}"])->assertForbidden();
 });
 
-it('rejects a malformed token', function (): void {
-    testCase()->getJson('/me', ['Authorization' => 'Bearer not-a-biscuit'])->assertUnauthorized();
+it('denies a malformed token', function (): void {
+    testCase()->getJson('/posts', ['Authorization' => 'Bearer not-a-biscuit'])->assertForbidden();
 });
 
-it('authenticates from the bearer header', function (): void {
-    testCase()->getJson('/me', testCase()->bearer('user("alice");'))->assertOk()->assertContent('alice');
-});
-
-it('authenticates from the cookie', function (): void {
+it('reads the token from the cookie', function (): void {
     testCase()
         ->withCredentials()
-        ->withUnencryptedCookie('biscuit', testCase()->mint('user(42);')->toBase64())
-        ->getJson('/me')
-        ->assertOk()
-        ->assertContent('42');
+        ->withUnencryptedCookie('biscuit', testCase()->mint('right("posts", "read");')->toBase64())
+        ->getJson('/posts')
+        ->assertOk();
 });
 
-it('falls back to the revocation id without user fact', function (): void {
-    $biscuit = testCase()->mint('right("posts", "read");');
-
+it('authorizes alongside the user of any guard', function (): void {
     testCase()
-        ->getJson('/me', ['Authorization' => 'Bearer ' . $biscuit->toBase64()])
-        ->assertOk()
-        ->assertContent($biscuit->revocationIds()[0] ?? '');
+        ->actingAs(new GenericUser(['id' => 1]))
+        ->getJson('/posts', testCase()->bearer('right("posts", "read");'))
+        ->assertOk();
 });
 
 it('grants a named policy', function (): void {
@@ -71,14 +63,14 @@ it('denies an expired token', function (): void {
 });
 
 it('evaluates inline policies and leaves other abilities to the app', function (): void {
-    $user = BiscuitUser::fromBiscuit(testCase()->mint('right("posts", "read");'), 'user');
-    Gate::define('app.ability', static fn(): bool => true);
+    request()->headers->add(testCase()->bearer('right("posts", "read");'));
+    Gate::define('app.ability', static fn(?GenericUser $_user): bool => true);
 
-    expect(Gate::forUser($user)->allows('allow if right("posts", "read")'))
+    expect(Gate::allows('allow if right("posts", "read")'))
         ->toBeTrue()
-        ->and(Gate::forUser($user)->allows('allow if right("posts", "write")'))
+        ->and(Gate::allows('allow if right("posts", "write")'))
         ->toBeFalse()
-        ->and(Gate::forUser($user)->allows('app.ability'))
+        ->and(Gate::allows('app.ability'))
         ->toBeTrue();
 });
 
@@ -102,14 +94,11 @@ it('fails loudly when the key file is missing', function (): void {
     expect(static fn(): PublicKey => app(PublicKey::class))->toThrow(FileNotFoundException::class);
 });
 
-it('leaves users of other guards to the app gates', function (): void {
+it('denies a Biscuit policy without token even when the app defines it', function (): void {
     $user = new GenericUser(['id' => 1]);
     Gate::define('posts.edit', static fn(): bool => true);
 
-    expect(Gate::forUser($user)->allows('posts.read'))
-        ->toBeFalse()
-        ->and(Gate::forUser($user)->allows('posts.edit'))
-        ->toBeTrue();
+    expect(Gate::forUser($user)->allows('posts.edit'))->toBeFalse();
 });
 
 it('loads the public key from a PEM file', function (): void {

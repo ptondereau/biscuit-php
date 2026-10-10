@@ -11,8 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 #### Added
 
 - New `ptondereau/biscuit-laravel` package for Laravel 12 and 13 on PHP 8.2 or later.
-- `biscuit` auth guard: reads the token from the bearer header or a cookie and checks its signature.
-- Datalog policies from `config/biscuit.php` work as Gate abilities, with placeholders filled from the Gate argument.
+- Datalog policies from `config/biscuit.php` work as Gate abilities, with placeholders filled from the Gate argument. The token comes from the bearer header or a cookie, next to the app's own authentication.
 - `PublicKey` and `PrivateKey` container bindings, loaded from a hex string or a PEM file.
 
 ### Tooling

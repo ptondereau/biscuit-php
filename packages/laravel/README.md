@@ -28,25 +28,12 @@ BISCUIT_PUBLIC_KEY=ed25519/...
 
 The private key (`BISCUIT_PRIVATE_KEY` or `BISCUIT_PRIVATE_KEY_FILE`) is only needed to mint tokens.
 
-## Authentication
-
-Add a guard in `config/auth.php`:
-
-```php
-'guards' => [
-    'biscuit' => ['driver' => 'biscuit'],
-],
-```
-
-The guard reads the token from the `Authorization: Bearer` header, or from the cookie named in `BISCUIT_COOKIE`. It checks the signature against the public key. An invalid token is rejected with 401.
-
-```php
-Route::middleware('auth:biscuit')->get('/me', fn (Request $request) => $request->user()->identifier);
-```
-
-The user identifier comes from the `user` fact of the authority block (`user("alice")` or `user(42)`). Change the fact name with `biscuit.user_fact`. Without that fact, the identifier is the token's first revocation ID.
-
 ## Authorization
+
+A Biscuit is not an authentication token. Keep your guards (session, Sanctum, Passport) for users. The token only carries rights.
+
+The token comes from the `Authorization: Bearer` header, or from the cookie named in `BISCUIT_COOKIE`. Its signature is checked against the public key.
+
 
 Declare Datalog policies in `config/biscuit.php`:
 
@@ -60,7 +47,7 @@ Declare Datalog policies in `config/biscuit.php`:
 Each policy is a Gate ability. It works with `can` middleware, `Gate::allows()`, `@can` and `$this->authorize()`:
 
 ```php
-Route::middleware(['auth:biscuit', 'can:posts.edit,post'])->put('/posts/{post}', UpdatePost::class);
+Route::middleware(['auth', 'can:posts.edit,post'])->put('/posts/{post}', UpdatePost::class);
 ```
 
 The Gate argument fills the policy placeholders:
@@ -75,7 +62,7 @@ Placeholders the policy does not use are ignored. Values must be strings, intege
 
 An ability that starts with `allow ` or `deny ` is used as an inline policy: `Gate::allows('allow if right("posts", "read")')`.
 
-Abilities that are not Biscuit policies, and users from other guards, go to the app's own gates and policies.
+A Biscuit policy is denied when the request has no valid token, whoever the user is. Other abilities go to the app's own gates and policies.
 
 ## Minting tokens
 

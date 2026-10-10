@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Biscuit\Laravel;
 
+use Biscuit\Auth\AuthorizerBuilder;
 use Biscuit\Auth\Biscuit;
+use Biscuit\Auth\Policy;
 use Biscuit\Auth\PrivateKey;
 use Biscuit\Auth\PublicKey;
+use Biscuit\Exception\AuthorizationException;
 use Biscuit\Exception\AuthorizerBuildException;
 use Biscuit\Exception\BuilderStateException;
 use Biscuit\Exception\FormatException;
@@ -14,11 +17,9 @@ use Biscuit\Exception\PolicyException;
 use Biscuit\Exception\PrivateKeyException;
 use Biscuit\Exception\PublicKeyException;
 use Biscuit\Exception\ScopeException;
-use Biscuit\Exception\SnapshotException;
 use Biscuit\Exception\TermException;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
@@ -75,8 +76,6 @@ final class BiscuitServiceProvider extends ServiceProvider
             __DIR__ . '/../config/biscuit.php' => $this->app->configPath('biscuit.php'),
         ], 'biscuit-config');
 
-        Auth::viaRequest('biscuit', $this->user(...));
-
         Gate::before(
             /**
              * @param array<array-key, mixed> $arguments
@@ -88,22 +87,21 @@ final class BiscuitServiceProvider extends ServiceProvider
              * @throws ScopeException
              * @throws TermException
              */
-            function (mixed $user, string $ability, array $arguments): ?bool {
-                if (!$user instanceof BiscuitUser) {
+            function (mixed $_user, string $ability, array $arguments): ?bool {
+                $policy = $this->app->make(Policies::class)->resolve($ability, $arguments);
+
+                if (null === $policy) {
                     return null;
                 }
 
-                $policy = $this->app->make(Policies::class)->resolve($ability, $arguments);
+                $biscuit = $this->biscuit($this->app->make(Request::class));
 
-                return null === $policy ? null : $user->authorize($policy);
+                return null !== $biscuit && self::authorize($biscuit, $policy);
             },
         );
     }
 
-    /**
-     * @throws SnapshotException
-     */
-    private function user(Request $request): ?BiscuitUser
+    private function biscuit(Request $request): ?Biscuit
     {
         $cookie = self::option('biscuit.cookie');
         $token = $request->bearerToken() ?? (null !== $cookie ? $request->cookie($cookie) : null);
@@ -112,15 +110,32 @@ final class BiscuitServiceProvider extends ServiceProvider
             return null;
         }
 
-        $publicKey = $this->app->make(PublicKey::class);
-
         try {
-            $biscuit = Biscuit::fromBase64($token, $publicKey);
+            return Biscuit::fromBase64($token, $this->app->make(PublicKey::class));
         } catch (FormatException) {
             return null;
         }
+    }
 
-        return BiscuitUser::fromBiscuit($biscuit, Config::string('biscuit.user_fact'));
+    /**
+     * @throws AuthorizerBuildException
+     * @throws BuilderStateException
+     * @throws PolicyException
+     * @throws TermException
+     */
+    private static function authorize(Biscuit $biscuit, Policy $policy): bool
+    {
+        $builder = new AuthorizerBuilder();
+        $builder->setTime();
+        $builder->addPolicy($policy);
+
+        try {
+            $builder->build($biscuit)->authorize();
+        } catch (AuthorizationException) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
