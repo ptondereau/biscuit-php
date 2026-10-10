@@ -46,7 +46,7 @@ jobs:
           targets: x86_64-unknown-linux-gnu
 
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -167,7 +167,7 @@ jobs:
           targets: aarch64-unknown-linux-gnu
 
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -277,7 +277,7 @@ jobs:
           components: rustfmt
 
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -335,7 +335,7 @@ jobs:
           targets: aarch64-apple-darwin
 
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -376,7 +376,7 @@ jobs:
 
     steps:
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -433,7 +433,7 @@ jobs:
 
     steps:
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -491,7 +491,7 @@ jobs:
 
     steps:
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
@@ -527,7 +527,7 @@ jobs:
 
     steps:
       - name: Install PHP ${{ matrix.php-version }} (${{ matrix.phpts }})
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php-version }}
           coverage: none
