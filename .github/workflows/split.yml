@@ -9,9 +9,13 @@ on:
 permissions:
   contents: read
 
+env:
+  SPLITSH_VERSION: v1.0.1
+  SPLITSH_SHA256: 2539301ce5e21d0ca44b689d0dd2c1b20d9f9e996c1fe6c462afb8af4e7141cc
+
 jobs:
   split:
-    name: Split ${{ matrix.package.path }}
+    name: Split ${{ matrix.package.repository }}
     runs-on: ubuntu-latest
     concurrency:
       group: split-${{ matrix.package.repository }}
@@ -21,40 +25,33 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - { path: packages/stubs, repository: ptondereau/biscuit-php-stubs }
-          - { path: packages/symfony-bundle, repository: ptondereau/biscuit-sf-bundle }
-          - { path: packages/laravel, repository: ptondereau/biscuit-laravel }
+          - { prefixes: "--prefix=packages/stubs: --prefix=stubs:stubs", repository: ptondereau/biscuit-php-stubs }
+          - { prefixes: "--prefix=packages/symfony-bundle:", repository: ptondereau/biscuit-sf-bundle }
+          - { prefixes: "--prefix=packages/laravel:", repository: ptondereau/biscuit-laravel }
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: ${{ matrix.package.repository }}
-          token: ${{ secrets.SPLIT_TOKEN }}
-          path: mirror
+      - name: Install splitsh-lite
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/splitsh.tar.gz" \
+            "https://github.com/splitsh/lite/releases/download/$SPLITSH_VERSION/lite_linux_amd64.tar.gz"
+          echo "$SPLITSH_SHA256  $RUNNER_TEMP/splitsh.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/splitsh.tar.gz" -C "$RUNNER_TEMP"
 
-      - name: Mirror package
+      - name: Split and push
         env:
-          PACKAGE_PATH: ${{ matrix.package.path }}
-        run: rsync -a --delete --exclude .git "$PACKAGE_PATH/" mirror/
-
-      - name: Commit and push
-        working-directory: mirror
+          PREFIXES: ${{ matrix.package.prefixes }}
+          REPOSITORY: ${{ matrix.package.repository }}
+          SPLIT_TOKEN: ${{ secrets.SPLIT_TOKEN }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if ! git diff --cached --quiet; then
-            git commit -m "Split from ptondereau/biscuit-php@${GITHUB_SHA}"
-            git push origin HEAD:main
+          sha=$("$RUNNER_TEMP/splitsh-lite" $PREFIXES)
+          remote="https://x-access-token:${SPLIT_TOKEN}@github.com/${REPOSITORY}.git"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            git push "$remote" "${sha}:refs/tags/${GITHUB_REF_NAME}"
+          else
+            git push "$remote" "${sha}:refs/heads/main"
           fi
-
-      - name: Push release tag
-        if: startsWith(github.ref, 'refs/tags/')
-        working-directory: mirror
-        run: |
-          git tag "$GITHUB_REF_NAME"
-          git push origin "refs/tags/$GITHUB_REF_NAME"
