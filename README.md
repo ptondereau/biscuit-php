@@ -4,6 +4,7 @@ PHP bindings for [Biscuit](https://www.biscuitsec.org), a bearer token supportin
 
 [![CI](https://github.com/ptondereau/biscuit-php/actions/workflows/tests.yml/badge.svg)](https://github.com/ptondereau/biscuit-php/actions/workflows/tests.yml)
 [![Split](https://github.com/ptondereau/biscuit-php/actions/workflows/split.yml/badge.svg)](https://github.com/ptondereau/biscuit-php/actions/workflows/split.yml)
+[![Coverage Status](https://coveralls.io/repos/github/ptondereau/biscuit-php/badge.svg?branch=main)](https://coveralls.io/github/ptondereau/biscuit-php?branch=main)
 [![PHP Version](https://img.shields.io/packagist/php-v/ptondereau/biscuit-php.svg)](https://packagist.org/packages/ptondereau/biscuit-php)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
@@ -15,7 +16,7 @@ This repository holds the extension and the PHP packages built on top of it. The
 | --- | --- | --- | --- |
 | Extension | repository root | [`ptondereau/biscuit-php`](https://packagist.org/packages/ptondereau/biscuit-php) | [![Latest Version](https://img.shields.io/packagist/v/ptondereau/biscuit-php.svg)](https://packagist.org/packages/ptondereau/biscuit-php) |
 | IDE and static-analysis stubs | [`packages/stubs`](./packages/stubs) | [`ptondereau/biscuit-php-stubs`](https://packagist.org/packages/ptondereau/biscuit-php-stubs) | [![Latest Version](https://img.shields.io/packagist/v/ptondereau/biscuit-php-stubs.svg)](https://packagist.org/packages/ptondereau/biscuit-php-stubs) |
-| Symfony bundle | [`packages/symfony-bundle`](./packages/symfony-bundle) | [`ptondereau/biscuit-symfony-bundle`](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle) | [![Latest Version](https://img.shields.io/packagist/v/ptondereau/biscuit-symfony-bundle.svg)](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle) [![Coverage Status](https://coveralls.io/repos/github/ptondereau/biscuit-php/badge.svg?branch=main)](https://coveralls.io/github/ptondereau/biscuit-php?branch=main) |
+| Symfony bundle | [`packages/symfony-bundle`](./packages/symfony-bundle) | [`ptondereau/biscuit-symfony-bundle`](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle) | [![Latest Version](https://img.shields.io/packagist/v/ptondereau/biscuit-symfony-bundle.svg)](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle) |
 | Laravel package | [`packages/laravel`](./packages/laravel) | [`ptondereau/biscuit-laravel`](https://packagist.org/packages/ptondereau/biscuit-laravel) | [![Latest Version](https://img.shields.io/packagist/v/ptondereau/biscuit-laravel.svg)](https://packagist.org/packages/ptondereau/biscuit-laravel) |
 
 On every push to `main` and on release tags, the [`split`](./.github/workflows/split.yml) workflow mirrors each directory of `packages/` to its read-only repository ([`biscuit-php-stubs`](https://github.com/ptondereau/biscuit-php-stubs), [`biscuit-sf-bundle`](https://github.com/ptondereau/biscuit-sf-bundle), [`biscuit-laravel`](https://github.com/ptondereau/biscuit-laravel)), which is what Packagist tracks. Issues and pull requests for every package go to this repository.
