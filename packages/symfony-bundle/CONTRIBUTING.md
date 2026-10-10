@@ -6,18 +6,21 @@ All contributors are expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md
 
 ## Reporting bugs and proposing features
 
-Use the [issue tracker](https://github.com/ptondereau/biscuit-sf-bundle/issues). The issue templates collect the information that will get your report triaged the fastest.
+Use the [biscuit-php issue tracker](https://github.com/ptondereau/biscuit-php/issues). The bundle is developed in that repository under `packages/symfony-bundle`; [biscuit-sf-bundle](https://github.com/ptondereau/biscuit-sf-bundle) is a read-only mirror.
 
 For security vulnerabilities, do not open a public issue. See [SECURITY.md](SECURITY.md).
 
 ## Development setup
 
 ```bash
-git clone https://github.com/ptondereau/biscuit-sf-bundle.git
-cd biscuit-sf-bundle
-pie install ptondereau/biscuit-php:0.4.0
+git clone https://github.com/ptondereau/biscuit-php.git
+cd biscuit-php
+cargo build --release
+cd packages/symfony-bundle
 composer install
 ```
+
+Load `target/release/libbiscuit_php.so` with an `extension=` line in your `php.ini`.
 
 ## Quality gate
 
@@ -43,7 +46,7 @@ composer cs-fix
 
 - Branch from `main`. Keep the diff focused on one logical change per PR.
 - Add or update tests for any behavior change. Tests for new features must exist before the implementation lands.
-- Update `CHANGELOG.md` under the `## [Unreleased]` section. Use the appropriate Keep a Changelog category (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`).
+- Update the root `CHANGELOG.md` under `## [Unreleased]`, in the `### Symfony bundle` section. Use the appropriate Keep a Changelog category (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`).
 - Update the `README.md` if you add, remove, or rename public-facing configuration, services, commands, or attributes.
 - The CI workflow must be green. PRs failing CI will not be reviewed.
 
@@ -76,4 +79,4 @@ The GitHub Actions workflow runs the same `composer check` against PHP 8.1, 8.2,
 
 ## Releasing
 
-Maintainers tag releases as `vX.Y.Z` on `main`. Tagging triggers a Packagist update. The `CHANGELOG.md` `## [Unreleased]` block is renamed to the new version on the tagging commit.
+Maintainers tag releases as `vX.Y.Z` on biscuit-php `main`. The split workflow pushes the tag to the mirror, which triggers a Packagist update. The root `CHANGELOG.md` `## [Unreleased]` block is renamed to the new version on the tagging commit.
