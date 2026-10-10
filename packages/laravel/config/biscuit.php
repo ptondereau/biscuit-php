@@ -8,6 +8,5 @@ return [
     'private_key' => env('BISCUIT_PRIVATE_KEY'),
     'private_key_file' => env('BISCUIT_PRIVATE_KEY_FILE'),
     'cookie' => env('BISCUIT_COOKIE'),
-    'user_fact' => 'user',
     'policies' => [],
 ];
