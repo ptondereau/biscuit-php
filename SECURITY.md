@@ -1,26 +1,22 @@
 # Security Policy
 
+This policy covers every package built from this repository: the `biscuit` PHP extension, `biscuit-php-stubs`, the Symfony bundle and the Laravel package.
+
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.3.x   | Yes                |
-| < 0.3   | No                 |
+Only the latest `0.Y` release line receives security fixes. Older lines do not.
 
 ## Reporting a Vulnerability
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+**Please do not report security vulnerabilities through public GitHub issues, discussions, or pull requests.**
 
-If you discover a security vulnerability in biscuit-php, please report it responsibly through one of the following channels:
-
-1. **GitHub Private Vulnerability Reporting** — Use the [Security Advisories](https://github.com/ptondereau/biscuit-php/security/advisories/new) page to privately report the issue.
-2. **Email** — Send a detailed report to [pierre.tondereau@protonmail.com](mailto:pierre.tondereau@protonmail.com).
+Report them privately through [GitHub Private Vulnerability Reporting](https://github.com/ptondereau/biscuit-php/security/advisories/new) on this repository, even if the issue is in the Symfony bundle or the Laravel package. Their repositories are read-only mirrors.
 
 ### What to Include
 
 - A description of the vulnerability and its potential impact
 - Steps to reproduce or a proof of concept
-- The version(s) affected
+- The affected package(s) and version(s)
 - Any suggested fix, if you have one
 
 ### What to Expect
@@ -39,8 +35,9 @@ Since biscuit-php provides PHP bindings for [Biscuit](https://www.biscuitsec.org
 - Cryptographic key handling (Ed25519, Secp256r1)
 - Memory safety in the Rust/PHP FFI boundary
 - Authorization policy evaluation
+- Token extraction and authorization in the Symfony bundle and the Laravel package
 
-Vulnerabilities in upstream dependencies ([biscuit-auth](https://github.com/biscuit-auth/biscuit-rust), [ext-php-rs](https://github.com/extphprs/ext-php-rs)) should be reported to their respective maintainers, but feel free to notify us as well so we can track the impact on this project.
+Vulnerabilities in upstream dependencies ([biscuit-auth](https://github.com/eclipse-biscuit/biscuit-rust), [ext-php-rs](https://github.com/extphprs/ext-php-rs)) should be reported to their respective maintainers, but feel free to notify us as well so we can track the impact on this project.
 
 ## Disclosure Policy
 

@@ -1011,7 +1011,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). All contributors are expected to follow 
 
 ## Security
 
-Vulnerabilities should be reported to `security@biscuitsec.org`. See [SECURITY.md](SECURITY.md) for details.
+Vulnerabilities should be reported privately through [GitHub Private Vulnerability Reporting](https://github.com/ptondereau/biscuit-php/security/advisories/new). See [SECURITY.md](SECURITY.md) for details.
 
 ## License
 
