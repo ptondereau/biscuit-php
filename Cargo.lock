@@ -134,7 +134,7 @@ dependencies = [
 
 [[package]]
 name = "biscuit_php"
-version = "0.5.5"
+version = "0.5.6"
 dependencies = [
  "biscuit-auth",
  "biscuit-parser",
