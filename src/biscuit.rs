@@ -1,11 +1,53 @@
+use std::collections::HashMap;
+
+use biscuit_auth::RootKeyProvider;
+use biscuit_auth::error::Format;
 use ext_php_rs::binary_slice::BinarySlice;
+use ext_php_rs::convert::FromZval;
+use ext_php_rs::exception::PhpException;
 use ext_php_rs::prelude::*;
+use ext_php_rs::types::Zval;
+use ext_php_rs::zend::ce;
 
 use crate::builders::{BiscuitBuilder, BlockBuilder};
 use crate::errors::{BuildKind, FormatKind, ResultExt};
 use crate::helpers::get_builder;
 use crate::keys::PublicKey;
 use crate::third_party::{ThirdPartyBlock, ThirdPartyRequest};
+
+pub enum RootKeys<'a> {
+    Single(&'a PublicKey),
+    Set(HashMap<i64, &'a PublicKey>),
+}
+
+impl<'a> TryFrom<&'a Zval> for RootKeys<'a> {
+    type Error = PhpException;
+
+    fn try_from(zval: &'a Zval) -> Result<Self, Self::Error> {
+        <&PublicKey>::from_zval(zval)
+            .map(Self::Single)
+            .or_else(|| HashMap::from_zval(zval).map(Self::Set))
+            .ok_or_else(|| {
+                PhpException::new(
+                    "root must be a PublicKey or an array<int, PublicKey>".into(),
+                    0,
+                    ce::type_error(),
+                )
+            })
+    }
+}
+
+impl RootKeyProvider for RootKeys<'_> {
+    fn choose(&self, key_id: Option<u32>) -> Result<biscuit_auth::PublicKey, Format> {
+        match self {
+            Self::Single(key) => Ok(key.0),
+            Self::Set(keys) => key_id
+                .and_then(|id| keys.get(&i64::from(id)))
+                .map(|key| key.0)
+                .ok_or(Format::UnknownPublicKey),
+        }
+    }
+}
 
 #[php_class]
 #[php(name = "Biscuit\\Auth\\Biscuit")]
@@ -18,15 +60,17 @@ impl Biscuit {
         BiscuitBuilder(Some(biscuit_auth::builder::BiscuitBuilder::new()))
     }
 
-    pub fn from_bytes(data: BinarySlice<u8>, root: &PublicKey) -> PhpResult<Self> {
+    pub fn from_bytes(data: BinarySlice<u8>, root: &Zval) -> PhpResult<Self> {
+        let root = RootKeys::try_from(root)?;
         Ok(Self(
-            biscuit_auth::Biscuit::from(data.as_ref(), root.0).format(FormatKind::Bytes)?,
+            biscuit_auth::Biscuit::from(data.as_ref(), root).format(FormatKind::Bytes)?,
         ))
     }
 
-    pub fn from_base64(data: &str, root: &PublicKey) -> PhpResult<Self> {
+    pub fn from_base64(data: &str, root: &Zval) -> PhpResult<Self> {
+        let root = RootKeys::try_from(root)?;
         Ok(Self(
-            biscuit_auth::Biscuit::from_base64(data, root.0).format(FormatKind::Base64)?,
+            biscuit_auth::Biscuit::from_base64(data, root).format(FormatKind::Base64)?,
         ))
     }
 
@@ -139,12 +183,10 @@ impl UnverifiedBiscuit {
             .collect()
     }
 
-    pub fn verify(&self, root: &PublicKey) -> PhpResult<Biscuit> {
+    pub fn verify(&self, root: &Zval) -> PhpResult<Biscuit> {
+        let root = RootKeys::try_from(root)?;
         Ok(Biscuit(
-            self.0
-                .clone()
-                .verify(root.0)
-                .format(FormatKind::Signature)?,
+            self.0.clone().verify(root).format(FormatKind::Signature)?,
         ))
     }
 }
