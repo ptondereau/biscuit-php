@@ -23,6 +23,7 @@ jobs:
         package:
           - { path: packages/stubs, repository: ptondereau/biscuit-php-stubs }
           - { path: packages/symfony-bundle, repository: ptondereau/biscuit-sf-bundle }
+          - { path: packages/laravel, repository: ptondereau/biscuit-laravel }
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

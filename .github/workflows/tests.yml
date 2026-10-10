@@ -341,3 +341,67 @@ jobs:
               echo "ok: $class\n";
             }
           '
+
+  laravel:
+    name: Laravel - PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}${{ matrix.deps == 'lowest' && ' (lowest)' || '' }}
+    needs: tests-build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/laravel
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '8.2', laravel: '12' }
+          - { php: '8.3', laravel: '12' }
+          - { php: '8.3', laravel: '13' }
+          - { php: '8.4', laravel: '12' }
+          - { php: '8.4', laravel: '13' }
+          - { php: '8.5', laravel: '12' }
+          - { php: '8.5', laravel: '13' }
+          - { php: '8.2', laravel: '12', deps: 'lowest' }
+          - { php: '8.3', laravel: '13', deps: 'lowest' }
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: biscuit_php-${{ matrix.php }}
+          path: ${{ runner.temp }}/ext
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: pcov
+          ini-values: extension=${{ runner.temp }}/ext/libbiscuit_php.so
+        env:
+          fail-fast: true
+
+      - name: Constrain Laravel version
+        env:
+          LARAVEL: ^${{ matrix.laravel }}.0
+        run: |
+          composer require --no-update --no-interaction \
+            "illuminate/auth:$LARAVEL" \
+            "illuminate/database:$LARAVEL" \
+            "illuminate/http:$LARAVEL" \
+            "illuminate/support:$LARAVEL"
+
+      - name: Install dependencies
+        uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+        with:
+          working-directory: packages/laravel
+          dependency-versions: ${{ matrix.deps == 'lowest' && 'lowest' || 'highest' }}
+
+      - name: Run quality gate
+        run: composer check
+
+      - name: Enforce full coverage
+        run: vendor/bin/pest --coverage --min=100

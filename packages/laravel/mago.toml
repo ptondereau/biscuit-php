@@ -1,0 +1,44 @@
+php-version = "8.2.0"
+
+[source]
+workspace = "."
+paths = ["src/", "tests/", "config/"]
+includes = ["vendor"]
+excludes = ["vendor/orchestra/testbench-core/laravel"]
+
+[formatter]
+print-width = 120
+tab-width = 4
+use-tabs = false
+
+[linter]
+integrations = ["pest", "laravel"]
+minimum-fail-level = "Note"
+
+[linter.rules]
+function-name = { enabled = false }
+
+[analyzer]
+minimum-fail-level = "Note"
+ignore = [{ code = "unhandled-thrown-type", in = ["tests/"] }]
+unchecked-exceptions = ["TypeError", "Illuminate\\Contracts\\Container\\BindingResolutionException"]
+find-unused-expressions = true
+find-unused-definitions = true
+find-overly-wide-return-types = true
+find-unused-parameters = true
+analyze-dead-code = true
+check-throws = true
+strict-list-index-checks = true
+strict-array-index-existence = true
+no-boolean-literal-comparison = true
+check-missing-type-hints = true
+check-closure-missing-type-hints = true
+check-arrow-function-missing-type-hints = true
+check-missing-override = true
+check-property-initialization = true
+check-use-statements = true
+check-name-casing = true
+enforce-class-finality = true
+require-api-or-internal = true
+allow-side-effects-in-conditions = false
+register-super-globals = false

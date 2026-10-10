@@ -1,0 +1,10 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: max
+    paths:
+        - src
+        - tests
+    scanDirectories:
+        - vendor/ptondereau/biscuit-php-stubs/stubs
