@@ -267,6 +267,8 @@ jobs:
           file: packages/symfony-bundle/coverage.xml
           base-path: packages/symfony-bundle
           format: clover
+          flag-name: symfony-bundle
+          parallel: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   symfony-bundle-consumer-install:
@@ -404,4 +406,28 @@ jobs:
         run: composer check
 
       - name: Enforce full coverage
-        run: vendor/bin/pest --coverage --min=100
+        run: vendor/bin/pest --coverage --min=100 --coverage-clover=coverage.xml
+
+      - name: Upload coverage to Coveralls
+        if: matrix.php == '8.5' && matrix.laravel == '13'
+        uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2.3.8
+        with:
+          file: packages/laravel/coverage.xml
+          base-path: packages/laravel
+          format: clover
+          flag-name: laravel
+          parallel: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  coverage-finish:
+    name: Code coverage - Finish
+    needs: [symfony-bundle-coverage, laravel]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2.3.8
+        with:
+          parallel-finished: true
+          carryforward: symfony-bundle,laravel
+          github-token: ${{ secrets.GITHUB_TOKEN }}
