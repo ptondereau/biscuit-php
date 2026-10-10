@@ -2,11 +2,15 @@
 
 Symfony bundle for [Biscuit](https://www.biscuitsec.org/) authorization tokens.
 
-[![CI](https://github.com/ptondereau/biscuit-sf-bundle/actions/workflows/ci.yml/badge.svg)](https://github.com/ptondereau/biscuit-sf-bundle/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/github/ptondereau/biscuit-sf-bundle/badge.svg?branch=main)](https://coveralls.io/github/ptondereau/biscuit-sf-bundle?branch=main)
+[![CI](https://github.com/ptondereau/biscuit-php/actions/workflows/tests.yml/badge.svg)](https://github.com/ptondereau/biscuit-php/actions/workflows/tests.yml)
+[![Coverage Status](https://coveralls.io/repos/github/ptondereau/biscuit-php/badge.svg?branch=main)](https://coveralls.io/github/ptondereau/biscuit-php?branch=main)
 [![Latest Version](https://img.shields.io/packagist/v/ptondereau/biscuit-symfony-bundle.svg)](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle)
 [![PHP Version](https://img.shields.io/packagist/php-v/ptondereau/biscuit-symfony-bundle.svg)](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
+> **This repository is a read-only mirror.** The bundle is developed in
+> [`packages/symfony-bundle` of ptondereau/biscuit-php](https://github.com/ptondereau/biscuit-php/tree/main/packages/symfony-bundle)
+> and synced here automatically. Please open issues and pull requests against that repository.
 
 ## About
 
@@ -30,14 +34,14 @@ Read the Datalog reference at [biscuitsec.org/docs/reference/datalog](https://ww
 
 - PHP 8.1 or higher
 - Symfony 6.4, 7.4, or 8.0
-- The `biscuit-php` PHP extension (version 0.5.0)
+- The `biscuit-php` PHP extension (version 0.5 or higher)
 
 ## Installation
 
 Install the PHP extension via [pie](https://github.com/php/pie):
 
 ```bash
-pie install ptondereau/biscuit-php:0.5.0
+pie install ptondereau/biscuit-php
 ```
 
 Install the bundle via Composer:

@@ -3,6 +3,21 @@
 PHP bindings for [Biscuit](https://www.biscuitsec.org), a bearer token supporting offline attenuation, decentralized verification, and powerful authorization policies.
 
 [![CI](https://github.com/ptondereau/biscuit-php/actions/workflows/tests.yml/badge.svg)](https://github.com/ptondereau/biscuit-php/actions/workflows/tests.yml)
+[![Split](https://github.com/ptondereau/biscuit-php/actions/workflows/split.yml/badge.svg)](https://github.com/ptondereau/biscuit-php/actions/workflows/split.yml)
+[![PHP Version](https://img.shields.io/packagist/php-v/ptondereau/biscuit-php.svg)](https://packagist.org/packages/ptondereau/biscuit-php)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
+## Packages
+
+This repository holds the extension and the PHP packages built on top of it. They share one version and one [changelog](./CHANGELOG.md).
+
+| Package | Source | Packagist | Version |
+| --- | --- | --- | --- |
+| Extension | repository root | [`ptondereau/biscuit-php`](https://packagist.org/packages/ptondereau/biscuit-php) | [![Latest Version](https://img.shields.io/packagist/v/ptondereau/biscuit-php.svg)](https://packagist.org/packages/ptondereau/biscuit-php) |
+| IDE and static-analysis stubs | [`packages/stubs`](./packages/stubs) | [`ptondereau/biscuit-php-stubs`](https://packagist.org/packages/ptondereau/biscuit-php-stubs) | [![Latest Version](https://img.shields.io/packagist/v/ptondereau/biscuit-php-stubs.svg)](https://packagist.org/packages/ptondereau/biscuit-php-stubs) |
+| Symfony bundle | [`packages/symfony-bundle`](./packages/symfony-bundle) | [`ptondereau/biscuit-symfony-bundle`](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle) | [![Latest Version](https://img.shields.io/packagist/v/ptondereau/biscuit-symfony-bundle.svg)](https://packagist.org/packages/ptondereau/biscuit-symfony-bundle) [![Coverage Status](https://coveralls.io/repos/github/ptondereau/biscuit-php/badge.svg?branch=main)](https://coveralls.io/github/ptondereau/biscuit-php?branch=main) |
+
+On every push to `main` and on release tags, the [`split`](./.github/workflows/split.yml) workflow mirrors each directory of `packages/` to its read-only repository ([`biscuit-php-stubs`](https://github.com/ptondereau/biscuit-php-stubs), [`biscuit-sf-bundle`](https://github.com/ptondereau/biscuit-sf-bundle)), which is what Packagist tracks. Issues and pull requests for every package go to this repository.
 
 ## Documentation and Specifications
 
@@ -322,9 +337,7 @@ php \
 
 ## PHP Stubs
 
-The stubs live in [`packages/stubs/`](./packages/stubs) and are maintained by hand, one file per class. On every push to `main` and on release tags, the [`split`](./.github/workflows/split.yml) workflow mirrors each directory of `packages/` to its read-only repository ([`ptondereau/biscuit-php-stubs`](https://github.com/ptondereau/biscuit-php-stubs), [`ptondereau/biscuit-sf-bundle`](https://github.com/ptondereau/biscuit-sf-bundle)), which is what Packagist tracks. Release tags are replicated so every package shares the extension version.
-
-When changing the PHP API exposed from Rust, update the matching stub in `packages/stubs/` in the same pull request.
+The stubs live in [`packages/stubs/`](./packages/stubs) and are maintained by hand, one file per class. When changing the PHP API exposed from Rust, update the matching stub in `packages/stubs/` in the same pull request.
 
 ## Contributing
 
@@ -332,7 +345,10 @@ Contributions are welcome! Please:
 
 1. Add tests for new features
 2. Update documentation and the PHP stubs in `packages/stubs/` when the API changes
-3. Ensure all tests pass
+3. Add an entry to [`CHANGELOG.md`](./CHANGELOG.md) under `## [Unreleased]`, in the section of the package you changed
+4. Ensure all tests pass
+
+Symfony bundle specifics are in [its contributing guide](./packages/symfony-bundle/CONTRIBUTING.md).
 
 ## License
 
