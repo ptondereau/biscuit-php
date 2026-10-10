@@ -43,7 +43,7 @@ Pre-built binaries are available for Linux (glibc/musl, x86_64/arm64), macOS (x8
 
 ```bash
 # Pick the archive matching your PHP version, libc, arch, and TS/NTS:
-VERSION=v0.4.0
+VERSION=v0.6.0
 wget https://github.com/ptondereau/biscuit-php/releases/download/${VERSION}/php_biscuit_php-${VERSION}_php8.3-x86_64-linux-glibc-nts.zip
 unzip php_biscuit_php-${VERSION}_php8.3-x86_64-linux-glibc-nts.zip
 
