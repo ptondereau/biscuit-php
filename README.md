@@ -316,41 +316,9 @@ $publicKey = PublicKey::fromBytes($bytes, Algorithm::Ed25519); // Explicit Ed255
 $publicKey = PublicKey::fromBytes($bytes, Algorithm::Secp256r1); // Explicit Secp256r1
 ```
 
-## Testing
-
-```bash
-cargo build
-php \
-    -dextension=target/debug/libbiscuit_php.so \
-    vendor/bin/phpunit
-```
-
-## Formatting
-
-We're using [Mago](https://mago.carthage.software/) as code-style formatter for PHP code
-
-```bash
-composer install
-cargo build
-php \
-    -dextension=target/debug/libbiscuit_php.so \
-    vendor/bin/mago lint // and format
-```
-
-## PHP Stubs
-
-The stubs live in [`packages/stubs/`](./packages/stubs) and are maintained by hand, one file per class. When changing the PHP API exposed from Rust, update the matching stub in `packages/stubs/` in the same pull request.
-
 ## Contributing
 
-Contributions are welcome! Please:
-
-1. Add tests for new features
-2. Update documentation and the PHP stubs in `packages/stubs/` when the API changes
-3. Add an entry to [`CHANGELOG.md`](./CHANGELOG.md) under `## [Unreleased]`, in the section of the package you changed
-4. Ensure all tests pass
-
-Symfony bundle specifics are in [its contributing guide](./packages/symfony-bundle/CONTRIBUTING.md).
+Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development setup, the quality gate of each package and the pull request expectations.
 
 ## License
 
