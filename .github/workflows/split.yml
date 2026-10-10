@@ -1,0 +1,59 @@
+name: Split packages
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  split:
+    name: Split ${{ matrix.package.path }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: split-${{ matrix.package.repository }}
+      cancel-in-progress: false
+
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - { path: packages/stubs, repository: ptondereau/biscuit-php-stubs }
+          - { path: packages/symfony-bundle, repository: ptondereau/biscuit-sf-bundle }
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ matrix.package.repository }}
+          token: ${{ secrets.SPLIT_TOKEN }}
+          path: mirror
+
+      - name: Mirror package
+        env:
+          PACKAGE_PATH: ${{ matrix.package.path }}
+        run: rsync -a --delete --exclude .git "$PACKAGE_PATH/" mirror/
+
+      - name: Commit and push
+        working-directory: mirror
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Split from ptondereau/biscuit-php@${GITHUB_SHA}"
+            git push origin HEAD:main
+          fi
+
+      - name: Push release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: mirror
+        run: |
+          git tag "$GITHUB_REF_NAME"
+          git push origin "refs/tags/$GITHUB_REF_NAME"

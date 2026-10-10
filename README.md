@@ -322,16 +322,16 @@ php \
 
 ## PHP Stubs
 
-The stubs live in [`stubs/`](./stubs) and are maintained by hand, one file per class. On every push to `main` and on release tags, the [`sync-stubs`](./.github/workflows/sync-stubs.yml) workflow mirrors them (together with `dist/stubs-package/`) to [`ptondereau/biscuit-php-stubs`](https://github.com/ptondereau/biscuit-php-stubs), which is what Packagist tracks. Release tags are replicated on the mirror so stub versions follow extension releases.
+The stubs live in [`packages/stubs/`](./packages/stubs) and are maintained by hand, one file per class. On every push to `main` and on release tags, the [`split`](./.github/workflows/split.yml) workflow mirrors each directory of `packages/` to its read-only repository ([`ptondereau/biscuit-php-stubs`](https://github.com/ptondereau/biscuit-php-stubs), [`ptondereau/biscuit-sf-bundle`](https://github.com/ptondereau/biscuit-sf-bundle)), which is what Packagist tracks. Release tags are replicated so every package shares the extension version.
 
-When changing the PHP API exposed from Rust, update the matching stub in `stubs/` in the same pull request.
+When changing the PHP API exposed from Rust, update the matching stub in `packages/stubs/` in the same pull request.
 
 ## Contributing
 
 Contributions are welcome! Please:
 
 1. Add tests for new features
-2. Update documentation and the PHP stubs in `stubs/` when the API changes
+2. Update documentation and the PHP stubs in `packages/stubs/` when the API changes
 3. Ensure all tests pass
 
 ## License

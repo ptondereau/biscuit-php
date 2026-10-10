@@ -3,7 +3,7 @@
 IDE and static-analysis stubs for [`biscuit_php`](https://github.com/ptondereau/biscuit-php), the PHP extension for [Biscuit](https://www.biscuitsec.org/) authorization tokens.
 
 > **This repository is a read-only mirror.** The stubs are maintained in the
-> [`stubs/` directory of ptondereau/biscuit-php](https://github.com/ptondereau/biscuit-php/tree/main/stubs)
+> [`packages/stubs/` directory of ptondereau/biscuit-php](https://github.com/ptondereau/biscuit-php/tree/main/packages/stubs)
 > and synced here automatically. Please open issues and pull requests against the main repository.
 
 ## Installation

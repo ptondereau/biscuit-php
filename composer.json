@@ -12,7 +12,7 @@
     ],
     "autoload-dev": {
         "psr-4": {
-            "Biscuit\\": "stubs/Biscuit/",
+            "Biscuit\\": "packages/stubs/stubs/Biscuit/",
             "Biscuit\\Tests\\": "tests/"
         }
     },

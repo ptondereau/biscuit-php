@@ -57,8 +57,8 @@ jobs:
 
       - name: Validate stubs
         run: |
-          find stubs -name '*.php' -print0 | xargs -0 -n1 php -l
-          composer validate --strict dist/stubs-package/composer.json
+          find packages/stubs -name '*.php' -print0 | xargs -0 -n1 php -l
+          composer validate --strict packages/stubs/composer.json
 
       - name: Setup Mago
         if: ${{ matrix.php-version == '8.5' }}
@@ -74,6 +74,12 @@ jobs:
 
       - name: "Run PHPUnit"
         run: php -dextension=./target/release/libbiscuit_php.so vendor/bin/phpunit
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: biscuit_php-${{ matrix.php-version }}
+          path: target/release/libbiscuit_php.so
+          retention-days: 1
 
   tests-debug:
     runs-on: ubuntu-latest
@@ -116,3 +122,222 @@ jobs:
 
       - name: "Run PHPUnit"
         run: php -dextension=./target/release/libbiscuit_php.so vendor/bin/phpunit
+
+  symfony-bundle:
+    name: Symfony bundle - PHP ${{ matrix.php }} / Symfony ${{ matrix.symfony }}${{ matrix.deps == 'lowest' && ' (lowest)' || '' }}
+    needs: tests-build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/symfony-bundle
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '8.1', symfony: '6.4.*' }
+          - { php: '8.2', symfony: '6.4.*' }
+          - { php: '8.3', symfony: '6.4.*' }
+          - { php: '8.4', symfony: '6.4.*' }
+          - { php: '8.5', symfony: '6.4.*' }
+          - { php: '8.2', symfony: '7.4.*' }
+          - { php: '8.3', symfony: '7.4.*' }
+          - { php: '8.4', symfony: '7.4.*' }
+          - { php: '8.5', symfony: '7.4.*' }
+          - { php: '8.4', symfony: '8.0.*' }
+          - { php: '8.5', symfony: '8.0.*' }
+          - { php: '8.4', symfony: '8.1.*' }
+          - { php: '8.5', symfony: '8.1.*' }
+          - { php: '8.1', symfony: '6.4.*', deps: 'lowest' }
+          - { php: '8.2', symfony: '7.4.*', deps: 'lowest' }
+          - { php: '8.4', symfony: '8.0.*', deps: 'lowest' }
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: biscuit_php-${{ matrix.php }}
+          path: ${{ runner.temp }}/ext
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: none
+          ini-values: extension=${{ runner.temp }}/ext/libbiscuit_php.so
+        env:
+          fail-fast: true
+
+      - name: Constrain Symfony version
+        env:
+          SYMFONY: ${{ matrix.symfony }}
+        run: |
+          composer require --no-update --no-interaction \
+            "symfony/framework-bundle:$SYMFONY" \
+            "symfony/security-bundle:$SYMFONY" \
+            "symfony/config:$SYMFONY" \
+            "symfony/dependency-injection:$SYMFONY" \
+            "symfony/console:$SYMFONY"
+          composer require --no-update --no-interaction --dev \
+            "symfony/cache:$SYMFONY" \
+            "symfony/web-profiler-bundle:$SYMFONY" \
+            "symfony/twig-bundle:$SYMFONY" \
+            "symfony/twig-bridge:$SYMFONY" \
+            "symfony/property-access:$SYMFONY" \
+            "symfony/property-info:$SYMFONY" \
+            "symfony/browser-kit:$SYMFONY" \
+            "symfony/css-selector:$SYMFONY" \
+            "symfony/messenger:$SYMFONY" \
+            "symfony/runtime:$SYMFONY" \
+            "symfony/yaml:$SYMFONY"
+
+      - name: Install dependencies
+        uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+        with:
+          working-directory: packages/symfony-bundle
+          dependency-versions: ${{ matrix.deps == 'lowest' && 'lowest' || 'highest' }}
+
+      - name: Run quality gate
+        run: composer check
+
+  symfony-bundle-coverage:
+    name: Symfony bundle - Code coverage
+    needs: tests-build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/symfony-bundle
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: biscuit_php-8.5
+          path: ${{ runner.temp }}/ext
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: pcov
+          ini-values: extension=${{ runner.temp }}/ext/libbiscuit_php.so
+        env:
+          fail-fast: true
+
+      - name: Constrain Symfony version
+        run: |
+          composer require --no-update --no-interaction \
+            "symfony/framework-bundle:7.4.*" \
+            "symfony/security-bundle:7.4.*" \
+            "symfony/config:7.4.*" \
+            "symfony/dependency-injection:7.4.*" \
+            "symfony/console:7.4.*"
+          composer require --no-update --no-interaction --dev \
+            "symfony/cache:7.4.*" \
+            "symfony/web-profiler-bundle:7.4.*" \
+            "symfony/twig-bundle:7.4.*" \
+            "symfony/twig-bridge:7.4.*" \
+            "symfony/property-access:7.4.*" \
+            "symfony/property-info:7.4.*" \
+            "symfony/browser-kit:7.4.*" \
+            "symfony/css-selector:7.4.*" \
+            "symfony/messenger:7.4.*" \
+            "symfony/runtime:7.4.*" \
+            "symfony/yaml:7.4.*"
+
+      - name: Install dependencies
+        uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+        with:
+          working-directory: packages/symfony-bundle
+
+      - name: Run tests with coverage
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2.3.8
+        with:
+          file: packages/symfony-bundle/coverage.xml
+          base-path: packages/symfony-bundle
+          format: clover
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  symfony-bundle-consumer-install:
+    name: Symfony bundle - Consumer install
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/symfony-bundle
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+        env:
+          fail-fast: true
+
+      - name: Install the way a consumer would
+        run: composer install --no-dev --no-progress --ignore-platform-req=ext-biscuit_php
+
+      - name: Every interface a shipped class typehints must be installed
+        run: |
+          set -euo pipefail
+          for package in psr/cache psr/log symfony/event-dispatcher-contracts; do
+            if ! composer show "$package" >/dev/null 2>&1; then
+              echo "::error::$package is used by a shipped class but missing from a --no-dev install"
+              exit 1
+            fi
+            echo "✓ $package"
+          done
+
+      - name: No suggested package may be needed to load the bundle
+        run: |
+          set -euo pipefail
+          for package in doctrine/dbal doctrine/orm symfony/maker-bundle symfony/messenger symfony/web-profiler-bundle symfony/yaml; do
+            if composer show "$package" >/dev/null 2>&1; then
+              echo "::error::$package leaked into a --no-dev install; it should stay a suggestion"
+              exit 1
+            fi
+          done
+          php -r '
+            require "vendor/autoload.php";
+            $classes = [
+              "Biscuit\\BiscuitBundle\\BiscuitBundle",
+              "Biscuit\\BiscuitBundle\\DependencyInjection\\BiscuitExtension",
+              "Biscuit\\BiscuitBundle\\Revocation\\RevocationChecker",
+              "Biscuit\\BiscuitBundle\\Revocation\\Store\\CacheRevocationStore",
+              "Biscuit\\BiscuitBundle\\Revocation\\Message\\RevokeToken",
+              "Biscuit\\BiscuitBundle\\Revocation\\Message\\UnrevokeToken",
+              "Biscuit\\BiscuitBundle\\Revocation\\Message\\PurgeExpiredRevocations",
+              "Biscuit\\BiscuitBundle\\Revocation\\Message\\RevocationPushHandler",
+              "Biscuit\\BiscuitBundle\\Security\\Http\\AuthenticationFailureResponseFactory",
+            ];
+            foreach ($classes as $class) {
+              if (!class_exists($class)) {
+                fwrite(STDERR, "missing: $class\n");
+                exit(1);
+              }
+              foreach ((new ReflectionClass($class))->getConstructor()?->getParameters() ?? [] as $parameter) {
+                $type = $parameter->getType();
+                if ($type instanceof ReflectionNamedType && !$type->isBuiltin() && !class_exists($type->getName()) && !interface_exists($type->getName())) {
+                  fwrite(STDERR, sprintf("%s typehints missing %s\n", $class, $type->getName()));
+                  exit(1);
+                }
+              }
+              echo "ok: $class\n";
+            }
+          '
