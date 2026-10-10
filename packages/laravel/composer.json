@@ -1,0 +1,71 @@
+{
+  "name": "ptondereau/biscuit-laravel",
+  "description": "Laravel integration for Biscuit authorization tokens",
+  "type": "library",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Pierre Tondereau",
+      "email": "pierre.tondereau@protonmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=8.2",
+    "ext-biscuit_php": ">=0.5",
+    "illuminate/auth": "^12.0 || ^13.0",
+    "illuminate/database": "^12.0 || ^13.0",
+    "illuminate/filesystem": "^12.0 || ^13.0",
+    "illuminate/http": "^12.0 || ^13.0",
+    "illuminate/support": "^12.0 || ^13.0",
+    "symfony/polyfill-php83": "^1.31"
+  },
+  "require-dev": {
+    "carthage-software/mago": "^1.55",
+    "larastan/larastan": "^3.13",
+    "orchestra/testbench": "^10.0 || ^11.0",
+    "pestphp/pest": "^3.8 || ^4.0 || ^5.0",
+    "ptondereau/biscuit-php-stubs": "^0.5.1"
+  },
+  "scripts": {
+    "format": "mago format",
+    "lint": [
+      "mago format --dry-run",
+      "mago lint",
+      "mago analyze"
+    ],
+    "phpstan": "phpstan analyse --memory-limit=512M",
+    "test": "pest",
+    "check": [
+      "@lint",
+      "@phpstan",
+      "@test"
+    ]
+  },
+  "autoload": {
+    "psr-4": {
+      "Biscuit\\Laravel\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Biscuit\\Laravel\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Biscuit\\Laravel\\BiscuitServiceProvider"
+      ]
+    },
+    "branch-alias": {
+      "dev-main": "0.6.x-dev"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "carthage-software/mago": true,
+      "pestphp/pest-plugin": true
+    }
+  }
+}

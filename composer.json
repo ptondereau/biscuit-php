@@ -21,7 +21,7 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^10",
-        "carthage-software/mago": "1.25.2"
+        "carthage-software/mago": "1.55.0"
     },
     "config": {
         "allow-plugins": {
