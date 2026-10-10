@@ -1,0 +1,26 @@
+name: Labels
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/labels.yml]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sync:
+    name: Sync labels
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Create or update labels
+        run: |
+          gh label create extension --force --color 1d76db --description "ext-biscuit PHP extension"
+          gh label create symfony-bundle --force --color 000000 --description "Symfony bundle"
+          gh label create laravel --force --color f9322c --description "Laravel package"
+          gh label create stubs --force --color 8892bf --description "PHP stubs"

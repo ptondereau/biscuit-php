@@ -1,0 +1,18 @@
+name: Extension
+description: The ext-biscuit PHP extension (Rust)
+labels: ["extension"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened or what do you need? Add a reproducer if it is a bug.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      placeholder: ext-biscuit 0.5.3, PHP 8.4, Linux x86_64
+    validations:
+      required: true
