@@ -20,9 +20,11 @@ use Biscuit\Auth\Rule;
 use Biscuit\Auth\ThirdPartyBlock;
 use Biscuit\Auth\ThirdPartyRequest;
 use Biscuit\Auth\UnverifiedBiscuit;
+use Biscuit\Exception\Base64Exception;
 use Biscuit\Exception\BuilderStateException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use TypeError;
 
 class BiscuitTest extends TestCase
 {
@@ -516,6 +518,78 @@ class BiscuitTest extends TestCase
 
         $utoken = UnverifiedBiscuit::fromBase64($base64);
         static::assertSame(42, $utoken->rootKeyId());
+    }
+
+    public function testFromBase64WithRootKeySetSelectsKeyByRootKeyId(): void
+    {
+        $previous = new KeyPair();
+        $current = new KeyPair();
+        $builder = new BiscuitBuilder('user("alice")');
+        $builder->setRootKeyId(2);
+        $token = $builder->build($current->getPrivateKey());
+
+        $parsed = Biscuit::fromBase64($token->toBase64(), [
+            1 => $previous->getPublicKey(),
+            2 => $current->getPublicKey(),
+        ]);
+
+        static::assertSame(1, $parsed->blockCount());
+    }
+
+    public function testFromBase64WithRootKeySetRejectsUnknownRootKeyId(): void
+    {
+        $kp = new KeyPair();
+        $builder = new BiscuitBuilder('user("alice")');
+        $builder->setRootKeyId(3);
+        $token = $builder->build($kp->getPrivateKey());
+
+        $this->expectException(Base64Exception::class);
+
+        Biscuit::fromBase64($token->toBase64(), [1 => $kp->getPublicKey()]);
+    }
+
+    public function testFromBase64WithRootKeySetRejectsTokenWithoutRootKeyId(): void
+    {
+        $kp = new KeyPair();
+        $token = (new BiscuitBuilder('user("alice")'))->build($kp->getPrivateKey());
+
+        $this->expectException(Base64Exception::class);
+
+        Biscuit::fromBase64($token->toBase64(), [0 => $kp->getPublicKey()]);
+    }
+
+    public function testFromBytesWithRootKeySetSelectsKeyByRootKeyId(): void
+    {
+        $kp = new KeyPair();
+        $builder = new BiscuitBuilder('user("alice")');
+        $builder->setRootKeyId(7);
+        $token = $builder->build($kp->getPrivateKey());
+
+        $parsed = Biscuit::fromBytes(pack('C*', ...$token->toBytes()), [7 => $kp->getPublicKey()]);
+
+        static::assertSame(1, $parsed->blockCount());
+    }
+
+    public function testUnverifiedBiscuitVerifyWithRootKeySetSelectsKeyByRootKeyId(): void
+    {
+        $kp = new KeyPair();
+        $builder = new BiscuitBuilder('user("alice")');
+        $builder->setRootKeyId(5);
+        $token = $builder->build($kp->getPrivateKey());
+
+        $verified = UnverifiedBiscuit::fromBase64($token->toBase64())->verify([5 => $kp->getPublicKey()]);
+
+        static::assertSame(1, $verified->blockCount());
+    }
+
+    public function testFromBase64RejectsRootKeySetWithNonPublicKeyValues(): void
+    {
+        $kp = new KeyPair();
+        $token = (new BiscuitBuilder('user("alice")'))->build($kp->getPrivateKey());
+
+        $this->expectException(TypeError::class);
+
+        Biscuit::fromBase64($token->toBase64(), [1 => 'not a key']);
     }
 
     public function testFactWithSet(): void

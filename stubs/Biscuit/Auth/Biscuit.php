@@ -12,6 +12,7 @@ use Biscuit\Exception\SnapshotException;
 use Biscuit\Exception\ThirdPartyBlockAppendException;
 use Biscuit\Exception\ThirdPartyException;
 use Error;
+use TypeError;
 
 /**
  * A verified Biscuit authorization token.
@@ -55,9 +56,16 @@ class Biscuit
      * Deserializes a token from raw bytes (binary string) and verifies its
      * signatures against the root public key.
      *
-     * @throws BytesException If the input is not a valid token or signature verification fails.
+     * $root is one public key or a key set. The key set uses the root key ID
+     * as the index. The extension uses the key that has the same ID as
+     * {@see UnverifiedBiscuit::rootKeyId()}.
+     *
+     * @param PublicKey|array<int, PublicKey> $root
+     *
+     * @throws BytesException If the token is not valid, the key set has no key for its root key ID, or the signature is not correct.
+     * @throws TypeError If $root is not a PublicKey and not an array of PublicKey.
      */
-    public static function fromBytes(string $data, PublicKey $root): Biscuit
+    public static function fromBytes(string $data, PublicKey|array $root): Biscuit
     {
         throw new Error('Biscuit\Auth\Biscuit::fromBytes() should be implemented by the biscuit_php extension.');
     }
@@ -66,9 +74,16 @@ class Biscuit
      * Deserializes a token from a URL-safe base64 string and verifies its
      * signatures against the root public key.
      *
-     * @throws Base64Exception If the input is not a valid token or signature verification fails.
+     * $root is one public key or a key set. The key set uses the root key ID
+     * as the index. The extension uses the key that has the same ID as
+     * {@see UnverifiedBiscuit::rootKeyId()}.
+     *
+     * @param PublicKey|array<int, PublicKey> $root
+     *
+     * @throws Base64Exception If the token is not valid, the key set has no key for its root key ID, or the signature is not correct.
+     * @throws TypeError If $root is not a PublicKey and not an array of PublicKey.
      */
-    public static function fromBase64(string $data, PublicKey $root): Biscuit
+    public static function fromBase64(string $data, PublicKey|array $root): Biscuit
     {
         throw new Error('Biscuit\Auth\Biscuit::fromBase64() should be implemented by the biscuit_php extension.');
     }

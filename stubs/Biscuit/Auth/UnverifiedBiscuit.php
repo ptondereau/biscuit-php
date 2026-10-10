@@ -10,6 +10,7 @@ use Biscuit\Exception\BuilderStateException;
 use Biscuit\Exception\SignatureException;
 use Biscuit\Exception\SnapshotException;
 use Error;
+use TypeError;
 
 /**
  * A token parsed without cryptographic signature verification.
@@ -110,9 +111,16 @@ class UnverifiedBiscuit
      * Checks the token signatures against the root public key and converts
      * it to a {@see Biscuit} usable for authorization.
      *
-     * @throws SignatureException If signature verification fails.
+     * $root is one public key or a key set. The key set uses the root key ID
+     * as the index. The extension uses the key that has the same ID as
+     * {@see UnverifiedBiscuit::rootKeyId()}.
+     *
+     * @param PublicKey|array<int, PublicKey> $root
+     *
+     * @throws SignatureException If the key set has no key for the root key ID, or the signature is not correct.
+     * @throws TypeError If $root is not a PublicKey and not an array of PublicKey.
      */
-    public function verify(PublicKey $root): Biscuit
+    public function verify(PublicKey|array $root): Biscuit
     {
         throw new Error('Biscuit\Auth\UnverifiedBiscuit::verify() should be implemented by the biscuit_php extension.');
     }

@@ -229,6 +229,25 @@ try {
 
 Arguments left `null` keep their current value. Limits travel with snapshots.
 
+### Root Key Rotation
+
+Set a root key ID on the token. To verify the token, give a key set. The key set uses the root key ID as the index.
+
+```php
+$builder = new BiscuitBuilder('user("alice")');
+$builder->setRootKeyId(2);
+$token = $builder->build($current->getPrivateKey());
+
+$parsed = Biscuit::fromBase64($token->toBase64(), [
+    1 => $previous->getPublicKey(),
+    2 => $current->getPublicKey(),
+]);
+```
+
+The extension rejects a token that has no root key ID.
+The extension also rejects a token if the key set does not contain its root key ID.
+`Biscuit::fromBytes()` and `UnverifiedBiscuit::verify()` also accept a key set.
+
 ### Snapshot Persistence
 
 ```php
