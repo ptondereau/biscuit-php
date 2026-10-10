@@ -1,0 +1,248 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Biscuit\BiscuitBundle\DependencyInjection;
+
+use Biscuit\BiscuitBundle\Maker\MakeBiscuitPolicy;
+use Doctrine\DBAL\Connection as DoctrineConnection;
+use Doctrine\ORM\Tools\Event\GenerateSchemaEventArgs;
+use Symfony\Bundle\MakerBundle\Maker\AbstractMaker;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Resource\ClassExistenceResource;
+use Symfony\Component\DependencyInjection\ChildDefinition;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Extension\Extension;
+use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\Messenger\MessageBusInterface;
+
+final class BiscuitExtension extends Extension
+{
+    public function load(array $configs, ContainerBuilder $container): void
+    {
+        $configuration = new Configuration();
+        $config = $this->processConfiguration($configuration, $configs);
+
+        $loader = new PhpFileLoader(
+            $container,
+            new FileLocator(\dirname(__DIR__, 2) . '/config'),
+        );
+        $loader->load('services.php');
+
+        $this->setParameters($container, $config);
+        $this->configureTokenExtractor($container, $config);
+        $this->configureRevocation($container, $config, $loader);
+        $this->configureMaker($container);
+    }
+
+    private function configureMaker(ContainerBuilder $container): void
+    {
+        $container->addResource(new ClassExistenceResource(AbstractMaker::class));
+
+        if (!class_exists(AbstractMaker::class)) {
+            return;
+        }
+
+        $container->register('biscuit.maker.make_policy', MakeBiscuitPolicy::class)
+            ->addTag('maker.command');
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function configureRevocation(
+        ContainerBuilder $container,
+        array $config,
+        PhpFileLoader $loader,
+    ): void {
+        $revocation = $config['revocation'];
+
+        if (false === $revocation['enabled']) {
+            return;
+        }
+
+        if (null === $revocation['on_unavailable']) {
+            throw new InvalidConfigurationException('biscuit.revocation.on_unavailable must be set explicitly when revocation is enabled. Use "deny" to reject requests when the revocation list cannot be read (fail closed), or "allow" to accept them and log an error (fail open). There is no default because the right answer depends on whether an unreachable list should take your API down.');
+        }
+
+        $loader->load('revocation.php');
+
+        $this->configureStaticRevocationStore($container, $revocation['stores']['static']);
+        $this->configureCacheRevocationStore($container, $revocation['stores']['cache']);
+        $this->configureDoctrineRevocationStore($container, $revocation['stores']['doctrine'], $loader);
+
+        if (false === $revocation['stores']['in_memory']['enabled']) {
+            $container->removeDefinition('biscuit.revocation.store.in_memory');
+        }
+
+        $this->configureRevocationPush($container, $revocation['push'], $loader);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function configureRevocationPush(
+        ContainerBuilder $container,
+        array $config,
+        PhpFileLoader $loader,
+    ): void {
+        if (false === $config['enabled']) {
+            return;
+        }
+
+        $container->addResource(new ClassExistenceResource(MessageBusInterface::class));
+
+        if (!interface_exists(MessageBusInterface::class)) {
+            throw new InvalidConfigurationException('biscuit.revocation.push.enabled is true but symfony/messenger is not installed. Run "composer require symfony/messenger", or drop the push key and point biscuit.revocation.stores.cache.pool at a shared pool instead.');
+        }
+
+        $loader->load('revocation_push.php');
+
+        /** @var string $bus */
+        $bus = $config['bus'];
+
+        $container->setParameter('biscuit.revocation.push.bus', $bus);
+
+        $container->getDefinition('biscuit.revocation.publisher')
+            ->setArgument('$bus', new Reference($bus));
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function configureDoctrineRevocationStore(
+        ContainerBuilder $container,
+        array $config,
+        PhpFileLoader $loader,
+    ): void {
+        if (false === $config['enabled']) {
+            return;
+        }
+
+        $container->addResource(new ClassExistenceResource(DoctrineConnection::class));
+
+        if (!class_exists(DoctrineConnection::class)) {
+            throw new InvalidConfigurationException('biscuit.revocation.stores.doctrine is enabled but doctrine/dbal is not installed. Run "composer require doctrine/dbal", or use another store.');
+        }
+
+        $loader->load('revocation_doctrine.php');
+
+        /** @var string $connectionId */
+        $connectionId = $config['connection'];
+        /** @var string $table */
+        $table = $config['table'];
+
+        $container->setParameter('biscuit.revocation.stores.doctrine.connection', $connectionId);
+        $container->setParameter('biscuit.revocation.stores.doctrine.table', $table);
+
+        $container->getDefinition('biscuit.revocation.store.doctrine')
+            ->setArgument('$connection', new Reference($connectionId));
+
+        $container->getDefinition('biscuit.revocation.doctrine.setup_command')
+            ->setArgument('$connection', new Reference($connectionId));
+
+        if (!class_exists(GenerateSchemaEventArgs::class)) {
+            $container->removeDefinition('biscuit.revocation.doctrine.schema_listener');
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function configureStaticRevocationStore(ContainerBuilder $container, array $config): void
+    {
+        $ids = $config['ids'];
+        $file = $config['file'];
+
+        if ([] === $ids && null === $file) {
+            $container->removeDefinition('biscuit.revocation.store.static');
+
+            return;
+        }
+
+        $container->setParameter('biscuit.revocation.stores.static.ids', $ids);
+        $container->setParameter('biscuit.revocation.stores.static.file', $file);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function configureCacheRevocationStore(ContainerBuilder $container, array $config): void
+    {
+        if (false === $config['enabled']) {
+            $container->removeDefinition('biscuit.revocation.store.cache');
+
+            return;
+        }
+
+        $poolId = $config['pool'];
+
+        if (null === $poolId) {
+            $poolId = 'cache.biscuit.revocation';
+
+            $container->setDefinition($poolId, new ChildDefinition($config['adapter']))
+                ->addTag('cache.pool', ['name' => 'biscuit.revocation']);
+        }
+
+        $container->getDefinition('biscuit.revocation.store.cache')
+            ->setArgument('$cachePool', new Reference($poolId))
+            ->setArgument('$keyPrefix', $config['key_prefix']);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function configureTokenExtractor(
+        ContainerBuilder $container,
+        array $config,
+    ): void {
+        $extractorConfig = $config['security']['token_extractor'];
+        $extractors = [];
+
+        if ($extractorConfig['header']) {
+            $extractors[] = new Reference('biscuit.token_extractor.header');
+        }
+
+        if (false !== $extractorConfig['cookie']) {
+            $extractors[] = new Reference('biscuit.token_extractor.cookie');
+        }
+
+        $chainDefinition = $container->getDefinition('biscuit.token_extractor');
+        $chainDefinition->setArguments($extractors);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function setParameters(
+        ContainerBuilder $container,
+        array $config,
+    ): void {
+        $parameters = [
+            'biscuit.keys.public_key' => $config['keys']['public_key'],
+            'biscuit.keys.private_key' => $config['keys']['private_key'],
+            'biscuit.keys.public_key_file' => $config['keys']['public_key_file'],
+            'biscuit.keys.private_key_file' => $config['keys']['private_key_file'],
+            'biscuit.security.token_extractor.header' => $config['security']['token_extractor']['header'],
+            'biscuit.security.token_extractor.cookie' => $config['security']['token_extractor']['cookie'],
+            'biscuit.security.user_identifier_fact' => $config['security']['user_identifier_fact'],
+            'biscuit.security.www_authenticate' => $config['security']['www_authenticate'],
+            'biscuit.security.realm' => $config['security']['realm'],
+            'biscuit.revocation.enabled' => $config['revocation']['enabled'],
+            'biscuit.revocation.on_unavailable' => $config['revocation']['on_unavailable'],
+            'biscuit.revocation.dispatch_check_events' => $config['revocation']['dispatch_check_events'],
+            'biscuit.revocation.default_expiry' => $config['revocation']['default_expiry'],
+            'biscuit.revocation.stores.cache.key_prefix' => $config['revocation']['stores']['cache']['key_prefix'],
+            'biscuit.policies' => $config['policies'],
+            'biscuit.token_templates' => $config['token_templates'],
+            'biscuit.block_templates' => $config['block_templates'],
+            'biscuit.authorizer_fact_templates' => $config['authorizer_fact_templates'],
+        ];
+
+        foreach ($parameters as $name => $value) {
+            $container->setParameter($name, $value);
+        }
+    }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "biscuit-bundle-assets",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web assets for Biscuit Symfony Bundle",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "dependencies": {
+    "@biscuit-auth/web-components": "^0.7.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^21.0.1",
+    "@rollup/plugin-node-resolve": "^13.0.6",
+    "@web/rollup-plugin-import-meta-assets": "^1.0.7",
+    "rollup": "^2.60.0",
+    "rollup-plugin-copy": "^3.4.0"
+  }
+}

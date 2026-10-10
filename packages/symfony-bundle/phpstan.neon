@@ -1,0 +1,92 @@
+parameters:
+    level: 8
+
+    phpVersion:
+        min: 80100
+        max: 80499
+
+    paths:
+        - src
+        - tests
+
+    excludePaths:
+        - vendor
+        - src/Resources/skeleton
+
+    bootstrapFiles:
+        - vendor/autoload.php
+
+    scanDirectories:
+        - vendor/ptondereau/biscuit-php-stubs/stubs
+
+    symfony:
+        containerXmlPath: null
+
+    ignoreErrors:
+        # Symfony Console compatibility - add() exists in 6.4/7.x, addCommand() in 8.0+
+        -
+            message: '#Call to an undefined method Symfony\\Component\\Console\\Application::add\(\)#'
+            path: tests/*
+            reportUnmatched: false
+        # PHPUnit assertion type narrowing
+        -
+            message: '#will always evaluate to true#'
+            path: tests/*
+            reportUnmatched: false
+        # Symfony AbstractAuthenticator requires nullable return types in method signatures
+        -
+            message: '#Method Biscuit\\BiscuitBundle\\Security\\Authenticator\\BiscuitAuthenticator::supports\(\) never returns null so it can be removed from the return type#'
+            reportUnmatched: false
+        -
+            message: '#Method Biscuit\\BiscuitBundle\\Security\\Authenticator\\BiscuitAuthenticator::onAuthenticationFailure\(\) never returns null so it can be removed from the return type#'
+            reportUnmatched: false
+        # Symfony AbstractDataCollector requires nullable return type in signature
+        -
+            message: '#Method Biscuit\\BiscuitBundle\\DataCollector\\BiscuitDataCollector::getTemplate\(\) never returns null so it can be removed from the return type#'
+            reportUnmatched: false
+        # Test authenticator signature matching
+        -
+            message: '#Method Biscuit\\BiscuitBundle\\Security\\Authenticator\\TestBiscuitAuthenticator::supports\(\) never returns null so it can be removed from the return type#'
+            reportUnmatched: false
+        # Test fixture loader YAML parsing defensive checks
+        -
+            message: '#Call to function is_array\(\) with array.* will always evaluate to true#'
+            path: src/Test/*
+            reportUnmatched: false
+        -
+            message: '#Call to function is_string\(\) with string will always evaluate to true#'
+            path: src/Test/*
+            reportUnmatched: false
+        # Symfony 7.3+ Vote class used in forward-compatible voter signature; absent on Symfony 6.4
+        -
+            message: '#has invalid type Symfony\\Component\\Security\\Core\\Authorization\\Voter\\Vote#'
+            path: src/Security/Voter/BiscuitVoter.php
+            reportUnmatched: false
+        # doctrine/dbal 3 can return null from getSchemaAssetsFilter(); dbal 4 never does
+        -
+            message: '#between null and callable\(\): mixed will always evaluate to true#'
+            path: src/Revocation/Doctrine/RevocationSchemaListener.php
+            reportUnmatched: false
+        # doctrine/orm 3.6.8 added GenerateSchemaEventArgs::setSchema(), which throws below doctrine/dbal 4.5.
+        # Both feature checks stay, so each is redundant on one end of the supported range.
+        -
+            message: '#Call to function method_exists\(\) with Doctrine\\ORM\\Tools\\Event\\GenerateSchemaEventArgs and .setSchema. will always evaluate to true#'
+            path: src/Revocation/Doctrine/RevocationSchemaListener.php
+            reportUnmatched: false
+        -
+            message: '#Call to function method_exists\(\) with .?Doctrine\\\\?DBAL\\\\?Schema\\\\?Schema.? and .edit. will always evaluate to (true|false)#'
+            path: src/Revocation/Doctrine/RevocationSchemaListener.php
+            reportUnmatched: false
+        # Older symfony/config (prefer-lowest) does not expose generic types on TreeBuilder/NodeBuilder
+        -
+            message: '#return type with generic class Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder does not specify its types#'
+            path: src/DependencyInjection/Configuration.php
+            reportUnmatched: false
+        -
+            message: '#Call to method arrayNode\(\) on an unknown class Symfony\\Component\\Config\\Definition\\Builder\\NodeBuilder#'
+            path: src/DependencyInjection/Configuration.php
+            reportUnmatched: false
+
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-symfony/extension.neon

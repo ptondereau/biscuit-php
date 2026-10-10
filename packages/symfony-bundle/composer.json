@@ -1,0 +1,82 @@
+{
+  "name": "ptondereau/biscuit-symfony-bundle",
+  "description": "Symfony bundle for Biscuit authorization tokens",
+  "type": "symfony-bundle",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Pierre Tondereau",
+      "email": "pierre.tondereau@protonmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=8.1",
+    "ext-biscuit_php": ">=0.5",
+    "psr/cache": "^2.0 || ^3.0",
+    "psr/log": "^1.1 || ^2.0 || ^3.0",
+    "symfony/config": "^6.4 || ^7.0 || ^8.0",
+    "symfony/console": "^6.4 || ^7.0 || ^8.0",
+    "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
+    "symfony/event-dispatcher-contracts": "^2.5 || ^3.0",
+    "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
+    "symfony/security-bundle": "^6.4 || ^7.0 || ^8.0"
+  },
+  "require-dev": {
+    "doctrine/dbal": "^3.6 || ^4.0",
+    "doctrine/orm": "^2.19 || ^3.0",
+    "friendsofphp/php-cs-fixer": "^3.90",
+    "phpstan/phpstan": "^2.0",
+    "phpstan/phpstan-phpunit": "^2.0",
+    "phpstan/phpstan-symfony": "^2.0",
+    "phpunit/phpunit": "^10.0 || ^11.0",
+    "ptondereau/biscuit-php-stubs": "^0.5.1",
+    "symfony/browser-kit": "^6.4 || ^7.0 || ^8.0",
+    "symfony/cache": "^6.4 || ^7.0 || ^8.0",
+    "symfony/css-selector": "^6.4 || ^7.0 || ^8.0",
+    "symfony/maker-bundle": "^1.50",
+    "symfony/messenger": "^6.4 || ^7.0 || ^8.0",
+    "symfony/runtime": "^6.4 || ^7.0 || ^8.0",
+    "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0",
+    "symfony/web-profiler-bundle": "^6.4 || ^7.0 || ^8.0",
+    "symfony/yaml": "^6.4 || ^7.0 || ^8.0"
+  },
+  "suggest": {
+    "doctrine/dbal": "To keep revocations in a database with biscuit.revocation.stores.doctrine",
+    "symfony/maker-bundle": "To scaffold policy classes with make:biscuit-policy",
+    "symfony/messenger": "To broadcast revocations to other instances with biscuit.revocation.push",
+    "symfony/web-profiler-bundle": "To inspect tokens, policy checks and revocation in the profiler",
+    "symfony/yaml": "To load Datalog fixtures from YAML in tests"
+  },
+  "scripts": {
+    "phpstan": "phpstan analyse --memory-limit=512M",
+    "cs-fix": "php-cs-fixer fix",
+    "cs-check": "php-cs-fixer fix --dry-run --diff",
+    "test": "phpunit",
+    "check": [
+      "@cs-check",
+      "@phpstan",
+      "@test"
+    ]
+  },
+  "autoload": {
+    "psr-4": {
+      "Biscuit\\BiscuitBundle\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Biscuit\\BiscuitBundle\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "symfony/runtime": true
+    }
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-main": "0.4.x-dev"
+    }
+  }
+}
