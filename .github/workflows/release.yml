@@ -71,7 +71,7 @@ jobs:
           rm biscuit_php.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pie-linux-x86_64-glibc-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -134,7 +134,7 @@ jobs:
           rm biscuit_php.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pie-linux-x86_64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -192,7 +192,7 @@ jobs:
           rm biscuit_php.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pie-linux-arm64-glibc-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -237,7 +237,7 @@ jobs:
           rm biscuit_php.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pie-linux-arm64-musl-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -302,7 +302,7 @@ jobs:
           rm "${BASE_NAME}.dll"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pie-windows-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
@@ -360,7 +360,7 @@ jobs:
           rm biscuit_php.so
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pie-macos-arm64-php${{ matrix.php-version }}-${{ matrix.phpts }}
           path: dist/*.zip
