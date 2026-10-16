@@ -178,6 +178,9 @@ $policy = new Policy('allow if user({name})', ['name' => 'alice']);
 // Or use set() method for dynamic values
 $fact = new Fact('user({id})');
 $fact->set('id', $userId);
+
+// Dates accept any DateTimeInterface
+$check = new Check('check if time($t), $t < {expires}', ['expires' => new DateTimeImmutable('+1 hour')]);
 ```
 
 ### Authorizer Queries
@@ -189,9 +192,12 @@ $rule = new Rule('users($id) <- user($id)');
 $facts = $authorizer->query($rule);
 
 foreach ($facts as $fact) {
-    echo "Found: {$fact->name()}\n";
+    [$id] = $fact->terms();
+    echo "Found: {$fact->name()} {$id}\n";
 }
 ```
+
+`Fact::terms()` returns PHP values in the types accepted as parameters: int, bool, string, `list<int>` for bytes, `DateTimeImmutable` in UTC for dates and a list for sets. Null, arrays, maps and unbound parameters throw a `TermException`.
 
 ### Datalog Statistics
 

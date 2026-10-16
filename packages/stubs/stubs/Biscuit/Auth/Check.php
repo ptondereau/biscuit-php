@@ -7,6 +7,7 @@ namespace Biscuit\Auth;
 use Biscuit\Exception\CheckException;
 use Biscuit\Exception\ScopeException;
 use Biscuit\Exception\TermException;
+use DateTimeInterface;
 use Error;
 
 /**
@@ -28,7 +29,7 @@ class Check
      * Parses a check from Datalog source code.
      *
      * @param non-empty-string $source
-     * @param array<string, int|bool|string|list<int|bool|string>>|null $params Values for `{name}` parameters.
+     * @param array<string, int|bool|string|DateTimeInterface|list<int|bool|string|DateTimeInterface>>|null $params Values for `{name}` parameters.
      * @param array<string, PublicKey>|null $scope_params Public keys for trust scope parameters.
      *
      * @throws CheckException If the source is not a valid check.
@@ -43,7 +44,7 @@ class Check
     /**
      * Binds the `{$name}` parameter to a value.
      *
-     * @param int|bool|string|list<int|bool|string> $value
+     * @param int|bool|string|DateTimeInterface|list<int|bool|string|DateTimeInterface> $value
      *
      * @throws TermException If the value has an unsupported type (e.g. null).
      */

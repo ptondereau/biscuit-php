@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Extension
+
+#### Added
+
+- `Fact::terms()` returns the terms of a fact as PHP values, so `Authorizer::query()` results can be read without parsing `__toString()`.
+- Datalog parameters accept a `DateTimeInterface` for dates.
+
+### Stubs
+
+#### Added
+
+- `Fact::terms()`, and `DateTimeInterface` in the parameter types.
+
 ### Laravel package
 
 #### Added
@@ -18,7 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 #### Changed
 
-- Mago 1.55.0.
+- Mago 1.57.0.
 
 ## [0.6.0] - 2026-10-10
 
