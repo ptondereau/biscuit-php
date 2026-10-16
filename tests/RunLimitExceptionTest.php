@@ -111,6 +111,18 @@ class RunLimitExceptionTest extends TestCase
     }
 
     #[Test]
+    public function setLimitsAppliesAnIntMaxTime(): void
+    {
+        $builder = new AuthorizerBuilder('allow if true;');
+        $builder->setLimits(maxTime: 0);
+
+        $this->expectException(RunLimitException::class);
+        $this->expectExceptionCode(3);
+
+        $builder->buildUnauthenticated()->authorize();
+    }
+
+    #[Test]
     public function setLimitsWithoutArgumentsKeepsTheDefaults(): void
     {
         $builder = new AuthorizerBuilder('a(1); b($x) <- a($x); allow if b(1);');
