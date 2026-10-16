@@ -21,6 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 #### Fixed
 
 - `AuthorizationException` and `RunLimitException` messages no longer repeat their cause.
+- An argument of the wrong type throws a `TypeError`, with ext-php-rs 0.16.3. A required argument used to throw a plain `Exception`, and an optional one was read as `null`.
+- `AuthorizerBuilder::setLimits()` applies a `maxTime` given as an int. It used to be ignored, so the default limit stayed.
 
 ### Stubs
 
