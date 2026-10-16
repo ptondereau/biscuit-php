@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Biscuit\BiscuitBundle\Command;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+
 /**
  * Parses repeated key=value --param options into typed values.
  *
@@ -52,6 +55,13 @@ trait CliParams
 
         if (is_numeric($value) && !str_contains($value, '.')) {
             return (int) $value;
+        }
+
+        $date = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $value);
+        $errors = DateTimeImmutable::getLastErrors();
+
+        if (false !== $date && (false === $errors || 0 === $errors['warning_count'])) {
+            return $date;
         }
 
         return $value;

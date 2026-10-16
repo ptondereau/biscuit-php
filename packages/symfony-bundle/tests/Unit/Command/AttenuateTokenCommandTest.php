@@ -208,6 +208,50 @@ final class AttenuateTokenCommandTest extends TestCase
         self::assertStringContainsString('false', $tester->getDisplay());
     }
 
+    #[Test]
+    public function itCoercesDateParameterValues(): void
+    {
+        $tokenManager = $this->createRealTokenManager();
+        $parentBase64 = $this->buildParentToken($tokenManager);
+
+        $tester = $this->createCommandTester($tokenManager, [
+            'expires' => [
+                'checks' => ['check if time($t), $t <= {exp}'],
+            ],
+        ]);
+
+        $tester->execute([
+            'token' => $parentBase64,
+            '--template' => 'expires',
+            '--param' => ['exp=2030-08-06T12:00:00+02:00'],
+        ]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+        self::assertStringContainsString('$t <= 2030-08-06T10:00:00Z', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itKeepsAnImpossibleDateAsAString(): void
+    {
+        $tokenManager = $this->createRealTokenManager();
+        $parentBase64 = $this->buildParentToken($tokenManager);
+
+        $tester = $this->createCommandTester($tokenManager, [
+            'expires' => [
+                'checks' => ['check if time($t), $t <= {exp}'],
+            ],
+        ]);
+
+        $tester->execute([
+            'token' => $parentBase64,
+            '--template' => 'expires',
+            '--param' => ['exp=2030-02-30T12:00:00Z'],
+        ]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+        self::assertStringContainsString('$t <= "2030-02-30T12:00:00Z"', $tester->getDisplay());
+    }
+
     /**
      * @param array<string, array{facts?: list<non-empty-string>, checks?: list<non-empty-string>, rules?: list<non-empty-string>}> $templates
      */

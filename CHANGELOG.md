@@ -29,6 +29,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `Fact::terms()`, and `DateTimeInterface` in the parameter types.
 - `Bytes`, also accepted in the parameter types.
 
+### Symfony bundle
+
+#### Fixed
+
+- Template parameters bind as Datalog dates from a `DateTimeInterface`, or from a `--param` value in RFC 3339 form such as `2026-08-06T12:00:00Z`.
+- The README's `expires` block template checks `time($t)`, the fact the voter adds, instead of `now($t)`.
+
 ### Laravel package
 
 #### Added

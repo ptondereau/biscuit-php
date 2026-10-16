@@ -170,7 +170,7 @@ biscuit:
                 - 'check if operation("read")'
         expires:
             checks:
-                - 'check if now($t), $t <= {exp}'
+                - 'check if time($t), $t <= {exp}'
 
     authorizer_fact_templates:   # Facts injected into the authorizer, keyed by #[IsGranted] policy name
         credit_authorized:
@@ -381,7 +381,7 @@ biscuit:
                 - 'check if operation("read")'
         expires:
             checks:
-                - 'check if now($t), $t <= {exp}'
+                - 'check if time($t), $t <= {exp}'
         single_resource:
             checks:
                 - 'check if resource({res})'
@@ -392,6 +392,7 @@ Apply a template to an existing token:
 ```php
 use Biscuit\Auth\Biscuit;
 use Biscuit\BiscuitBundle\Token\BiscuitBlockFactory;
+use DateTimeImmutable;
 
 final class ShareLinkAction
 {
@@ -404,11 +405,13 @@ final class ShareLinkAction
         ]);
 
         return $this->blockFactory->attenuate($derived, 'expires', [
-            'exp' => time() + 3600,
+            'exp' => new DateTimeImmutable('+1 hour'),
         ]);
     }
 }
 ```
+
+A date parameter takes a `DateTimeInterface`, so it compares against the `time()` fact the voter adds. On the command line, pass it in RFC 3339 form: `-p exp=2026-08-06T12:00:00Z`.
 
 For composing several templates into a single block (one extra block instead of N), use `buildBlock()` plus the underlying `BlockBuilder::merge()` before passing the result to `BiscuitTokenManager::attenuate()`.
 
