@@ -123,7 +123,7 @@ pub(crate) enum BiscuitError {
         #[source]
         source: BoxedError,
     },
-    #[error("authorization failed: {source}")]
+    #[error("{source}")]
     Authorization {
         #[source]
         source: biscuit_auth::error::Token,
@@ -187,19 +187,6 @@ where
             source: Box::new(source),
         })
     }
-}
-
-pub(crate) fn collect_chain(err: &(dyn std::error::Error + 'static)) -> String {
-    let mut parts: Vec<String> = vec![err.to_string()];
-    let mut current = err.source();
-    while let Some(src) = current {
-        let part = src.to_string();
-        if parts.last() != Some(&part) {
-            parts.push(part);
-        }
-        current = src.source();
-    }
-    parts.join(": ")
 }
 
 #[php_class]
@@ -359,7 +346,7 @@ pub struct ThirdPartyException;
 
 impl From<BiscuitError> for PhpException {
     fn from(err: BiscuitError) -> Self {
-        let message = collect_chain(&err);
+        let message = err.to_string();
         if let Some(limit) = find_run_limit(&err) {
             return build_run_limit_exception(limit, format!("{message}: {limit}"));
         }

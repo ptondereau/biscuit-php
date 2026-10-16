@@ -18,6 +18,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - **BREAKING**: a list parameter always binds as a set. A list of ints between 0 and 255, or an empty list, used to bind as bytes, so such a set could not be passed. Wrap bytes in `Bytes` instead.
 
+#### Fixed
+
+- `AuthorizationException` and `RunLimitException` messages no longer repeat their cause.
+
 ### Stubs
 
 #### Added
