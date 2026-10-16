@@ -4,7 +4,7 @@ use biscuit_parser::error::ParseError as UpstreamParseError;
 use ext_php_rs::prelude::*;
 
 use crate::errors::{DatalogKind, ResultExt};
-use crate::helpers::{MixedValue, mixed_value_to_term};
+use crate::helpers::{MixedValue, mixed_value_to_term, term_to_mixed_value};
 use crate::keys::PublicKey;
 
 #[php_class]
@@ -116,6 +116,15 @@ impl Fact {
 
     pub fn name(&self) -> String {
         self.0.predicate.name.clone()
+    }
+
+    pub fn terms(&self) -> PhpResult<Vec<MixedValue>> {
+        self.0
+            .predicate
+            .terms
+            .iter()
+            .map(term_to_mixed_value)
+            .collect()
     }
 
     pub fn __to_string(&self) -> String {

@@ -1,6 +1,11 @@
 use std::collections::HashMap;
 
+use biscuit_auth::builder::Term;
+use ext_php_rs::convert::{FromZval, IntoZval};
+use ext_php_rs::flags::DataType;
 use ext_php_rs::prelude::*;
+use ext_php_rs::types::Zval;
+use ext_php_rs::zend::ClassEntry;
 
 use crate::errors::{BiscuitError, DatalogKind, ResultExt, StaticError};
 use crate::keys::PublicKey;
@@ -12,22 +17,79 @@ pub enum MixedValue {
     ParsedStr(String),
     Bytes(Vec<u8>),
     Array(Vec<MixedValue>),
+    Date(Timestamp),
     None,
 }
 
-pub fn mixed_value_to_term(value: &MixedValue) -> PhpResult<biscuit_auth::builder::Term> {
+#[derive(Debug)]
+pub struct Timestamp(i64);
+
+impl FromZval<'_> for Timestamp {
+    const TYPE: DataType = DataType::object("DateTimeInterface");
+
+    fn from_zval(zval: &Zval) -> Option<Self> {
+        let date = zval.object()?;
+        if !date.instance_of(ClassEntry::try_find("DateTimeInterface")?) {
+            return None;
+        }
+        date.try_call_method("getTimestamp", vec![])
+            .ok()?
+            .long()
+            .map(Self)
+    }
+}
+
+impl IntoZval for Timestamp {
+    const TYPE: DataType = DataType::object("DateTimeImmutable");
+    const NULLABLE: bool = false;
+
+    fn set_zval(self, zv: &mut Zval, persistent: bool) -> ext_php_rs::error::Result<()> {
+        ZendCallable::try_from_name("date_create_immutable")?
+            .try_call(vec![&format!("@{}", self.0)])?
+            .set_zval(zv, persistent)
+    }
+}
+
+pub fn mixed_value_to_term(value: &MixedValue) -> PhpResult<Term> {
     match value {
-        MixedValue::Long(v) => Ok(biscuit_auth::builder::Term::Integer(*v)),
-        MixedValue::Bool(b) => Ok(biscuit_auth::builder::Term::Bool(*b)),
-        MixedValue::ParsedStr(s) => Ok(biscuit_auth::builder::Term::Str(s.clone())),
-        MixedValue::Bytes(b) => Ok(biscuit_auth::builder::Term::Bytes(b.clone())),
+        MixedValue::Long(v) => Ok(Term::Integer(*v)),
+        MixedValue::Bool(b) => Ok(Term::Bool(*b)),
+        MixedValue::ParsedStr(s) => Ok(Term::Str(s.clone())),
+        MixedValue::Bytes(b) => Ok(Term::Bytes(b.clone())),
         MixedValue::Array(arr) => {
             let terms: Result<Vec<_>, _> = arr.iter().map(mixed_value_to_term).collect();
             let term_set: std::collections::BTreeSet<_> = terms?.into_iter().collect();
-            Ok(biscuit_auth::builder::Term::Set(term_set))
+            Ok(Term::Set(term_set))
         }
+        MixedValue::Date(Timestamp(ts)) => Ok(Term::Date(
+            u64::try_from(*ts)
+                .map_err(|_| StaticError("date out of range"))
+                .datalog(DatalogKind::Term)?,
+        )),
         MixedValue::None => {
             Err::<_, StaticError>(StaticError("unexpected value")).datalog(DatalogKind::Term)?
+        }
+    }
+}
+
+pub fn term_to_mixed_value(term: &Term) -> PhpResult<MixedValue> {
+    match term {
+        Term::Integer(v) => Ok(MixedValue::Long(*v)),
+        Term::Bool(b) => Ok(MixedValue::Bool(*b)),
+        Term::Str(s) => Ok(MixedValue::ParsedStr(s.clone())),
+        Term::Bytes(b) => Ok(MixedValue::Bytes(b.clone())),
+        Term::Set(set) => Ok(MixedValue::Array(
+            set.iter()
+                .map(term_to_mixed_value)
+                .collect::<PhpResult<_>>()?,
+        )),
+        Term::Date(secs) => Ok(MixedValue::Date(Timestamp(
+            i64::try_from(*secs)
+                .map_err(|_| StaticError("date out of range"))
+                .datalog(DatalogKind::Term)?,
+        ))),
+        Term::Null | Term::Array(_) | Term::Map(_) | Term::Variable(_) | Term::Parameter(_) => {
+            Err::<_, StaticError>(StaticError("unsupported term")).datalog(DatalogKind::Term)?
         }
     }
 }
