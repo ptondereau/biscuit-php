@@ -29,7 +29,7 @@ class Policy
      * Parses a policy from Datalog source code.
      *
      * @param non-empty-string $source
-     * @param array<string, int|bool|string|DateTimeInterface|list<int|bool|string|DateTimeInterface>>|null $params Values for `{name}` parameters.
+     * @param array<string, int|bool|string|Bytes|DateTimeInterface|list<int|bool|string|Bytes|DateTimeInterface>>|null $params Values for `{name}` parameters.
      * @param array<string, PublicKey>|null $scope_params Public keys for trust scope parameters.
      *
      * @throws PolicyException If the source is not a valid policy.
@@ -44,7 +44,7 @@ class Policy
     /**
      * Binds the `{$name}` parameter to a value.
      *
-     * @param int|bool|string|DateTimeInterface|list<int|bool|string|DateTimeInterface> $value
+     * @param int|bool|string|Bytes|DateTimeInterface|list<int|bool|string|Bytes|DateTimeInterface> $value
      *
      * @throws TermException If the value has an unsupported type (e.g. null).
      */

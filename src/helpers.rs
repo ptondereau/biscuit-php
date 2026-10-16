@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use biscuit_auth::builder::Term;
+use ext_php_rs::binary::Binary;
+use ext_php_rs::class::RegisteredClass;
 use ext_php_rs::convert::{FromZval, IntoZval};
 use ext_php_rs::flags::DataType;
 use ext_php_rs::prelude::*;
@@ -15,10 +17,34 @@ pub enum MixedValue {
     Long(i64),
     Bool(bool),
     ParsedStr(String),
-    Bytes(Vec<u8>),
+    Bytes(Bytes),
     Array(Vec<MixedValue>),
     Date(Timestamp),
     None,
+}
+
+#[php_class]
+#[php(name = "Biscuit\\Auth\\Bytes")]
+#[derive(Debug, Clone)]
+pub struct Bytes(Vec<u8>);
+
+#[php_impl]
+impl Bytes {
+    pub fn __construct(data: Binary<u8>) -> Self {
+        Self(data.into())
+    }
+
+    pub fn __to_string(&self) -> Binary<u8> {
+        Binary::new(self.0.clone())
+    }
+}
+
+impl FromZval<'_> for Bytes {
+    const TYPE: DataType = DataType::object(Self::CLASS_NAME);
+
+    fn from_zval(zval: &Zval) -> Option<Self> {
+        <&Self>::from_zval(zval).cloned()
+    }
 }
 
 #[derive(Debug)]
@@ -55,7 +81,7 @@ pub fn mixed_value_to_term(value: &MixedValue) -> PhpResult<Term> {
         MixedValue::Long(v) => Ok(Term::Integer(*v)),
         MixedValue::Bool(b) => Ok(Term::Bool(*b)),
         MixedValue::ParsedStr(s) => Ok(Term::Str(s.clone())),
-        MixedValue::Bytes(b) => Ok(Term::Bytes(b.clone())),
+        MixedValue::Bytes(Bytes(b)) => Ok(Term::Bytes(b.clone())),
         MixedValue::Array(arr) => {
             let terms: Result<Vec<_>, _> = arr.iter().map(mixed_value_to_term).collect();
             let term_set: std::collections::BTreeSet<_> = terms?.into_iter().collect();
@@ -77,7 +103,7 @@ pub fn term_to_mixed_value(term: &Term) -> PhpResult<MixedValue> {
         Term::Integer(v) => Ok(MixedValue::Long(*v)),
         Term::Bool(b) => Ok(MixedValue::Bool(*b)),
         Term::Str(s) => Ok(MixedValue::ParsedStr(s.clone())),
-        Term::Bytes(b) => Ok(MixedValue::Bytes(b.clone())),
+        Term::Bytes(b) => Ok(MixedValue::Bytes(Bytes(b.clone()))),
         Term::Set(set) => Ok(MixedValue::Array(
             set.iter()
                 .map(term_to_mixed_value)

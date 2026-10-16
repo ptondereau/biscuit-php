@@ -46,6 +46,7 @@ pub fn get_module(module: ModuleBuilder) -> ModuleBuilder {
         .class::<ThirdPartyBlock>()
         .class::<Rule>()
         .class::<Fact>()
+        .class::<Bytes>()
         .class::<Check>()
         .class::<Policy>()
         .class::<ParseError>()

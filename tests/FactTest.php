@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Biscuit\Tests;
 
 use Biscuit\Auth\AuthorizerBuilder;
+use Biscuit\Auth\Bytes;
 use Biscuit\Auth\Fact;
 use Biscuit\Auth\Rule;
 use Biscuit\Exception\FactException;
@@ -63,7 +64,8 @@ class FactTest extends TestCase
         static::assertSame(42, $integer);
         static::assertTrue($boolean);
         static::assertSame('alice', $string);
-        static::assertSame([0, 255], $bytes);
+        static::assertInstanceOf(Bytes::class, $bytes);
+        static::assertSame("\x00\xff", (string) $bytes);
         static::assertInstanceOf(DateTimeImmutable::class, $date);
         static::assertSame('2024-01-01T00:00:00+00:00', $date->format(DATE_ATOM));
         static::assertSame(['a', 'b'], $set);
@@ -71,7 +73,7 @@ class FactTest extends TestCase
 
     public function testTermsRoundTripThroughParams(): void
     {
-        $fact = new Fact('f(42, true, "alice", hex:00ff, 2024-01-01T00:00:00Z, {"a", "b"})');
+        $fact = new Fact('f(42, true, "alice", hex:0102, 2024-01-01T00:00:00Z, {1, 2})');
         $params = array_combine(['integer', 'boolean', 'string', 'bytes', 'date', 'set'], $fact->terms());
 
         $copy = new Fact('f({integer}, {boolean}, {string}, {bytes}, {date}, {set})', $params);
@@ -84,6 +86,27 @@ class FactTest extends TestCase
         $fact = new Fact('f({date})', ['date' => new DateTime('2024-01-01T01:00:00+01:00')]);
 
         static::assertSame('f(2024-01-01T00:00:00Z)', (string) $fact);
+    }
+
+    public function testBytesParamBindsBytes(): void
+    {
+        $fact = new Fact('f({bytes})', ['bytes' => new Bytes("\x01\x02\x03")]);
+
+        static::assertSame('f(hex:010203)', (string) $fact);
+    }
+
+    public function testListOfSmallIntsParamBindsSet(): void
+    {
+        $fact = new Fact('f({set})', ['set' => [1, 2, 3]]);
+
+        static::assertSame('f({1, 2, 3})', (string) $fact);
+    }
+
+    public function testEmptyListParamBindsEmptySet(): void
+    {
+        $fact = new Fact('f({set})', ['set' => []]);
+
+        static::assertSame('f({,})', (string) $fact);
     }
 
     #[Test]

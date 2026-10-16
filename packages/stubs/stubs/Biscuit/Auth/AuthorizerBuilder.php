@@ -40,7 +40,7 @@ class AuthorizerBuilder
      * Creates a builder, optionally seeded with Datalog source code
      * (equivalent to calling {@see AuthorizerBuilder::addCode()}).
      *
-     * @param array<string, int|bool|string|DateTimeInterface|list<int|bool|string|DateTimeInterface>>|null $params Values for `{name}` parameters.
+     * @param array<string, int|bool|string|Bytes|DateTimeInterface|list<int|bool|string|Bytes|DateTimeInterface>>|null $params Values for `{name}` parameters.
      * @param array<string, PublicKey>|null $scope_params Public keys for trust scope parameters.
      *
      * @throws TermException If the source cannot be parsed or a parameter cannot be applied.
@@ -56,7 +56,7 @@ class AuthorizerBuilder
      * Parses Datalog source code (facts, rules, checks, and policies) into
      * the builder.
      *
-     * @param array<string, int|bool|string|DateTimeInterface|list<int|bool|string|DateTimeInterface>>|null $params Values for `{name}` parameters.
+     * @param array<string, int|bool|string|Bytes|DateTimeInterface|list<int|bool|string|Bytes|DateTimeInterface>>|null $params Values for `{name}` parameters.
      * @param array<string, PublicKey>|null $scope_params Public keys for trust scope parameters.
      *
      * @throws TermException If the source cannot be parsed or a parameter cannot be applied.
