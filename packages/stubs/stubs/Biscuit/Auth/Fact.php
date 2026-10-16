@@ -29,7 +29,7 @@ class Fact
      * Parses a fact from Datalog source code.
      *
      * @param non-empty-string $source
-     * @param array<string, int|bool|string|DateTimeInterface|list<int|bool|string|DateTimeInterface>>|null $params Values for `{name}` parameters.
+     * @param array<string, int|bool|string|Bytes|DateTimeInterface|list<int|bool|string|Bytes|DateTimeInterface>>|null $params Values for `{name}` parameters.
      *
      * @throws FactException If the source is not a valid fact.
      * @throws TermException If a parameter value has an unsupported type (e.g. null).
@@ -42,7 +42,7 @@ class Fact
     /**
      * Binds the `{$name}` parameter to a value.
      *
-     * @param int|bool|string|DateTimeInterface|list<int|bool|string|DateTimeInterface> $value
+     * @param int|bool|string|Bytes|DateTimeInterface|list<int|bool|string|Bytes|DateTimeInterface> $value
      *
      * @throws TermException If the value has an unsupported type (e.g. null).
      */
@@ -61,14 +61,14 @@ class Fact
 
     /**
      * Returns the fact's terms as PHP values, in the types accepted by {@see Fact::set()}:
-     * int, bool, string, `list<int>` for bytes, `DateTimeImmutable` in UTC for dates and a list for sets.
+     * int, bool, string, {@see Bytes} for bytes, `DateTimeImmutable` in UTC for dates and a list for sets.
      *
      * ```php
      * $fact = $authorizer->query(new Rule('u($name, $age) <- user($name, $age)'))[0];
      * [$name, $age] = $fact->terms();
      * ```
      *
-     * @return list<int|bool|string|DateTimeImmutable|list<int|bool|string|DateTimeImmutable>>
+     * @return list<int|bool|string|Bytes|DateTimeImmutable|list<int|bool|string|Bytes|DateTimeImmutable>>
      *
      * @throws TermException If a term has no PHP equivalent (null, array, map or unbound parameter).
      */

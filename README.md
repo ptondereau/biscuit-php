@@ -161,7 +161,7 @@ $biscuitWithAttestation = $biscuit->appendThirdParty(
 ### Parameterized Primitives
 
 ```php
-use Biscuit\Auth\{Fact, Rule, Check, Policy};
+use Biscuit\Auth\{Fact, Rule, Check, Policy, Bytes};
 
 // Fact with constructor params
 $fact = new Fact('user({id})', ['id' => 'alice']);
@@ -181,6 +181,12 @@ $fact->set('id', $userId);
 
 // Dates accept any DateTimeInterface
 $check = new Check('check if time($t), $t < {expires}', ['expires' => new DateTimeImmutable('+1 hour')]);
+
+// Lists bind as sets
+$check = new Check('check if role($r), {roles}.contains($r)', ['roles' => ['admin', 'editor']]);
+
+// Binary strings bind as bytes once wrapped in Bytes
+$fact = new Fact('digest({digest})', ['digest' => new Bytes(hash('sha256', $payload, true))]);
 ```
 
 ### Authorizer Queries
@@ -197,7 +203,7 @@ foreach ($facts as $fact) {
 }
 ```
 
-`Fact::terms()` returns PHP values in the types accepted as parameters: int, bool, string, `list<int>` for bytes, `DateTimeImmutable` in UTC for dates and a list for sets. Null, arrays, maps and unbound parameters throw a `TermException`.
+`Fact::terms()` returns PHP values in the types accepted as parameters: int, bool, string, `Bytes` for bytes, `DateTimeImmutable` in UTC for dates and a list for sets. Null, arrays, maps and unbound parameters throw a `TermException`.
 
 ### Datalog Statistics
 

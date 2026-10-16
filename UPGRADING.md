@@ -1,5 +1,21 @@
 # Upgrading Guide
 
+## Upgrading from v0.6.x to v0.7.0
+
+A list parameter now always binds as a Datalog set. Before, a list of ints between 0 and 255, or an empty list, bound as bytes. Wrap bytes in `Bytes` instead:
+
+```php
+// Before
+$fact = new Fact('digest({digest})', ['digest' => array_values(unpack('C*', $digest))]);
+
+// After
+$fact = new Fact('digest({digest})', ['digest' => new Bytes($digest)]);
+```
+
+`Fact::terms()` returns bytes as `Bytes` too, so its result can be passed back as parameters.
+
+See [issue #85](https://github.com/ptondereau/biscuit-php/issues/85).
+
 ## Upgrading from v0.4.x to v0.5.0
 
 v0.5.0 replaces the flat list of `Invalid*` exception classes with a deep typed hierarchy under a shared `BiscuitException` base, and attaches structured payloads to `AuthorizationException` (matched policy and failed checks) and to all `DatalogException` subclasses (parse errors and parameter binding info). Every failure shape now has its own concrete exception class so callers can use idiomatic multi-catch instead of branching on a message string.
