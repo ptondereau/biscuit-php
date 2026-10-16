@@ -55,7 +55,7 @@ composer check
 
 This runs `php-cs-fixer`, `phpstan` at level 8 and `phpunit`. Run `composer cs-fix` to fix style issues.
 
-CI runs it against PHP 8.1 to 8.5 and Symfony 6.4, 7.4, 8.0 and 8.1. To reproduce a specific cell locally, set the relevant Symfony version constraint and run `composer update` before `composer check`.
+CI runs it against PHP 8.1 to 8.5 and Symfony 6.4, 7.4 and 8.1. To reproduce a specific cell locally, set the relevant Symfony version constraint and run `composer update` before `composer check`.
 
 ### Laravel package
 
