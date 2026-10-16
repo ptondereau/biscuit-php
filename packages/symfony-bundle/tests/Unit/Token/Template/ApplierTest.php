@@ -9,6 +9,7 @@ use Biscuit\Auth\BiscuitBuilder;
 use Biscuit\Auth\BlockBuilder;
 use Biscuit\BiscuitBundle\Token\Template\Applier;
 use Biscuit\BiscuitBundle\Token\Template\Template;
+use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -58,6 +59,17 @@ final class ApplierTest extends TestCase
         (new Applier())->populate($builder, $template, ['res' => 'doc-1']);
 
         self::assertStringContainsString('"doc-1"', (string) $builder);
+    }
+
+    #[Test]
+    public function bindsADateParamAsADatalogDate(): void
+    {
+        $builder = new BlockBuilder();
+        $template = new Template(checks: ['check if time($t), $t <= {exp}']);
+
+        (new Applier())->populate($builder, $template, ['exp' => new DateTimeImmutable('2030-08-06T12:00:00Z')]);
+
+        self::assertStringContainsString('$t <= 2030-08-06T12:00:00Z', (string) $builder);
     }
 
     #[Test]
