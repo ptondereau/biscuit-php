@@ -29,7 +29,7 @@
     "phpstan/phpstan-phpunit": "^2.0",
     "phpstan/phpstan-symfony": "^2.0",
     "phpunit/phpunit": "^10.0 || ^11.0",
-    "ptondereau/biscuit-php-stubs": "^0.5.1",
+    "ptondereau/biscuit-php-stubs": "^0.7.0",
     "symfony/browser-kit": "^6.4 || ^7.0 || ^8.0",
     "symfony/cache": "^6.4 || ^7.0 || ^8.0",
     "symfony/css-selector": "^6.4 || ^7.0 || ^8.0",
