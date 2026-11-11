@@ -237,10 +237,10 @@ statistics, so restored values can describe earlier execution.
 
 ### Run Limits
 
-The Datalog engine stops after 1000 facts, 100 iterations, or 1 ms of engine
-time by default. Hitting a limit is not a policy decision: it throws
+The Datalog engine stops after 1000 facts, 100 iterations, 1000 evaluation
+steps, or 1 ms of engine time by default. Hitting a limit is not a policy decision: it throws
 `Biscuit\Exception\RunLimitException`, a subclass of `AuthorizationException`
-whose `getCode()` is `1` (facts), `2` (iterations), or `3` (time). Raise the
+whose `getCode()` is `1` (facts), `2` (iterations), `3` (time), or `4` (steps). Raise the
 limits on the builder when the defaults are too tight for your host:
 
 ```php

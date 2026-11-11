@@ -173,6 +173,7 @@ impl AuthorizerBuilder {
         maxFacts: Option<i64>,
         maxIterations: Option<i64>,
         maxTime: Option<f64>,
+        maxSteps: Option<i64>,
     ) -> PhpResult<()> {
         let mut limits = get_builder(&self.0)?.limits().clone();
         if let Some(max_facts) = maxFacts {
@@ -185,6 +186,9 @@ impl AuthorizerBuilder {
             limits.max_time = Duration::try_from_secs_f64(max_time).map_err(|_| {
                 value_error("maxTime must be a finite, non-negative number of seconds")
             })?;
+        }
+        if let Some(max_steps) = maxSteps {
+            limits.max_steps = non_negative(max_steps, "maxSteps")?;
         }
         self.0 = Some(take_builder(&mut self.0)?.set_limits(limits));
         Ok(())

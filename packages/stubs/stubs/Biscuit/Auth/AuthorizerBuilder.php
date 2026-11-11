@@ -133,18 +133,23 @@ class AuthorizerBuilder
      *
      * Limits apply to `authorize()` and `query()`; exceeding one throws a
      * {@see RunLimitException}. Arguments left null keep the current value
-     * (defaults: 1000 facts, 100 iterations, 0.001 seconds). Limits are
+     * (defaults: 1000 facts, 100 iterations, 0.001 seconds, 1000 steps). Limits are
      * preserved in snapshots.
      *
      * @param int|null $maxFacts Maximum number of facts the engine may generate.
      * @param int|null $maxIterations Maximum number of inference iterations.
      * @param float|null $maxTime Maximum engine time in seconds.
+     * @param int|null $maxSteps Maximum number of evaluation steps.
      *
      * @throws ValueError If a value is negative or not finite.
      * @throws BuilderStateException If the builder has already been consumed.
      */
-    public function setLimits(?int $maxFacts = null, ?int $maxIterations = null, ?float $maxTime = null): void
-    {
+    public function setLimits(
+        ?int $maxFacts = null,
+        ?int $maxIterations = null,
+        ?float $maxTime = null,
+        ?int $maxSteps = null,
+    ): void {
         throw new Error(
             'Biscuit\Auth\AuthorizerBuilder::setLimits() should be implemented by the biscuit_php extension.',
         );

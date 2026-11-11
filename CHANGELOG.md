@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Extension
+
+#### Added
+
+- `AuthorizerBuilder::setLimits()` takes a `maxSteps` limit. `RunLimitException` has code `4` when it is reached.
+
+#### Changed
+
+- Built on biscuit-auth 7.0.0-alpha.1 and ext-php-rs 0.16.4. Datalog evaluation now stops after 1000 steps by default.
+
+### Stubs
+
+#### Added
+
+- `maxSteps` parameter on `AuthorizerBuilder::setLimits()`.
+
+### Tooling
+
+#### Changed
+
+- Mago 1.59.0.
+- PHPUnit 10.5.62 or later, 11.5.50 or later for the Symfony bundle, to avoid CVE-2026-24765.
+
 ## [0.7.0] - 2026-10-16
 
 ### Extension

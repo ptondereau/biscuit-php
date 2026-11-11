@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use biscuit_auth::KeyPair as BiscuitKeyPair;
 use ext_php_rs::prelude::*;
 
 use crate::biscuit::Biscuit;
@@ -31,10 +30,9 @@ impl BiscuitBuilder {
     }
 
     pub fn build(&self, root: &PrivateKey) -> PhpResult<Biscuit> {
-        let keypair = BiscuitKeyPair::from(&root.0);
         let token = get_builder(&self.0)?
             .clone()
-            .build(&keypair)
+            .build(&root.0)
             .build(BuildKind::Token)?;
         Ok(Biscuit(token))
     }
