@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-11
+
 ### Extension
 
 #### Added
@@ -99,6 +101,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 Extension releases up to 0.5.6 are described in the [GitHub releases](https://github.com/ptondereau/biscuit-php/releases).
 
-[Unreleased]: https://github.com/ptondereau/biscuit-php/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/ptondereau/biscuit-php/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/ptondereau/biscuit-php/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/ptondereau/biscuit-php/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/ptondereau/biscuit-php/compare/v0.5.6...v0.6.0

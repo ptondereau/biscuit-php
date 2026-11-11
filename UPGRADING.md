@@ -1,5 +1,13 @@
 # Upgrading Guide
 
+## Upgrading from v0.7.x to v0.8.0
+
+Datalog evaluation now stops after 1000 steps, from the step counter of biscuit-auth 7. An authorizer that goes over throws a `RunLimitException` with code `4`. Raise the limit on the builder:
+
+```php
+$builder->setLimits(maxSteps: 10_000);
+```
+
 ## Upgrading from v0.6.x to v0.7.0
 
 A list parameter now always binds as a Datalog set. Before, a list of ints between 0 and 255, or an empty list, bound as bytes. Wrap bytes in `Bytes` instead:
