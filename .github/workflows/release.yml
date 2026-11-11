@@ -55,6 +55,9 @@ jobs:
         env:
           phpts: ${{ matrix.phpts }}
 
+      - name: Use the libclang of the default clang
+        run: echo "LIBCLANG_PATH=/usr/lib/x86_64-linux-gnu/libclang-$(clang -dumpversion | cut -d. -f1).so.1" >> "$GITHUB_ENV"
+
       - name: Build release binary
         run: |
           cargo build --release --target x86_64-unknown-linux-gnu

@@ -46,6 +46,9 @@ jobs:
           extensions: mbstring
           tools: composer:v2.9.7
 
+      - name: Use the libclang of the default clang
+        run: echo "LIBCLANG_PATH=/usr/lib/x86_64-linux-gnu/libclang-$(clang -dumpversion | cut -d. -f1).so.1" >> "$GITHUB_ENV"
+
       - name: Build
         run: cargo build --release --all-features
 
@@ -113,6 +116,9 @@ jobs:
           tools: composer:v2.9.7
         env:
           debug: true
+
+      - name: Use the libclang of the default clang
+        run: echo "LIBCLANG_PATH=/usr/lib/x86_64-linux-gnu/libclang-$(clang -dumpversion | cut -d. -f1).so.1" >> "$GITHUB_ENV"
 
       - name: Build
         run: cargo build --release --all-features
