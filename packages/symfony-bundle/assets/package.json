@@ -15,5 +15,8 @@
     "@web/rollup-plugin-import-meta-assets": "^1.0.7",
     "rollup": "^2.80.0",
     "rollup-plugin-copy": "^3.4.0"
+  },
+  "overrides": {
+    "lit-analyzer": "^2.0.3"
   }
 }
