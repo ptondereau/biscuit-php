@@ -34,7 +34,7 @@ Read the Datalog reference at [biscuitsec.org/docs/reference/datalog](https://ww
 
 - PHP 8.1 or higher
 - Symfony 6.4, 7.4, or 8.0
-- The `biscuit-php` PHP extension (version 0.5 or higher)
+- The `biscuit-php` PHP extension (version 0.8 or higher)
 
 ## Installation
 

@@ -11,7 +11,7 @@
   ],
   "require": {
     "php": ">=8.2",
-    "ext-biscuit_php": ">=0.5",
+    "ext-biscuit_php": ">=0.8",
     "illuminate/auth": "^12.0 || ^13.0",
     "illuminate/database": "^12.0 || ^13.0",
     "illuminate/filesystem": "^12.0 || ^13.0",
@@ -24,7 +24,7 @@
     "larastan/larastan": "^3.13",
     "orchestra/testbench": "^10.0 || ^11.0",
     "pestphp/pest": "^3.8 || ^4.0 || ^5.0",
-    "ptondereau/biscuit-php-stubs": "^0.5.1"
+    "ptondereau/biscuit-php-stubs": "^0.8.0"
   },
   "scripts": {
     "format": "mago format",
@@ -58,7 +58,7 @@
       ]
     },
     "branch-alias": {
-      "dev-main": "0.6.x-dev"
+      "dev-main": "0.8.x-dev"
     }
   },
   "config": {

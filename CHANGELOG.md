@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Symfony bundle
+
+#### Changed
+
+- Requires the extension 0.8 or later.
+
+### Laravel package
+
+#### Changed
+
+- Requires the extension 0.8 or later.
+
 ## [0.8.0] - 2026-11-11
 
 ### Extension
@@ -23,6 +35,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 #### Added
 
 - `maxSteps` parameter on `AuthorizerBuilder::setLimits()`.
+
+### Symfony bundle
+
+#### Changed
+
+- The `lit-analyzer` dependency of `@biscuit-auth/web-components` is overridden to 2.x in `assets`, dropping vulnerable `micromatch`, `braces` and `decode-uri-component` versions. The built assets do not change.
 
 ### Tooling
 
