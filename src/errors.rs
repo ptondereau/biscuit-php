@@ -493,6 +493,7 @@ fn run_limit_code(limit: &RunLimit) -> i64 {
         RunLimit::TooManyFacts => 1,
         RunLimit::TooManyIterations => 2,
         RunLimit::Timeout => 3,
+        RunLimit::TooManySteps => 4,
         RunLimit::UnexpectedQueryResult(..) => 0,
     }
 }

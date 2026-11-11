@@ -144,9 +144,9 @@ pub(crate) fn collect_term_params(
 
 pub(crate) fn collect_scope_params(
     scope_params: Option<HashMap<String, &PublicKey>>,
-) -> HashMap<String, biscuit_auth::PublicKey> {
+) -> HashMap<String, biscuit_auth::public_keys::PublicKeyData> {
     match scope_params {
-        Some(sp) => sp.iter().map(|(k, v)| (k.clone(), v.0)).collect(),
+        Some(sp) => sp.iter().map(|(k, v)| (k.clone(), v.0.into())).collect(),
         None => HashMap::new(),
     }
 }

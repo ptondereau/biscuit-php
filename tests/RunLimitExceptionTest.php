@@ -123,6 +123,18 @@ class RunLimitExceptionTest extends TestCase
     }
 
     #[Test]
+    public function setLimitsAppliesMaxSteps(): void
+    {
+        $builder = new AuthorizerBuilder('a(1); b($x) <- a($x), $x > 0; allow if b(1);');
+        $builder->setLimits(maxSteps: 0);
+
+        $this->expectException(RunLimitException::class);
+        $this->expectExceptionCode(4);
+
+        $builder->buildUnauthenticated()->authorize();
+    }
+
+    #[Test]
     public function setLimitsWithoutArgumentsKeepsTheDefaults(): void
     {
         $builder = new AuthorizerBuilder('a(1); b($x) <- a($x); allow if b(1);');

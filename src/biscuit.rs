@@ -38,6 +38,8 @@ impl<'a> TryFrom<&'a Zval> for RootKeys<'a> {
 }
 
 impl RootKeyProvider for RootKeys<'_> {
+    type Key = biscuit_auth::PublicKey;
+
     fn choose(&self, key_id: Option<u32>) -> Result<biscuit_auth::PublicKey, Format> {
         match self {
             Self::Single(key) => Ok(key.0),

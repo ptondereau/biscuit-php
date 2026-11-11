@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use biscuit_auth::KeyPair as BiscuitKeyPair;
 use biscuit_auth::builder::Algorithm as BiscuitAlgorithm;
 use ext_php_rs::binary_slice::BinarySlice;
 use ext_php_rs::prelude::*;
@@ -28,17 +27,17 @@ impl From<Algorithm> for BiscuitAlgorithm {
 #[php_class]
 #[php(name = "Biscuit\\Auth\\KeyPair")]
 #[derive(Debug)]
-pub struct KeyPair(BiscuitKeyPair);
+pub struct KeyPair(biscuit_auth::PrivateKey);
 
 #[php_impl]
 impl KeyPair {
     pub fn __construct(alg: Option<Algorithm>) -> Self {
         let algorithm = alg.unwrap_or(Algorithm::Ed25519).into();
-        Self(BiscuitKeyPair::new_with_algorithm(algorithm))
+        Self(biscuit_auth::PrivateKey::new_with_algorithm(algorithm))
     }
 
     pub fn from_private_key(private_key: &PrivateKey) -> Self {
-        Self(BiscuitKeyPair::from(&private_key.0))
+        Self(private_key.0.clone())
     }
 
     pub fn get_public_key(&self) -> PublicKey {
@@ -46,7 +45,7 @@ impl KeyPair {
     }
 
     pub fn get_private_key(&self) -> PrivateKey {
-        PrivateKey(self.0.private())
+        PrivateKey(self.0.clone())
     }
 }
 
@@ -131,13 +130,11 @@ impl PrivateKey {
 
     pub fn generate(alg: Option<Algorithm>) -> Self {
         let algorithm = alg.unwrap_or(Algorithm::Ed25519).into();
-        let keypair = BiscuitKeyPair::new_with_algorithm(algorithm);
-        Self(keypair.private())
+        Self(biscuit_auth::PrivateKey::new_with_algorithm(algorithm))
     }
 
     pub fn get_public_key(&self) -> PublicKey {
-        let keypair = BiscuitKeyPair::from(&self.0);
-        PublicKey(keypair.public())
+        PublicKey(self.0.public())
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
