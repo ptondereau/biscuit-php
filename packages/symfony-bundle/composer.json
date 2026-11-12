@@ -28,7 +28,7 @@
     "phpstan/phpstan": "^2.0",
     "phpstan/phpstan-phpunit": "^2.0",
     "phpstan/phpstan-symfony": "^2.0",
-    "phpunit/phpunit": "^10.5.62 || ^11.5.50",
+    "phpunit/phpunit": "^12.5.43",
     "ptondereau/biscuit-php-stubs": "^0.8.0",
     "symfony/browser-kit": "^6.4 || ^7.0 || ^8.0",
     "symfony/cache": "^6.4 || ^7.0 || ^8.0",
